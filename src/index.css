@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-slate-200;
+  }
+  
+  body {
+    @apply bg-gradient-to-br from-slate-50 to-blue-50 text-slate-900 font-sans;
+    margin: 0;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  .gradient-museum {
+    @apply bg-gradient-to-r from-nature-600 via-museum-500 to-nature-500;
+  }
+  
+  .text-gradient {
+    @apply bg-gradient-to-r from-nature-600 to-museum-600 bg-clip-text text-transparent;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:scale-105 hover:shadow-xl;
+  }
+  
+  .glass-effect {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+}
