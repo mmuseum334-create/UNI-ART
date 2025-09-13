@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Button } from '../ui/Button';
+import LogoUnipaz from '../../assets/LogoUnipaz.png';
 import {
   Menu,
   X,
@@ -11,7 +12,6 @@ import {
   Upload,
   Heart,
   Search,
-  Palette,
   Home,
   Sun,
   Moon
@@ -45,9 +45,13 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Palette className="h-8 w-8 text-nature-600 dark:text-nature-400" />
+            <img
+              src={LogoUnipaz}
+              alt="Logo Unipaz"
+              className="h-11 w-11 object-contain"
+            />
             <span className="text-xl font-display font-bold text-gradient dark:text-white">
-              Museo Virtual
+              The Gallery Peace
             </span>
           </Link>
 
