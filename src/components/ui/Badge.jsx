@@ -6,12 +6,12 @@ const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-slate-900 text-slate-50 hover:bg-slate-900/80',
-        secondary: 'border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80',
-        destructive: 'border-transparent bg-red-500 text-slate-50 hover:bg-red-500/80',
-        outline: 'text-slate-950',
-        success: 'border-transparent bg-nature-500 text-white hover:bg-nature-600',
-        info: 'border-transparent bg-museum-500 text-white hover:bg-museum-600',
+        default: 'border-transparent bg-slate-900 text-slate-50 hover:bg-slate-900/80 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-50/80',
+        secondary: 'border-transparent bg-slate-100 text-slate-900 hover:bg-slate-100/80 dark:bg-dark-tertiary dark:text-slate-50 dark:hover:bg-dark-tertiary/80',
+        destructive: 'border-transparent bg-red-500 text-slate-50 hover:bg-red-500/80 dark:bg-red-600 dark:hover:bg-red-600/80',
+        outline: 'text-slate-950 dark:text-slate-50',
+        success: 'border-transparent bg-nature-500 text-white hover:bg-nature-600 dark:bg-nature-600 dark:hover:bg-nature-700',
+        info: 'border-transparent bg-museum-500 text-white hover:bg-museum-600 dark:bg-museum-600 dark:hover:bg-museum-700',
       },
     },
     defaultVariants: {

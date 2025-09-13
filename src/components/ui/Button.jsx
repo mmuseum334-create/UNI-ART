@@ -6,12 +6,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: 'bg-gradient-to-r from-nature-600 to-museum-600 text-white hover:from-nature-700 hover:to-museum-700 shadow-md hover:shadow-lg',
-        destructive: 'bg-red-500 text-red-50 hover:bg-red-600',
-        outline: 'border border-nature-200 bg-transparent hover:bg-nature-50 hover:text-nature-700',
-        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200',
-        ghost: 'hover:bg-nature-50 hover:text-nature-700',
-        link: 'text-nature-600 underline-offset-4 hover:underline',
+        default: 'bg-gradient-to-r from-nature-600 to-museum-600 text-white hover:from-nature-700 hover:to-museum-700 dark:from-nature-500 dark:to-museum-500 dark:hover:from-nature-600 dark:hover:to-museum-600 shadow-md hover:shadow-lg',
+        destructive: 'bg-red-500 text-red-50 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700',
+        outline: 'border border-nature-200 bg-transparent hover:bg-nature-50 hover:text-nature-700 dark:border-nature-700 dark:hover:bg-dark-tertiary dark:hover:text-nature-300 dark:text-nature-300',
+        secondary: 'bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-dark-tertiary dark:text-slate-100 dark:hover:bg-slate-700',
+        ghost: 'hover:bg-nature-50 hover:text-nature-700 dark:hover:bg-dark-tertiary dark:hover:text-nature-300 dark:text-slate-300',
+        link: 'text-nature-600 underline-offset-4 hover:underline dark:text-nature-400',
       },
       size: {
         default: 'h-10 px-4 py-2',

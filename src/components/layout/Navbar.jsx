@@ -1,23 +1,27 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useTheme } from '../../contexts/ThemeContext';
 import { Button } from '../ui/Button';
-import { 
-  Menu, 
-  X, 
-  User, 
-  LogOut, 
-  Upload, 
-  Heart, 
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  Upload,
+  Heart,
   Search,
   Palette,
-  Home
+  Home,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -37,12 +41,12 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 glass-effect border-b border-white/20">
+    <nav className="sticky top-0 z-50 glass-effect border-b border-white/20 dark:border-dark-tertiary/50 dark:bg-dark-primary/90">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link to="/" className="flex items-center space-x-2">
-            <Palette className="h-8 w-8 text-nature-600" />
-            <span className="text-xl font-display font-bold text-gradient">
+            <Palette className="h-8 w-8 text-nature-600 dark:text-nature-400" />
+            <span className="text-xl font-display font-bold text-gradient dark:text-white">
               Museo Virtual
             </span>
           </Link>
@@ -54,7 +58,7 @@ const Navbar = () => {
                 <Link
                   key={link.to}
                   to={link.to}
-                  className="flex items-center space-x-1 text-slate-700 hover:text-nature-600 transition-colors"
+                  className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 hover:text-nature-600 dark:hover:text-nature-400 transition-colors"
                 >
                   <IconComponent className="h-4 w-4" />
                   <span>{link.label}</span>
@@ -64,22 +68,33 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
+              title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              {isDark ? (
+                <Sun className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+              ) : (
+                <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+              )}
+            </button>
             {isAuthenticated ? (
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/50 transition-colors"
+                  className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
                 >
                   <img
                     src={user.avatar}
                     alt={user.name}
                     className="h-8 w-8 rounded-full"
                   />
-                  <span className="text-slate-700 font-medium">{user.name}</span>
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">{user.name}</span>
                 </button>
 
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-2 w-48 glass-effect rounded-lg shadow-lg border border-white/20 py-1">
+                  <div className="absolute right-0 mt-2 w-48 glass-effect dark:bg-dark-secondary/95 rounded-lg shadow-lg border border-white/20 dark:border-dark-tertiary/50 py-1">
                     {userLinks.map((link) => {
                       const IconComponent = link.icon;
                       return (
@@ -87,17 +102,17 @@ const Navbar = () => {
                           key={link.to}
                           to={link.to}
                           onClick={() => setIsProfileOpen(false)}
-                          className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-white/50 transition-colors"
+                          className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
                         >
                           <IconComponent className="h-4 w-4" />
                           <span>{link.label}</span>
                         </Link>
                       );
                     })}
-                    <hr className="my-1 border-white/20" />
+                    <hr className="my-1 border-white/20 dark:border-dark-tertiary/50" />
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 transition-colors"
+                      className="flex items-center space-x-2 w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                     >
                       <LogOut className="h-4 w-4" />
                       <span>Cerrar Sesión</span>
@@ -121,20 +136,33 @@ const Navbar = () => {
             )}
           </div>
 
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-white/50 transition-colors"
-          >
-            {isMenuOpen ? (
-              <X className="h-6 w-6 text-slate-700" />
-            ) : (
-              <Menu className="h-6 w-6 text-slate-700" />
-            )}
-          </button>
+          <div className="md:hidden flex items-center space-x-2">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
+              title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+            >
+              {isDark ? (
+                <Sun className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+              ) : (
+                <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+              )}
+            </button>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
+            >
+              {isMenuOpen ? (
+                <X className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+              ) : (
+                <Menu className="h-6 w-6 text-slate-700 dark:text-slate-300" />
+              )}
+            </button>
+          </div>
         </div>
 
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-white/20">
+          <div className="md:hidden py-4 border-t border-white/20 dark:border-dark-tertiary/50">
             <div className="space-y-2">
               {navLinks.map((link) => {
                 const IconComponent = link.icon;
@@ -143,7 +171,7 @@ const Navbar = () => {
                     key={link.to}
                     to={link.to}
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-white/50 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 rounded-lg transition-colors"
                   >
                     <IconComponent className="h-4 w-4" />
                     <span>{link.label}</span>
@@ -153,14 +181,14 @@ const Navbar = () => {
 
               {isAuthenticated ? (
                 <>
-                  <hr className="my-2 border-white/20" />
+                  <hr className="my-2 border-white/20 dark:border-dark-tertiary/50" />
                   <div className="flex items-center space-x-2 px-4 py-2">
                     <img
                       src={user.avatar}
                       alt={user.name}
                       className="h-8 w-8 rounded-full"
                     />
-                    <span className="text-slate-700 font-medium">{user.name}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">{user.name}</span>
                   </div>
                   {userLinks.map((link) => {
                     const IconComponent = link.icon;
@@ -169,7 +197,7 @@ const Navbar = () => {
                         key={link.to}
                         to={link.to}
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex items-center space-x-2 px-4 py-2 text-slate-700 hover:bg-white/50 rounded-lg transition-colors"
+                        className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 rounded-lg transition-colors"
                       >
                         <IconComponent className="h-4 w-4" />
                         <span>{link.label}</span>
@@ -181,7 +209,7 @@ const Navbar = () => {
                       handleLogout();
                       setIsMenuOpen(false);
                     }}
-                    className="flex items-center space-x-2 w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 w-full px-4 py-2 text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                   >
                     <LogOut className="h-4 w-4" />
                     <span>Cerrar Sesión</span>

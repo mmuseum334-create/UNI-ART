@@ -50,14 +50,14 @@ const Home = () => {
 
   return (
     <div className="min-h-screen">
-      <section className="relative overflow-hidden bg-gradient-to-br from-nature-50 via-blue-50 to-purple-50 py-20">
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-sm"></div>
+      <section className="relative overflow-hidden bg-gradient-to-br from-nature-50 via-blue-50 to-purple-50 dark:from-dark-primary dark:via-dark-secondary dark:to-dark-primary py-20">
+        <div className="absolute inset-0 bg-white/30 dark:bg-dark-primary/30 backdrop-blur-sm"></div>
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-display font-bold text-gradient mb-6">
               Bienvenido al Museo Virtual
             </h1>
-            <p className="text-xl text-slate-600 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-3xl mx-auto">
               Descubre, explora y comparte el arte en todas sus formas. 
               Un espacio donde la creatividad no tiene límites y cada obra cuenta una historia única.
             </p>
@@ -80,13 +80,13 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-dark-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">
               Estadísticas del Museo
             </h2>
-            <p className="text-slate-600">Números que reflejan nuestra comunidad artística</p>
+            <p className="text-slate-600 dark:text-slate-300">Números que reflejan nuestra comunidad artística</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {stats.map((stat, index) => {
@@ -95,14 +95,14 @@ const Home = () => {
                 <Card key={index} className="text-center card-hover">
                   <CardContent className="pt-6">
                     <div className="flex justify-center mb-4">
-                      <div className="p-3 rounded-full bg-gradient-to-r from-nature-100 to-museum-100">
-                        <IconComponent className="h-8 w-8 text-nature-600" />
+                      <div className="p-3 rounded-full bg-gradient-to-r from-nature-100 to-museum-100 dark:from-dark-tertiary dark:to-dark-tertiary">
+                        <IconComponent className="h-8 w-8 text-nature-600 dark:text-nature-400" />
                       </div>
                     </div>
-                    <div className="text-3xl font-display font-bold text-slate-900 mb-2">
+                    <div className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2">
                       {stat.value}
                     </div>
-                    <div className="text-slate-600">{stat.label}</div>
+                    <div className="text-slate-600 dark:text-slate-300">{stat.label}</div>
                   </CardContent>
                 </Card>
               );
@@ -111,13 +111,13 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-slate-50">
+      <section className="py-16 bg-slate-50 dark:bg-dark-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">
               Categorías de Arte
             </h2>
-            <p className="text-slate-600">Explora diferentes formas de expresión artística</p>
+            <p className="text-slate-600 dark:text-slate-300">Explora diferentes formas de expresión artística</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {artCategories.map((category) => {
@@ -129,10 +129,10 @@ const Home = () => {
                       <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${category.color} flex items-center justify-center mb-4`}>
                         <IconComponent className="h-6 w-6 text-white" />
                       </div>
-                      <h3 className="font-display font-semibold text-slate-900 mb-2">
+                      <h3 className="font-display font-semibold text-slate-900 dark:text-white mb-2">
                         {category.name}
                       </h3>
-                      <p className="text-sm text-slate-600">
+                      <p className="text-sm text-slate-600 dark:text-slate-300">
                         {category.description}
                       </p>
                     </CardContent>
@@ -144,14 +144,14 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white dark:bg-dark-primary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-12">
             <div>
-              <h2 className="text-3xl font-display font-bold text-slate-900 mb-4">
+              <h2 className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-4">
                 Obras Destacadas
               </h2>
-              <p className="text-slate-600">Las creaciones más populares de nuestra comunidad</p>
+              <p className="text-slate-600 dark:text-slate-300">Las creaciones más populares de nuestra comunidad</p>
             </div>
             <Link to="/catalog">
               <Button variant="outline">
@@ -176,7 +176,7 @@ const Home = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <CardTitle className="text-lg mb-1">{artwork.title}</CardTitle>
-                        <p className="text-sm text-slate-600">por {artwork.artist}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">por {artwork.artist}</p>
                       </div>
                       <Badge variant="secondary">
                         {artCategories.find(cat => cat.id === artwork.category)?.name}
@@ -184,10 +184,10 @@ const Home = () => {
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-4 line-clamp-2">
                       {artwork.description}
                     </p>
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-1">
                         <Heart className="h-4 w-4" />
                         <span>{artwork.likes}</span>
