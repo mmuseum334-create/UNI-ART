@@ -14,7 +14,8 @@ import {
   Search,
   Home,
   Sun,
-  Moon
+  Moon,
+  Box
 } from 'lucide-react';
 
 const Navbar = () => {
@@ -33,6 +34,7 @@ const Navbar = () => {
   const navLinks = [
     { to: '/', icon: Home, label: 'Inicio' },
     { to: '/catalog', icon: Search, label: 'Catálogo' },
+    { to: '/ar', icon: Box, label: 'Realidad Aumentada' },
   ];
 
   const userLinks = [

@@ -158,27 +158,6 @@ la vida siempre avanza.`,
 
 export const artCategories = [
   {
-    id: 'poems',
-    name: 'Poemas',
-    icon: 'BookOpen',
-    description: 'Expresiones líricas del alma',
-    color: 'from-purple-500 to-pink-500'
-  },
-  {
-    id: 'songs',
-    name: 'Canciones',
-    icon: 'Music',
-    description: 'Melodías que tocan el corazón',
-    color: 'from-green-500 to-blue-500'
-  },
-  {
-    id: 'videos',
-    name: 'Videos',
-    icon: 'Video',
-    description: 'Narrativas visuales en movimiento',
-    color: 'from-red-500 to-orange-500'
-  },
-  {
     id: 'paintings',
     name: 'Pinturas',
     icon: 'Palette',
@@ -186,25 +165,11 @@ export const artCategories = [
     color: 'from-yellow-500 to-red-500'
   },
   {
-    id: 'images',
-    name: 'Imágenes',
-    icon: 'Image',
-    description: 'Momentos capturados en el tiempo',
-    color: 'from-blue-500 to-teal-500'
-  },
-  {
     id: 'sculptures',
     name: 'Esculturas',
     icon: 'Box',
     description: 'Formas tridimensionales del arte',
     color: 'from-gray-500 to-slate-700'
-  },
-  {
-    id: 'other',
-    name: 'Otros',
-    icon: 'Sparkles',
-    description: 'Expresiones artísticas únicas',
-    color: 'from-indigo-500 to-purple-500'
   }
 ];
 

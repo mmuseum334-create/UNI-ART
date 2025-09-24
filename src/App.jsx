@@ -8,6 +8,7 @@ import Profile from './pages/Profile';
 import Auth from './pages/Auth';
 import Upload from './pages/Upload';
 import ArtworkDetail from './pages/ArtworkDetail';
+import AR from './pages/AR';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/catalog" element={<Catalog />} />
+                <Route path="/ar" element={<AR />} />
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/upload" element={<Upload />} />
