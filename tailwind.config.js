@@ -41,8 +41,8 @@ export default {
         },
       },
       fontFamily: {
-        'display': ['Playfair Display', 'serif'],
-        'sans': ['Inter', 'system-ui', 'sans-serif'],
+        'display': ['Poppins', 'sans-serif'],
+        'sans': ['Poppins', 'system-ui', 'sans-serif'],
       },
     },
   },
