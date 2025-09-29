@@ -26,6 +26,7 @@ const ARViewer = ({ artwork, onExit }) => {
         // Importar THREE.js dinámicamente
         const THREE = await import('three');
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
+        const { FontLoader } = await import('three/examples/jsm/loaders/FontLoader.js');
         const { XRButton } = await import('three/examples/jsm/webxr/XRButton.js');
 
         if (!isMounted) return;
@@ -80,7 +81,7 @@ const ARViewer = ({ artwork, onExit }) => {
         scene.add(cube);
 
         // Agregar texto 3D básico
-        const loader = new THREE.FontLoader();
+        const loader = new FontLoader();
         try {
           // En una implementación real, cargarías una fuente
           const textGeometry = new THREE.PlaneGeometry(0.4, 0.1);
