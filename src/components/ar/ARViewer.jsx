@@ -285,39 +285,63 @@ const ARViewer = ({ artwork, onExit }) => {
           containerRef.current.appendChild(renderer.domElement);
         }
 
-        // Crear botón AR con configuración correcta
-        const xrButton = XRButton.createButton(renderer, {
-          requiredFeatures: ['local'],
-          optionalFeatures: ['dom-overlay', 'hit-test', 'anchors']
-        });
+        // Crear botón AR manual para mejor control
+        const createARButton = () => {
+          const button = document.createElement('button');
+          button.textContent = 'ENTER AR';
+          button.style.position = 'absolute';
+          button.style.bottom = '20px';
+          button.style.left = '50%';
+          button.style.transform = 'translateX(-50%)';
+          button.style.padding = '12px 24px';
+          button.style.backgroundColor = '#007bff';
+          button.style.border = 'none';
+          button.style.borderRadius = '25px';
+          button.style.color = 'white';
+          button.style.fontSize = '16px';
+          button.style.cursor = 'pointer';
+          button.style.zIndex = '1000';
+          button.style.fontWeight = 'bold';
 
-        xrButton.style.position = 'absolute';
-        xrButton.style.bottom = '20px';
-        xrButton.style.left = '50%';
-        xrButton.style.transform = 'translateX(-50%)';
-        xrButton.style.padding = '12px 24px';
-        xrButton.style.backgroundColor = '#007bff';
-        xrButton.style.border = 'none';
-        xrButton.style.borderRadius = '25px';
-        xrButton.style.color = 'white';
-        xrButton.style.fontSize = '16px';
-        xrButton.style.cursor = 'pointer';
+          button.addEventListener('click', async () => {
+            try {
+              const session = await navigator.xr.requestSession('immersive-ar', {
+                requiredFeatures: ['local'],
+                optionalFeatures: ['dom-overlay', 'hit-test', 'anchors']
+              });
+              renderer.xr.setSession(session);
+              button.style.display = 'none';
+            } catch (error) {
+              console.error('Error al iniciar AR:', error);
+              alert('No se pudo iniciar AR. Asegúrate de estar en un dispositivo compatible.');
+            }
+          });
 
+          return button;
+        };
+
+        const arButton = createARButton();
         if (containerRef.current) {
-          containerRef.current.appendChild(xrButton);
+          containerRef.current.appendChild(arButton);
         }
 
         // Manejar eventos de sesión XR
         renderer.xr.addEventListener('sessionstart', () => {
           setIsSessionActive(true);
-          if (sessionRef.current) {
-            sessionRef.current = renderer.xr.getSession();
+          sessionRef.current = renderer.xr.getSession();
+          // Ocultar el botón cuando AR está activo
+          if (arButton) {
+            arButton.style.display = 'none';
           }
         });
 
         renderer.xr.addEventListener('sessionend', () => {
           setIsSessionActive(false);
           sessionRef.current = null;
+          // Mostrar el botón cuando AR termina
+          if (arButton) {
+            arButton.style.display = 'block';
+          }
         });
 
         // Loop de renderizado
@@ -360,6 +384,9 @@ const ARViewer = ({ artwork, onExit }) => {
           window.removeEventListener('orientationchange', handleResize);
           if (renderer.domElement && containerRef.current) {
             containerRef.current.removeChild(renderer.domElement);
+          }
+          if (arButton && containerRef.current) {
+            containerRef.current.removeChild(arButton);
           }
           renderer.dispose();
         };
