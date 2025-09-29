@@ -18,6 +18,7 @@ const ARViewer = ({ artwork, onExit }) => {
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showARButton, setShowARButton] = useState(false);
 
   // Configurar viewport para móviles
   useEffect(() => {
@@ -122,16 +123,25 @@ const ARViewer = ({ artwork, onExit }) => {
 
     const initAR = async () => {
       try {
+        console.log('Iniciando verificación de AR...');
+
         // Verificar soporte de WebXR
         if (!navigator.xr) {
+          console.log('WebXR no disponible');
           throw new Error('WebXR no está soportado en este dispositivo/navegador');
         }
 
+        console.log('WebXR encontrado, verificando soporte de AR...');
+
         // Verificar soporte específico de AR
         const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+        console.log('Soporte de AR:', isARSupported);
+
         if (!isARSupported) {
           throw new Error('Realidad Aumentada no está soportada en este dispositivo');
         }
+
+        console.log('AR soportado, continuando...');
 
         // Importar THREE.js dinámicamente
         const THREE = await import('three');
@@ -325,6 +335,10 @@ const ARViewer = ({ artwork, onExit }) => {
           containerRef.current.appendChild(arButton);
         }
 
+        // Marcar que el botón AR está disponible
+        setShowARButton(true);
+        console.log('Botón AR creado y agregado al DOM');
+
         // Manejar eventos de sesión XR
         renderer.xr.addEventListener('sessionstart', () => {
           setIsSessionActive(true);
@@ -483,11 +497,46 @@ const ARViewer = ({ artwork, onExit }) => {
         <div className="absolute bottom-16 sm:bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10 px-4">
           <div className="bg-black/70 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-xs sm:max-w-sm">
             <Info className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-3 sm:mb-4 text-blue-400" />
-            <p className="text-sm sm:text-base mb-2 font-medium">Toca "ENTER AR" para iniciar</p>
-            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
-              Mueve tu dispositivo para ver el objeto 3D y toca la pantalla para interactuar
-            </p>
+            {showARButton ? (
+              <>
+                <p className="text-sm sm:text-base mb-2 font-medium">Toca "ENTER AR" para iniciar</p>
+                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                  Mueve tu dispositivo para ver el objeto 3D y toca la pantalla para interactuar
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm sm:text-base mb-2 font-medium">Cargando experiencia AR...</p>
+                <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                  Preparando la realidad aumentada
+                </p>
+              </>
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Botón manual si AR no se carga automáticamente */}
+      {!isSessionActive && !previewMode && !showARButton && !isLoading && (
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20">
+          <Button
+            onClick={async () => {
+              console.log('Intentando iniciar preview mode manualmente');
+              setIsLoading(true);
+              try {
+                const THREE = await import('three');
+                await initPreviewMode(THREE);
+                setPreviewMode(true);
+              } catch (err) {
+                console.error('Error al iniciar modo preview:', err);
+                setError('Error al cargar la vista 3D');
+              }
+              setIsLoading(false);
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold"
+          >
+            Ver en 3D
+          </Button>
         </div>
       )}
 
