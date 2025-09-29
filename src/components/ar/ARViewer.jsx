@@ -17,12 +17,88 @@ const ARViewer = ({ artwork, onExit }) => {
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [previewMode, setPreviewMode] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
+    const initPreviewMode = async (THREE) => {
+      try {
+        // Configurar escena 3D básica sin AR
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000011);
+        sceneRef.current = scene;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        rendererRef.current = renderer;
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 2;
+
+        // Crear la misma obra de arte pero para vista 3D
+        const artworkGroup = new THREE.Group();
+
+        const frameGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.05);
+        const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        artworkGroup.add(frame);
+
+        // Canvas con color dinámico
+        let canvasColor = 0xf0f0f0;
+        if (artwork.artist.toLowerCase().includes('van gogh')) canvasColor = 0xffeb3b;
+        else if (artwork.artist.toLowerCase().includes('picasso')) canvasColor = 0x2196f3;
+
+        const canvasGeometry = new THREE.PlaneGeometry(0.5, 0.7);
+        const canvasMaterial = new THREE.MeshStandardMaterial({ color: canvasColor });
+        const canvas = new THREE.Mesh(canvasGeometry, canvasMaterial);
+        canvas.position.z = 0.026;
+        artworkGroup.add(canvas);
+
+        scene.add(artworkGroup);
+
+        // Luces
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 1);
+        scene.add(directionalLight);
+
+        // Agregar al DOM
+        if (containerRef.current) {
+          containerRef.current.appendChild(renderer.domElement);
+        }
+
+        // Loop de animación
+        const animate = () => {
+          requestAnimationFrame(animate);
+          artworkGroup.rotation.y += 0.005;
+          renderer.render(scene, camera);
+        };
+        animate();
+
+        setIsLoading(false);
+      } catch (err) {
+        setError('Error en modo preview: ' + err.message);
+        setIsLoading(false);
+      }
+    };
+
     const initAR = async () => {
       try {
+        // Verificar soporte de WebXR
+        if (!navigator.xr) {
+          throw new Error('WebXR no está soportado en este dispositivo/navegador');
+        }
+
+        // Verificar soporte específico de AR
+        const isARSupported = await navigator.xr.isSessionSupported('immersive-ar');
+        if (!isARSupported) {
+          throw new Error('Realidad Aumentada no está soportada en este dispositivo');
+        }
+
         // Importar THREE.js dinámicamente
         const THREE = await import('three');
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
@@ -67,41 +143,98 @@ const ARViewer = ({ artwork, onExit }) => {
         directionalLight.shadow.mapSize.height = 2048;
         scene.add(directionalLight);
 
-        // Crear objeto 3D básico como placeholder
-        const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-        const material = new THREE.MeshStandardMaterial({
-          color: 0x00ff00,
-          metalness: 0.7,
-          roughness: 0.3
-        });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0, -0.5);
-        cube.castShadow = true;
-        cube.receiveShadow = true;
-        scene.add(cube);
+        // Crear una representación 3D de la obra de arte
+        const artworkGroup = new THREE.Group();
 
-        // Agregar texto 3D básico
-        const loader = new FontLoader();
-        try {
-          // En una implementación real, cargarías una fuente
-          const textGeometry = new THREE.PlaneGeometry(0.4, 0.1);
-          const textMaterial = new THREE.MeshBasicMaterial({
-            color: 0x333333,
-            transparent: true,
-            opacity: 0.8
-          });
-          const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-          textMesh.position.set(0, 0.3, -0.5);
-          scene.add(textMesh);
-        } catch (error) {
-          console.log('No se pudo cargar la fuente:', error);
+        // Marco de la obra
+        const frameGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.05);
+        const frameMaterial = new THREE.MeshStandardMaterial({
+          color: 0x8B4513,
+          metalness: 0.2,
+          roughness: 0.8
+        });
+        const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+        frame.castShadow = true;
+        artworkGroup.add(frame);
+
+        // "Lienzo" de la obra con colores representativos
+        const canvasGeometry = new THREE.PlaneGeometry(0.5, 0.7);
+
+        // Determinar color basado en el tipo de obra o artista
+        let canvasColor = 0xf0f0f0; // Color por defecto
+        if (artwork.artist.toLowerCase().includes('van gogh')) {
+          canvasColor = 0xffeb3b; // Amarillo para Van Gogh
+        } else if (artwork.artist.toLowerCase().includes('picasso')) {
+          canvasColor = 0x2196f3; // Azul para Picasso
+        } else if (artwork.title.toLowerCase().includes('noche')) {
+          canvasColor = 0x1a237e; // Azul oscuro para temas nocturnos
+        } else if (artwork.title.toLowerCase().includes('flores') || artwork.title.toLowerCase().includes('jardín')) {
+          canvasColor = 0x4caf50; // Verde para temas de naturaleza
         }
+
+        const canvasMaterial = new THREE.MeshStandardMaterial({
+          color: canvasColor,
+          side: THREE.DoubleSide,
+          metalness: 0.1,
+          roughness: 0.8
+        });
+        const canvas = new THREE.Mesh(canvasGeometry, canvasMaterial);
+        canvas.position.z = 0.026;
+        artworkGroup.add(canvas);
+
+        // Placa informativa
+        const plaqueGeometry = new THREE.BoxGeometry(0.4, 0.1, 0.02);
+        const plaqueMaterial = new THREE.MeshStandardMaterial({
+          color: 0x2c2c2c,
+          metalness: 0.1,
+          roughness: 0.9
+        });
+        const plaque = new THREE.Mesh(plaqueGeometry, plaqueMaterial);
+        plaque.position.set(0, -0.5, 0.03);
+        artworkGroup.add(plaque);
+
+        // Posicionar el grupo
+        artworkGroup.position.set(0, 0, -1);
+        artworkGroup.castShadow = true;
+        scene.add(artworkGroup);
+
+        // Agregar texto flotante con información
+        const textGroup = new THREE.Group();
+
+        // Texto del título (simulado con geometría)
+        const titleGeometry = new THREE.PlaneGeometry(0.5, 0.08);
+        const titleMaterial = new THREE.MeshBasicMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.9
+        });
+        const titleMesh = new THREE.Mesh(titleGeometry, titleMaterial);
+        titleMesh.position.set(0, 0.6, -0.8);
+        textGroup.add(titleMesh);
+
+        // Texto del artista
+        const artistGeometry = new THREE.PlaneGeometry(0.4, 0.06);
+        const artistMaterial = new THREE.MeshBasicMaterial({
+          color: 0xcccccc,
+          transparent: true,
+          opacity: 0.8
+        });
+        const artistMesh = new THREE.Mesh(artistGeometry, artistMaterial);
+        artistMesh.position.set(0, 0.5, -0.8);
+        textGroup.add(artistMesh);
+
+        scene.add(textGroup);
 
         // Configurar controles de XR
         const controller = renderer.xr.getController(0);
         controller.addEventListener('select', () => {
-          // Rotar el cubo al hacer tap
-          cube.rotation.y += Math.PI / 4;
+          // Rotar la obra al hacer tap
+          artworkGroup.rotation.y += Math.PI / 6;
+          // Hacer que el texto "pulse"
+          textGroup.scale.setScalar(1.1);
+          setTimeout(() => {
+            textGroup.scale.setScalar(1);
+          }, 200);
         });
         scene.add(controller);
 
@@ -110,10 +243,13 @@ const ARViewer = ({ artwork, onExit }) => {
           containerRef.current.appendChild(renderer.domElement);
         }
 
-        // Crear botón AR
+        // Crear botón AR con configuración correcta
         const xrButton = XRButton.createButton(renderer, {
-          requiredFeatures: ['local'],
-          optionalFeatures: ['dom-overlay', 'hit-test']
+          sessionInit: {
+            requiredFeatures: ['local'],
+            optionalFeatures: ['dom-overlay', 'hit-test', 'anchors']
+          },
+          sessionMode: 'immersive-ar'
         });
 
         xrButton.style.position = 'absolute';
@@ -148,9 +284,14 @@ const ARViewer = ({ artwork, onExit }) => {
         // Loop de renderizado
         const animate = () => {
           renderer.setAnimationLoop(() => {
-            if (cube) {
-              cube.rotation.x += 0.01;
-              cube.rotation.z += 0.01;
+            // Animación sutil de flotación para la obra
+            if (artworkGroup) {
+              artworkGroup.position.y = Math.sin(Date.now() * 0.001) * 0.02;
+              artworkGroup.rotation.x = Math.sin(Date.now() * 0.0005) * 0.05;
+            }
+            // Animación del texto
+            if (textGroup) {
+              textGroup.position.y = 0.5 + Math.sin(Date.now() * 0.002) * 0.01;
             }
             renderer.render(scene, camera);
           });
@@ -169,7 +310,16 @@ const ARViewer = ({ artwork, onExit }) => {
 
       } catch (err) {
         console.error('Error inicializando AR:', err);
-        setError(err.message);
+
+        // Si es un error de soporte, ofrecer modo preview
+        if (err.message.includes('WebXR') || err.message.includes('Realidad Aumentada')) {
+          console.log('AR no soportado, iniciando modo preview 3D');
+          setPreviewMode(true);
+          setError(null);
+          await initPreviewMode(THREE);
+        } else {
+          setError(err.message);
+        }
         setIsLoading(false);
       }
     };
@@ -246,13 +396,26 @@ const ARViewer = ({ artwork, onExit }) => {
       </div>
 
       {/* Instructions */}
-      {!isSessionActive && (
+      {!isSessionActive && !previewMode && (
         <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10">
           <div className="bg-black/70 backdrop-blur-sm rounded-lg p-6 max-w-sm">
             <Info className="h-8 w-8 mx-auto mb-4 text-blue-400" />
             <p className="text-sm mb-2">Toca el botón "ENTER AR" para iniciar</p>
             <p className="text-xs text-gray-300">
               Mueve tu dispositivo para ver el objeto 3D y toca la pantalla para interactuar
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Preview Mode Instructions */}
+      {previewMode && (
+        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-6 max-w-sm">
+            <div className="text-yellow-400 text-6xl mb-4">🖼️</div>
+            <p className="text-sm mb-2">Modo Vista Previa 3D</p>
+            <p className="text-xs text-gray-300">
+              AR no disponible. Disfruta de la vista 3D de la obra
             </p>
           </div>
         </div>
