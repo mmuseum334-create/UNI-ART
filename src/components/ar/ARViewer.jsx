@@ -19,6 +19,34 @@ const ARViewer = ({ artwork, onExit }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
 
+  // Configurar viewport para móviles
+  useEffect(() => {
+    // Configurar meta viewport para una mejor experiencia móvil
+    const viewport = document.querySelector('meta[name="viewport"]');
+    const originalContent = viewport?.getAttribute('content');
+
+    if (viewport) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+
+    // Prevenir zoom en iOS
+    const preventZoom = (e) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+
+    return () => {
+      // Restaurar viewport original al desmontar
+      if (viewport && originalContent) {
+        viewport.setAttribute('content', originalContent);
+      }
+      document.removeEventListener('touchstart', preventZoom);
+    };
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -29,8 +57,14 @@ const ARViewer = ({ artwork, onExit }) => {
         scene.background = new THREE.Color(0x000011);
         sceneRef.current = scene;
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        const renderer = new THREE.WebGLRenderer({
+          antialias: true,
+          powerPreference: "high-performance"
+        });
+
+        // Optimizar para móviles en modo preview también
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        renderer.setPixelRatio(pixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
         rendererRef.current = renderer;
@@ -111,16 +145,24 @@ const ARViewer = ({ artwork, onExit }) => {
         const scene = new THREE.Scene();
         sceneRef.current = scene;
 
-        // Configurar el renderer
+        // Configurar el renderer - Optimizado para móviles
         const renderer = new THREE.WebGLRenderer({
           antialias: true,
-          alpha: true
+          alpha: true,
+          powerPreference: "high-performance"
         });
-        renderer.setPixelRatio(window.devicePixelRatio);
+
+        // Ajustar pixel ratio para rendimiento en móviles
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        renderer.setPixelRatio(pixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.xr.enabled = true;
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        // Optimizaciones para móviles
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
         rendererRef.current = renderer;
 
@@ -245,11 +287,8 @@ const ARViewer = ({ artwork, onExit }) => {
 
         // Crear botón AR con configuración correcta
         const xrButton = XRButton.createButton(renderer, {
-          sessionInit: {
-            requiredFeatures: ['local'],
-            optionalFeatures: ['dom-overlay', 'hit-test', 'anchors']
-          },
-          sessionMode: 'immersive-ar'
+          requiredFeatures: ['local'],
+          optionalFeatures: ['dom-overlay', 'hit-test', 'anchors']
         });
 
         xrButton.style.position = 'absolute';
@@ -300,8 +339,25 @@ const ARViewer = ({ artwork, onExit }) => {
         animate();
         setIsLoading(false);
 
+        // Manejar resize para móviles (orientación, teclado virtual, etc.)
+        const handleResize = () => {
+          if (renderer && camera) {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+          }
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
         // Cleanup
         return () => {
+          window.removeEventListener('resize', handleResize);
+          window.removeEventListener('orientationchange', handleResize);
           if (renderer.domElement && containerRef.current) {
             containerRef.current.removeChild(renderer.domElement);
           }
@@ -373,70 +429,68 @@ const ARViewer = ({ artwork, onExit }) => {
       {/* Contenedor para el canvas AR */}
       <div ref={containerRef} className="absolute inset-0" />
 
-      {/* UI Overlay */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4">
-        <div className="flex justify-between items-start">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-4 text-white max-w-sm">
-            <h3 className="font-bold text-lg mb-2">{artwork.title}</h3>
-            <p className="text-sm text-gray-300 mb-2">por {artwork.artist}</p>
-            <p className="text-xs text-gray-400">{artwork.description}</p>
+      {/* UI Overlay - Responsive */}
+      <div className="absolute top-0 left-0 right-0 z-10 p-3 sm:p-4">
+        <div className="flex justify-between items-start gap-3">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-3 sm:p-4 text-white flex-1 max-w-xs sm:max-w-sm">
+            <h3 className="font-bold text-base sm:text-lg mb-1 sm:mb-2 leading-tight">{artwork.title}</h3>
+            <p className="text-xs sm:text-sm text-gray-300 mb-1 sm:mb-2">por {artwork.artist}</p>
+            <p className="text-xs text-gray-400 line-clamp-3 sm:line-clamp-none">{artwork.description}</p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <Button
               onClick={handleExit}
               variant="outline"
               size="sm"
-              className="bg-black/70 backdrop-blur-sm border-white/30 text-white hover:bg-black/90"
+              className="bg-black/70 backdrop-blur-sm border-white/30 text-white hover:bg-black/90 min-h-[44px] min-w-[44px] p-2"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Instructions */}
+      {/* Instructions - Mobile Optimized */}
       {!isSessionActive && !previewMode && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-6 max-w-sm">
-            <Info className="h-8 w-8 mx-auto mb-4 text-blue-400" />
-            <p className="text-sm mb-2">Toca el botón "ENTER AR" para iniciar</p>
-            <p className="text-xs text-gray-300">
+        <div className="absolute bottom-16 sm:bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10 px-4">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-xs sm:max-w-sm">
+            <Info className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-3 sm:mb-4 text-blue-400" />
+            <p className="text-sm sm:text-base mb-2 font-medium">Toca "ENTER AR" para iniciar</p>
+            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
               Mueve tu dispositivo para ver el objeto 3D y toca la pantalla para interactuar
             </p>
           </div>
         </div>
       )}
 
-      {/* Preview Mode Instructions */}
+      {/* Preview Mode Instructions - Mobile Optimized */}
       {previewMode && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10">
-          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-6 max-w-sm">
-            <div className="text-yellow-400 text-6xl mb-4">🖼️</div>
-            <p className="text-sm mb-2">Modo Vista Previa 3D</p>
-            <p className="text-xs text-gray-300">
+        <div className="absolute bottom-16 sm:bottom-20 left-1/2 transform -translate-x-1/2 text-center text-white z-10 px-4">
+          <div className="bg-black/70 backdrop-blur-sm rounded-lg p-4 sm:p-6 max-w-xs sm:max-w-sm">
+            <div className="text-yellow-400 text-4xl sm:text-6xl mb-3 sm:mb-4">🖼️</div>
+            <p className="text-sm sm:text-base mb-2 font-medium">Modo Vista Previa 3D</p>
+            <p className="text-xs sm:text-sm text-gray-300 leading-relaxed">
               AR no disponible. Disfruta de la vista 3D de la obra
             </p>
           </div>
         </div>
       )}
 
-      {/* Controls - Solo mostrar cuando AR está activo */}
+      {/* Controls - Touch Optimized for AR Sessions */}
       {isSessionActive && (
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 z-10">
+        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 sm:gap-4 z-10">
           <Button
             variant="outline"
-            size="sm"
-            className="bg-black/70 backdrop-blur-sm border-white/30 text-white"
+            className="bg-black/70 backdrop-blur-sm border-white/30 text-white hover:bg-black/90 min-h-[48px] min-w-[48px] p-3"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-5 w-5" />
           </Button>
           <Button
             variant="outline"
-            size="sm"
-            className="bg-black/70 backdrop-blur-sm border-white/30 text-white"
+            className="bg-black/70 backdrop-blur-sm border-white/30 text-white hover:bg-black/90 min-h-[48px] min-w-[48px] p-3"
           >
-            <Maximize className="h-4 w-4" />
+            <Maximize className="h-5 w-5" />
           </Button>
         </div>
       )}
