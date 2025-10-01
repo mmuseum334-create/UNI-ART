@@ -1,5 +1,11 @@
+'use client'
+
+/**
+ * HeroSection - Main hero banner with featured artwork carousel
+ * Auto-rotates through featured artworks with smooth transitions and animations
+ */
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Button } from './Button';
 import { Badge } from './Badge';
 import { ArrowRight, Sparkles, TrendingUp, Star } from 'lucide-react';
@@ -112,13 +118,13 @@ export const HeroSection = ({ featuredArtworks = [] }) => {
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in-up" style={{ animationDelay: '0.6s' }}>
-              <Link to={`/artwork/${currentArtwork.id}`}>
+              <Link href={`/artwork/${currentArtwork.id}`}>
                 <Button size="lg" className="bg-nature-600 hover:bg-nature-700 text-white border-none">
                   Ver Obra Completa
                   <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
               </Link>
-              <Link to="/catalog">
+              <Link href="/catalog">
                 <Button variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10">
                   Explorar Catálogo
                 </Button>

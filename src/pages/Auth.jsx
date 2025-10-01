@@ -1,9 +1,15 @@
+/**
+ * Auth page - Handles user authentication (login and registration)
+ * Provides forms for both signing in and creating new accounts
+ */
+'use client'
+
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Palette, Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
@@ -19,10 +25,9 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const { login, register } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = '/';
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -82,7 +87,7 @@ const Auth = () => {
       }
 
       if (result.success) {
-        navigate(from, { replace: true });
+        router.push(from);
       } else {
         setErrors({ submit: result.error || 'Error en la autenticación' });
       }

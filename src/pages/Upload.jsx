@@ -1,14 +1,20 @@
+/**
+ * Upload page - Allows users to upload and publish new artworks
+ * Multi-step form for artwork information, content, and metadata
+ */
+'use client'
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { artCategories } from '../data/mockData';
-import { 
-  Upload as UploadIcon, 
-  X, 
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { artCategories } from '@/data/mockData';
+import {
+  Upload as UploadIcon,
+  X,
   Plus,
   FileText,
   Music,
@@ -20,7 +26,7 @@ import {
 
 const Upload = () => {
   const { user, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -41,7 +47,7 @@ const Upload = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isAuthenticated) {
-    navigate('/auth');
+    router.push('/auth');
     return null;
   }
 
@@ -156,10 +162,8 @@ const Upload = () => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       console.log('Obra subida:', formData);
-      
-      navigate('/profile', { 
-        state: { message: 'Obra subida exitosamente' }
-      });
+
+      router.push('/profile');
     } catch (error) {
       setErrors({ submit: 'Error al subir la obra. Intenta nuevamente.' });
     } finally {
@@ -262,9 +266,9 @@ const Upload = () => {
     <div className="min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate('/profile')}
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/profile')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />

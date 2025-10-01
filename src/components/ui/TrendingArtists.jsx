@@ -1,11 +1,19 @@
+'use client'
+
+/**
+ * ArtCollageSection - Visual collage display of artwork with masonry-style layout
+ * Features parallax background and hover effects on artwork images
+ */
 import React from 'react';
-import Obra1 from '../../assets/Obra1.jpg';
-import Obra2 from '../../assets/Obra2.jpg';
-import Obra3 from '../../assets/Obra3.jpg';
-import Obra4 from '../../assets/Obra4.jpg';
-import Obra5 from '../../assets/Obra5.jpg';
-import Obra6 from '../../assets/Obra6.jpg';
-import Obra7 from '../../assets/Obra7.jpg';
+
+// Usar rutas públicas para las imágenes
+const Obra1 = '/Obra1.jpg';
+const Obra2 = '/Obra2.jpg';
+const Obra3 = '/Obra3.jpg';
+const Obra4 = '/Obra4.jpg';
+const Obra5 = '/Obra5.jpg';
+const Obra6 = '/Obra6.jpg';
+const Obra7 = '/Obra7.jpg';
 
 const ArtCollageSection = () => {
   return (

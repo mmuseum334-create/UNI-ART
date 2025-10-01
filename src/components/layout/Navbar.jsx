@@ -1,9 +1,17 @@
+/**
+ * @fileoverview Barra de navegación principal
+ * @description Componente de navegación global con menú responsive
+ * Client Component - usa hooks de estado y navegación
+ */
+
+'use client';
+
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Button } from '../ui/Button';
-import LogoUnipaz from '../../assets/LogoUnipaz.png';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useTheme } from '@/contexts/ThemeContext';
+import { Button } from '@/components/ui/Button';
 import {
   Menu,
   X,
@@ -23,32 +31,32 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const navigate = useNavigate();
+  const router = useRouter();
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    router.push('/');
     setIsProfileOpen(false);
   };
 
   const navLinks = [
-    { to: '/', icon: Home, label: 'Inicio' },
-    { to: '/catalog', icon: Search, label: 'Catálogo' },
-    { to: '/ar', icon: Box, label: 'Realidad Aumentada' },
+    { href: '/', icon: Home, label: 'Inicio' },
+    { href: '/catalog', icon: Search, label: 'Catálogo' },
+    { href: '/ar', icon: Box, label: 'Realidad Aumentada' },
   ];
 
   const userLinks = [
-    { to: '/profile', icon: User, label: 'Mi Perfil' },
-    { to: '/upload', icon: Upload, label: 'Subir Arte' },
+    { href: '/profile', icon: User, label: 'Mi Perfil' },
+    { href: '/upload', icon: Upload, label: 'Subir Arte' },
   ];
 
   return (
     <nav className="sticky top-0 z-50 glass-effect border-b border-white/20 dark:border-dark-tertiary/50 dark:bg-dark-primary/90">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <img
-              src={LogoUnipaz}
+              src="/LogoUnipaz.png"
               alt="Logo Unipaz"
               className="h-11 w-11 object-contain"
             />
@@ -62,8 +70,8 @@ const Navbar = () => {
               const IconComponent = link.icon;
               return (
                 <Link
-                  key={link.to}
-                  to={link.to}
+                  key={link.href}
+                  href={link.href}
                   className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 hover:text-nature-600 dark:hover:text-nature-400 transition-colors"
                 >
                   <IconComponent className="h-4 w-4" />
@@ -105,8 +113,8 @@ const Navbar = () => {
                       const IconComponent = link.icon;
                       return (
                         <Link
-                          key={link.to}
-                          to={link.to}
+                          key={link.href}
+                          href={link.href}
                           onClick={() => setIsProfileOpen(false)}
                           className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
                         >
@@ -128,12 +136,12 @@ const Navbar = () => {
               </div>
             ) : (
               <div className="flex space-x-2">
-                <Link to="/auth">
+                <Link href="/auth">
                   <Button variant="outline" size="sm">
                     Iniciar Sesión
                   </Button>
                 </Link>
-                <Link to="/auth">
+                <Link href="/auth">
                   <Button size="sm">
                     Registrarse
                   </Button>
@@ -174,8 +182,8 @@ const Navbar = () => {
                 const IconComponent = link.icon;
                 return (
                   <Link
-                    key={link.to}
-                    to={link.to}
+                    key={link.href}
+                    href={link.href}
                     onClick={() => setIsMenuOpen(false)}
                     className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 rounded-lg transition-colors"
                   >
@@ -200,8 +208,8 @@ const Navbar = () => {
                     const IconComponent = link.icon;
                     return (
                       <Link
-                        key={link.to}
-                        to={link.to}
+                        key={link.href}
+                        href={link.href}
                         onClick={() => setIsMenuOpen(false)}
                         className="flex items-center space-x-2 px-4 py-2 text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-dark-tertiary/50 rounded-lg transition-colors"
                       >
@@ -224,7 +232,7 @@ const Navbar = () => {
               ) : (
                 <div className="space-y-2 px-4 pt-2">
                   <Link
-                    to="/auth"
+                    href="/auth"
                     onClick={() => setIsMenuOpen(false)}
                     className="block w-full"
                   >
@@ -233,7 +241,7 @@ const Navbar = () => {
                     </Button>
                   </Link>
                   <Link
-                    to="/auth"
+                    href="/auth"
                     onClick={() => setIsMenuOpen(false)}
                     className="block w-full"
                   >

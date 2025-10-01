@@ -1,8 +1,14 @@
+/**
+ * @fileoverview Configuración de Tailwind CSS
+ * @description Define el sistema de diseño (colores, tipografía, etc.)
+ * Compatible con Next.js App Router
+ */
+
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   darkMode: 'class',
   content: [
-    "./index.html",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {

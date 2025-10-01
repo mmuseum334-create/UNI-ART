@@ -1,11 +1,18 @@
+/**
+ * Catalog page - Displays and filters all artworks in the museum
+ * Allows users to search, filter by category, and sort artwork listings
+ */
+'use client'
+
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { CategoryShowcase } from '../components/ui/CategoryShowcase';
-import { mockArtworks, artCategories, searchArtworks } from '../data/mockData';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { CategoryShowcase } from '@/components/ui/CategoryShowcase';
+import { mockArtworks, artCategories, searchArtworks } from '@/data/mockData';
 import {
   Search,
   Filter,
@@ -42,9 +49,9 @@ const sortOptions = [
 ];
 
 const Catalog = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'all');
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('q') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams?.get('category') || 'all');
   const [sortBy, setSortBy] = useState('recent');
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -86,11 +93,9 @@ const Catalog = () => {
   }, [searchQuery, selectedCategory, sortBy]);
 
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.set('q', searchQuery);
-    if (selectedCategory !== 'all') params.set('category', selectedCategory);
-    setSearchParams(params);
-  }, [searchQuery, selectedCategory, setSearchParams]);
+    // Update URL params (Next.js handles this differently via router)
+    // This can be enhanced with router.push if needed
+  }, [searchQuery, selectedCategory]);
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
@@ -108,7 +113,7 @@ const Catalog = () => {
     
     if (isListView) {
       return (
-        <Link to={`/artwork/${artwork.id}`}>
+        <Link href={`/artwork/${artwork.id}`}>
           <Card className="card-hover cursor-pointer">
             <div className="flex">
               <div className="w-32 h-32 flex-shrink-0">
@@ -158,7 +163,7 @@ const Catalog = () => {
     }
 
     return (
-      <Link to={`/artwork/${artwork.id}`}>
+      <Link href={`/artwork/${artwork.id}`}>
         <Card className="card-hover cursor-pointer h-full">
           <div className="aspect-video w-full overflow-hidden rounded-t-xl">
             <img

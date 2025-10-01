@@ -1,0 +1,13 @@
+/**
+ * Configuración de JavaScript para Next.js
+ * Define los path aliases para importaciones
+ */
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules", ".next"]
+}

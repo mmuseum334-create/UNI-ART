@@ -1,3 +1,7 @@
+/**
+ * ArtworkHoverDialog - Dialog overlay component that displays detailed artwork information on hover
+ * Shows artwork image, title, artist, description, stats, and tags
+ */
 import { Badge } from './Badge';
 import { Heart, Eye, User, Palette } from 'lucide-react';
 

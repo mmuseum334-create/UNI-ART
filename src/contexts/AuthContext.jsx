@@ -1,3 +1,12 @@
+/**
+ * @fileoverview Context de autenticación de usuarios
+ * @description Maneja el estado global de autenticación
+ * Client Component - usa localStorage y hooks de React
+ * NOTA: En producción con NestJS backend, reemplazar mock por llamadas API reales
+ */
+
+'use client';
+
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();

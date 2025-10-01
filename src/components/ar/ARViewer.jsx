@@ -1,5 +1,12 @@
+'use client'
+
+/**
+ * ARViewer - Augmented Reality viewer for artworks using WebXR
+ * Provides immersive AR experience with fallback to 3D preview mode
+ * Supports mobile devices with touch optimization
+ */
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '../ui/Button';
+import { Button } from '@/components/ui/Button';
 import {
   X,
   RotateCcw,

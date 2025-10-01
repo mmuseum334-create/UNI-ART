@@ -1,4 +1,8 @@
-import { cn } from '../../lib/utils';
+/**
+ * Card - Set of card components for creating content containers
+ * Includes Card, CardHeader, CardTitle, CardDescription, CardContent, and CardFooter
+ */
+import { cn } from '@/lib/utils';
 
 export const Card = ({ className, ...props }) => (
   <div
