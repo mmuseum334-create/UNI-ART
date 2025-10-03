@@ -1,5 +1,9 @@
+/**
+ * Badge - Versatile badge component with multiple style variants
+ * Used for tags, labels, and status indicators throughout the application
+ */
 import { cva } from 'class-variance-authority';
-import { cn } from '../../lib/utils';
+import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
   'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',

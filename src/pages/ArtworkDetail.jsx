@@ -1,11 +1,18 @@
+/**
+ * ArtworkDetail page - Displays detailed view of a single artwork
+ * Shows artwork content, metadata, artist info, and related works
+ */
+'use client'
+
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { mockArtworks, artCategories } from '../data/mockData';
-import { formatDate } from '../lib/utils';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { mockArtworks, artCategories } from '@/data/mockData';
+import { formatDate } from '@/lib/utils';
 import {
   Heart,
   Eye,
@@ -27,9 +34,10 @@ import {
 } from 'lucide-react';
 
 const ArtworkDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+  const params = useParams();
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const id = params?.id;
   const [artwork, setArtwork] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
@@ -47,7 +55,7 @@ const ArtworkDetail = () => {
 
   const handleLike = () => {
     if (!isAuthenticated) {
-      navigate('/auth');
+      router.push('/auth');
       return;
     }
     
@@ -78,7 +86,7 @@ const ArtworkDetail = () => {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-slate-900 mb-2">Obra no encontrada</h2>
           <p className="text-slate-600 mb-4">La obra que buscas no existe.</p>
-          <Link to="/catalog">
+          <Link href="/catalog">
             <Button>Volver al catálogo</Button>
           </Link>
         </div>
@@ -215,9 +223,9 @@ const ArtworkDetail = () => {
     <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={() => navigate(-1)}
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -241,8 +249,8 @@ const ArtworkDetail = () => {
                   <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
                     {artwork.title}
                   </h1>
-                  <Link 
-                    to={`/profile/${artwork.artistId}`}
+                  <Link
+                    href={`/profile/${artwork.artistId}`}
                     className="text-lg text-nature-600 hover:text-nature-700 font-medium"
                   >
                     por {artwork.artist}
@@ -356,7 +364,7 @@ const ArtworkDetail = () => {
                 <p className="text-sm text-slate-600 mb-3">
                   Artista apasionado por explorar nuevas formas de expresión creativa.
                 </p>
-                <Link to={`/profile/${artwork.artistId}`}>
+                <Link href={`/profile/${artwork.artistId}`}>
                   <Button variant="outline" size="sm" className="w-full">
                     Ver Perfil
                   </Button>
@@ -372,7 +380,7 @@ const ArtworkDetail = () => {
                 <CardContent>
                   <div className="space-y-3">
                     {relatedArtworks.map((related) => (
-                      <Link key={related.id} to={`/artwork/${related.id}`}>
+                      <Link key={related.id} href={`/artwork/${related.id}`}>
                         <div className="flex gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
                           <img
                             src={related.imageUrl || related.thumbnailUrl}

@@ -1,4 +1,8 @@
-import { cn } from '../../lib/utils';
+/**
+ * Input - Styled input component with consistent theming
+ * Provides a unified input field with focus states and dark mode support
+ */
+import { cn } from '@/lib/utils';
 
 export const Input = ({ className, type = 'text', ...props }) => {
   return (

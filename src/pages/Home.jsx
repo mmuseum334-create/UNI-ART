@@ -1,6 +1,14 @@
+/**
+ * @fileoverview Página principal/Home del sitio
+ * @description Muestra featured artworks, categorías y secciones destacadas
+ * Client Component - usa hooks de estado
+ */
+
+'use client';
+
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -58,14 +66,14 @@ const Home = () => {
               Un espacio donde la creatividad no tiene límites y cada obra cuenta una historia única.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/catalog">
+              <Link href="/catalog">
                 <Button size="lg" className="flex items-center gap-2">
                   Explorar Catálogo
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               {!isAuthenticated && (
-                <Link to="/auth">
+                <Link href="/auth">
                   <Button variant="outline" size="lg">
                     Únete Ahora
                   </Button>
@@ -118,7 +126,7 @@ const Home = () => {
               </h2>
               <p className="text-slate-600 dark:text-slate-300">Las creaciones más populares de nuestra comunidad</p>
             </div>
-            <Link to="/catalog">
+            <Link href="/catalog">
               <Button variant="outline">
                 Ver Todo
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -134,7 +142,7 @@ const Home = () => {
           >
             {featuredArtworks.map((artwork) => (
               <CarouselItem key={artwork.id}>
-                <Link to={`/artwork/${artwork.id}`}>
+                <Link href={`/artwork/${artwork.id}`}>
                   <Card className="card-hover cursor-pointer h-full">
                     <div className="aspect-video w-full overflow-hidden rounded-t-xl">
                       <img
@@ -205,19 +213,19 @@ const Home = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!isAuthenticated ? (
-              <Link to="/auth">
+              <Link href="/auth">
                 <Button size="lg" variant="secondary">
                   Crear Cuenta Gratis
                 </Button>
               </Link>
             ) : (
-              <Link to="/upload">
+              <Link href="/upload">
                 <Button size="lg" variant="secondary">
                   Subir tu Primera Obra
                 </Button>
               </Link>
             )}
-            <Link to="/catalog">
+            <Link href="/catalog">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-nature-600">
                 Explorar Galería
               </Button>

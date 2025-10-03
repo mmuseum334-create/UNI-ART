@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Context de tema para modo claro/oscuro
+ * @description Maneja el estado global del tema de la aplicación
+ * Client Component - usa hooks de React y accede al DOM
+ */
+
+'use client';
+
 import { createContext, useContext, useEffect, useState } from 'react';
 
 const ThemeContext = createContext();

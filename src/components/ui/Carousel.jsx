@@ -1,3 +1,9 @@
+'use client'
+
+/**
+ * Carousel - Interactive carousel component with autoplay, navigation arrows, and dot indicators
+ * Supports multiple items per view and customizable autoplay settings
+ */
 import { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from './Button';

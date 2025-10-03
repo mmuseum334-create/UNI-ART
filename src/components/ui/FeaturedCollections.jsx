@@ -1,5 +1,11 @@
+'use client'
+
+/**
+ * FeaturedCollections - Showcases curated art collections with filtering and stats
+ * Displays collection details, curator info, artwork previews, and engagement metrics
+ */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Card, CardContent } from './Card';
 import { Badge } from './Badge';
 import { Button } from './Button';
@@ -261,7 +267,7 @@ export const FeaturedCollections = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">
-                  <Link to={`/collection/${collection.id}`} className="flex-1">
+                  <Link href={`/collection/${collection.id}`} className="flex-1">
                     <Button
                       variant="outline"
                       size="sm"
@@ -285,7 +291,7 @@ export const FeaturedCollections = () => {
 
         {/* Call to Action */}
         <div className="text-center">
-          <Link to="/collections">
+          <Link href="/collections">
             <Button size="lg" className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-none">
               <Folder className="h-5 w-5 mr-2" />
               Ver Todas las Colecciones

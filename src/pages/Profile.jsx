@@ -1,18 +1,25 @@
+/**
+ * Profile page - Displays user profile, artworks, and settings
+ * Shows user statistics, uploaded works, favorites, and account configuration
+ */
+'use client'
+
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { mockArtworks } from '../data/mockData';
-import { formatDate } from '../lib/utils';
-import { 
-  User, 
-  Mail, 
-  Calendar, 
-  Edit, 
-  Heart, 
-  Eye, 
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import { mockArtworks } from '@/data/mockData';
+import { formatDate } from '@/lib/utils';
+import {
+  User,
+  Mail,
+  Calendar,
+  Edit,
+  Heart,
+  Eye,
   Upload,
   Grid3X3,
   List,
@@ -20,7 +27,6 @@ import {
   Save,
   X
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
@@ -68,7 +74,7 @@ const Profile = () => {
         : "space-y-4"
     }>
       {artworks.map((artwork) => (
-        <Link key={artwork.id} to={`/artwork/${artwork.id}`}>
+        <Link key={artwork.id} href={`/artwork/${artwork.id}`}>
           <Card className="card-hover cursor-pointer h-full">
             {viewMode === 'grid' ? (
               <>
@@ -212,7 +218,7 @@ const Profile = () => {
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-slate-200">
-                  <Link to="/upload">
+                  <Link href="/upload">
                     <Button className="w-full">
                       <Upload className="h-4 w-4 mr-2" />
                       Subir Nueva Obra
@@ -283,7 +289,7 @@ const Profile = () => {
                         <p className="text-slate-600 mb-4">
                           Comparte tu primera obra con la comunidad
                         </p>
-                        <Link to="/upload">
+                        <Link href="/upload">
                           <Button>
                             <Upload className="h-4 w-4 mr-2" />
                             Subir Primera Obra
@@ -309,7 +315,7 @@ const Profile = () => {
                         <p className="text-slate-600 mb-4">
                           Explora el catálogo y guarda las obras que más te gusten
                         </p>
-                        <Link to="/catalog">
+                        <Link href="/catalog">
                           <Button variant="outline">
                             Explorar Catálogo
                           </Button>

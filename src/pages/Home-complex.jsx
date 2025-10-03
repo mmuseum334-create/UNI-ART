@@ -1,6 +1,14 @@
+/**
+ * @fileoverview Página Home compleja (versión alternativa)
+ * @description Versión alternativa de la página principal con más features
+ * Client Component - usa hooks de estado
+ */
+
+'use client';
+
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
@@ -102,7 +110,7 @@ const Home = () => {
               </h2>
               <p className="text-slate-600 dark:text-slate-300">Las creaciones más populares de nuestra comunidad</p>
             </div>
-            <Link to="/catalog">
+            <Link href="/catalog">
               <Button variant="outline">
                 Ver Todo
                 <ArrowRight className="h-4 w-4 ml-2" />
@@ -112,7 +120,7 @@ const Home = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredArtworks.map((artwork) => (
-              <Link key={artwork.id} to={`/artwork/${artwork.id}`}>
+              <Link key={artwork.id} href={`/artwork/${artwork.id}`}>
                 <Card className="card-hover cursor-pointer h-full">
                   <div className="aspect-video w-full overflow-hidden rounded-t-xl">
                     <img
@@ -178,19 +186,19 @@ const Home = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!isAuthenticated ? (
-              <Link to="/auth">
+              <Link href="/auth">
                 <Button size="lg" variant="secondary">
                   Crear Cuenta Gratis
                 </Button>
               </Link>
             ) : (
-              <Link to="/upload">
+              <Link href="/upload">
                 <Button size="lg" variant="secondary">
                   Subir tu Primera Obra
                 </Button>
               </Link>
             )}
-            <Link to="/catalog">
+            <Link href="/catalog">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-nature-600">
                 Explorar Galería
               </Button>

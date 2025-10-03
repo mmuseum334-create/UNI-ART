@@ -1,8 +1,14 @@
+/**
+ * AR page - Augmented Reality experience for viewing 3D artworks
+ * Uses WebXR API to display artworks in AR on compatible devices
+ */
+'use client'
+
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '../components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import ARViewer from '../components/ar/ARViewer';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import { Badge } from '@/components/ui/Badge';
+import ARViewer from '@/components/ar/ARViewer';
 import {
   Box,
   Play,

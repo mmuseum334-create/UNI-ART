@@ -1,5 +1,11 @@
+'use client'
+
+/**
+ * CategoryShowcase - Displays art categories in an interactive grid layout
+ * Features hover effects, animations, and category stats
+ */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { Card, CardContent } from './Card';
 import { Badge } from './Badge';
 import { ArrowRight, TrendingUp } from 'lucide-react';
@@ -34,7 +40,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
             return (
               <Link
                 key={category.id}
-                to={`/catalog?category=${category.id}`}
+                href={`/catalog?category=${category.id}`}
                 onMouseEnter={() => setHoveredCategory(category.id)}
                 onMouseLeave={() => setHoveredCategory(null)}
                 className="group"
@@ -124,7 +130,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
 
         {/* Call to Action */}
         <div className="text-center mt-16">
-          <Link to="/catalog">
+          <Link href="/catalog">
             <div className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-nature-600 to-museum-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
               Ver Todas las Categorías
               <ArrowRight className="h-5 w-5" />
