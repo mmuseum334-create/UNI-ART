@@ -19,15 +19,21 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }) => {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const stored = localStorage.getItem('theme');
-      return stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+  const [isDark, setIsDark] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Evitar hydration mismatch: solo cargar tema después de montar
+  useEffect(() => {
+    setMounted(true);
+    const stored = localStorage.getItem('theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialDark = stored ? stored === 'dark' : prefersDark;
+    setIsDark(initialDark);
+  }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     const root = document.documentElement;
     if (isDark) {
       root.classList.add('dark');
@@ -35,11 +41,18 @@ export const ThemeProvider = ({ children }) => {
       root.classList.remove('dark');
     }
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
+  }, [isDark, mounted]);
 
   const toggleTheme = () => {
     setIsDark(prev => !prev);
   };
+
+  // No renderizar el tema hasta que esté montado
+  if (!mounted) {
+    return <ThemeContext.Provider value={{ isDark: false, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>;
+  }
 
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
