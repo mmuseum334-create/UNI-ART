@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge';
 import { HeroSection } from '../components/ui/HeroSection';
 import { CategoryShowcase } from '../components/ui/CategoryShowcase';
-import { TrendingArtists } from '../components/ui/TrendingArtists';
+import ArtCollageSection from '../components/ui/TrendingArtists';
 import { FeaturedCollections } from '../components/ui/FeaturedCollections';
 import { Carousel, CarouselItem } from '../components/ui/Carousel';
 import { featuredArtworks, artCategories } from '../data/mockData';
@@ -170,7 +170,7 @@ const Home = () => {
       </section>
 
       {/* Trending Artists */}
-      <TrendingArtists />
+      <ArtCollageSection />
 
       {/* Featured Collections */}
       <FeaturedCollections />
