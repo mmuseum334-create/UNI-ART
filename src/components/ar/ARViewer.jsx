@@ -218,7 +218,7 @@ const ARViewer = ({ artwork, onExit }) => {
               🔄 Arrastra para rotar • 🔍 Pellizca para zoom
             </p>
             <p className="text-xs text-gray-400">
-              Toca "VER EN AR" para colocar el modelo en tu espacio real
+              Toca &quot;VER EN AR&quot; para colocar el modelo en tu espacio real
             </p>
           </div>
         </div>
