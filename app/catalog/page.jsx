@@ -6,11 +6,16 @@
 
 'use client';
 
+import { Suspense } from 'react';
 import Catalog from '@/pages/Catalog';
 
 /**
  * CatalogPage - Página del catálogo de arte
  */
 export default function CatalogPage() {
-  return <Catalog />;
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>Cargando catálogo...</p></div>}>
+      <Catalog />
+    </Suspense>
+  );
 }

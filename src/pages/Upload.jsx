@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -46,9 +46,22 @@ const Upload = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Redirigir si no está autenticado (solo en el cliente)
+  useEffect(() => {
+    if (!isAuthenticated && typeof window !== 'undefined') {
+      router.push('/auth');
+    }
+  }, [isAuthenticated, router]);
+
+  // Mostrar loading durante SSR o mientras redirige
   if (!isAuthenticated) {
-    router.push('/auth');
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg text-slate-600">Redirigiendo...</p>
+        </div>
+      </div>
+    );
   }
 
   const handleInputChange = (e) => {
