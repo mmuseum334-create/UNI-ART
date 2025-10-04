@@ -162,36 +162,103 @@ const ARViewer = ({ artwork, onExit }) => {
 
           arButton.onclick = async () => {
             try {
-              console.log('Solicitando permisos de cámara...');
+              console.log('🎯 Iniciando proceso AR...');
+
+              // Mostrar mensaje al usuario
+              arButton.textContent = '⏳ Iniciando...';
+              arButton.disabled = true;
+
+              console.log('📸 Paso 1: Solicitando permisos de cámara...');
 
               // Solicitar permisos de cámara explícitamente PRIMERO
               try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                  video: { facingMode: 'environment' }
+                  video: {
+                    facingMode: 'environment',
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
+                  }
                 });
                 // Detener el stream inmediatamente, solo queríamos los permisos
                 stream.getTracks().forEach(track => track.stop());
-                console.log('Permisos de cámara concedidos');
+                console.log('✅ Permisos de cámara concedidos');
               } catch (cameraError) {
-                console.error('Error al solicitar cámara:', cameraError);
-                alert('Necesitas dar permisos de cámara para usar AR. Por favor, acepta los permisos cuando el navegador lo solicite.');
+                console.error('❌ Error al solicitar cámara:', cameraError);
+                arButton.textContent = '📱 INICIAR AR';
+                arButton.disabled = false;
+                alert('⚠️ Necesitas dar permisos de cámara para usar AR.\n\n' +
+                      'Por favor:\n' +
+                      '1. Acepta los permisos cuando el navegador lo solicite\n' +
+                      '2. Verifica que estés usando HTTPS (no HTTP)\n' +
+                      '3. Usa Chrome para Android actualizado\n\n' +
+                      'Error: ' + cameraError.message);
                 return;
               }
 
-              console.log('Solicitando sesión AR...');
-              const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['local', 'hit-test'],
-                optionalFeatures: ['dom-overlay']
-              });
+              console.log('🚀 Paso 2: Iniciando sesión AR...');
 
+              // Intentar con configuración mínima primero
+              let session;
+              try {
+                session = await navigator.xr.requestSession('immersive-ar', {
+                  requiredFeatures: ['hit-test'],
+                  optionalFeatures: ['dom-overlay', 'dom-overlay-for-handheld-ar']
+                });
+                console.log('✅ Sesión AR creada con hit-test');
+              } catch (e1) {
+                console.warn('⚠️ No se pudo crear con hit-test, intentando sin features:', e1.message);
+                try {
+                  // Intentar sin features requeridos
+                  session = await navigator.xr.requestSession('immersive-ar', {
+                    optionalFeatures: ['dom-overlay', 'dom-overlay-for-handheld-ar']
+                  });
+                  console.log('✅ Sesión AR creada sin features específicos');
+                } catch (e2) {
+                  console.error('❌ No se pudo crear sesión AR:', e2.message);
+                  throw new Error('No se pudo iniciar sesión AR: ' + e2.message);
+                }
+              }
+
+              console.log('🎨 Paso 3: Configurando renderer...');
               await renderer.xr.setSession(session);
               arButton.style.display = 'none';
               setIsSessionActive(true);
 
-              console.log('Sesión AR iniciada!');
+              console.log('🎉 ¡Sesión AR iniciada exitosamente!');
+
+              // Manejar fin de sesión
+              session.addEventListener('end', () => {
+                console.log('👋 Sesión AR finalizada');
+                setIsSessionActive(false);
+                arButton.style.display = 'block';
+                arButton.textContent = '📱 INICIAR AR';
+                arButton.disabled = false;
+              });
+
             } catch (error) {
-              console.error('Error al iniciar AR:', error);
-              alert('No se pudo iniciar AR: ' + error.message);
+              console.error('❌ Error general al iniciar AR:', error);
+              arButton.textContent = '📱 INICIAR AR';
+              arButton.disabled = false;
+
+              let errorMessage = '⚠️ No se pudo iniciar AR.\n\n';
+
+              if (error.name === 'SecurityError') {
+                errorMessage += '🔒 Error de seguridad:\n' +
+                               '• Verifica que estés usando HTTPS\n' +
+                               '• Comprueba los permisos de cámara\n';
+              } else if (error.name === 'NotSupportedError') {
+                errorMessage += '📱 AR no soportado:\n' +
+                               '• Usa Chrome para Android\n' +
+                               '• Verifica que ARCore esté instalado\n';
+              } else {
+                errorMessage += 'Error: ' + error.message + '\n\n';
+                errorMessage += 'Consejos:\n' +
+                               '• Usa un dispositivo Android compatible\n' +
+                               '• Accede vía HTTPS\n' +
+                               '• Actualiza Chrome a la última versión\n';
+              }
+
+              alert(errorMessage);
             }
           };
 
