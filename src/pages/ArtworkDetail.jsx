@@ -36,19 +36,7 @@ import {
 const ArtworkDetail = () => {
   const params = useParams();
   const router = useRouter();
-
-  // Manejo seguro de useAuth para SSR
-  let user = null;
-  let isAuthenticated = false;
-
-  try {
-    const auth = useAuth();
-    user = auth.user;
-    isAuthenticated = auth.isAuthenticated;
-  } catch (error) {
-    // Durante SSR, useAuth puede fallar - es OK
-    console.log('Auth not available during SSR');
-  }
+  const { user, isAuthenticated } = useAuth();
   const id = params?.id;
   const [artwork, setArtwork] = useState(null);
   const [isLiked, setIsLiked] = useState(false);

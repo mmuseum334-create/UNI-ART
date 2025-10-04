@@ -13,9 +13,26 @@ const AuthContext = createContext();
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
+
+  // Durante SSR (Server-Side Rendering), el contexto puede no estar disponible
+  // Esto es normal cuando Next.js está construyendo las páginas
   if (!context) {
+    // Si estamos en el servidor (build time), retornar valores por defecto
+    if (typeof window === 'undefined') {
+      return {
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        login: async () => ({ success: false }),
+        register: async () => ({ success: false }),
+        logout: () => {},
+        updateProfile: () => {}
+      };
+    }
+    // Si estamos en el cliente y no hay contexto, es un error real
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
+
   return context;
 };
 
