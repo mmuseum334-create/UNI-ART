@@ -155,6 +155,7 @@ const AR = () => {
             {arArtworks.map((artwork) => (
               <Card key={artwork.id} className="overflow-hidden card-hover">
                 <div className="aspect-video relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={artwork.thumbnail}
                     alt={artwork.title}
@@ -216,7 +217,7 @@ const AR = () => {
                     </div>
                     <h3 className="font-semibold mb-2">2. Inicia la experiencia</h3>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
-                      Selecciona una obra de arte y toca "Iniciar AR" para comenzar.
+                      Selecciona una obra de arte y toca &quot;Iniciar AR&quot; para comenzar.
                     </p>
                   </div>
                   <div>

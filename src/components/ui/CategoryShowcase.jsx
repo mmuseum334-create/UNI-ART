@@ -4,7 +4,7 @@
  * CategoryShowcase - Displays art categories in an interactive grid layout
  * Features hover effects, animations, and category stats
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent } from './Card';
 import { Badge } from './Badge';
@@ -12,6 +12,19 @@ import { ArrowRight, TrendingUp } from 'lucide-react';
 
 export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  const [categoryData, setCategoryData] = useState([]);
+
+  // Inicializar datos solo en el cliente para evitar errores de hidratación
+  useEffect(() => {
+    setCategoryData(categories.map((category) => ({
+      ...category,
+      particlePositions: [...Array(6)].map(() => ({
+        left: Math.random() * 100,
+        top: Math.random() * 100
+      })),
+      artworkCount: Math.floor(Math.random() * 500 + 50)
+    })));
+  }, [categories]);
 
   return (
     <section className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-dark-secondary dark:via-dark-primary dark:to-dark-secondary">
@@ -33,7 +46,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
 
         {/* Categories Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {categories.map((category, index) => {
+          {categoryData.length > 0 && categoryData.map((category, index) => {
             const IconComponent = iconMap[category.icon];
             const isHovered = hoveredCategory === category.id;
 
@@ -53,15 +66,15 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
 
                   {/* Floating Particles */}
                   <div className="absolute inset-0 overflow-hidden">
-                    {[...Array(6)].map((_, i) => (
+                    {category.particlePositions.map((pos, i) => (
                       <div
                         key={i}
                         className={`absolute w-2 h-2 bg-white/30 rounded-full transition-all duration-1000 ${
                           isHovered ? 'animate-float' : 'opacity-0'
                         }`}
                         style={{
-                          left: `${Math.random() * 100}%`,
-                          top: `${Math.random() * 100}%`,
+                          left: `${pos.left}%`,
+                          top: `${pos.top}%`,
                           animationDelay: `${i * 0.2}s`
                         }}
                       ></div>
@@ -118,7 +131,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
                       isHovered ? 'scale-110' : ''
                     }`}>
                       <Badge variant="secondary" className="bg-white/90 dark:bg-dark-primary/90 backdrop-blur-sm">
-                        {Math.floor(Math.random() * 500 + 50)} obras
+                        {category.artworkCount} obras
                       </Badge>
                     </div>
                   </CardContent>
