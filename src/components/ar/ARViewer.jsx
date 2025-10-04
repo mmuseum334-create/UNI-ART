@@ -162,10 +162,26 @@ const ARViewer = ({ artwork, onExit }) => {
 
           arButton.onclick = async () => {
             try {
+              console.log('Solicitando permisos de cámara...');
+
+              // Solicitar permisos de cámara explícitamente PRIMERO
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                  video: { facingMode: 'environment' }
+                });
+                // Detener el stream inmediatamente, solo queríamos los permisos
+                stream.getTracks().forEach(track => track.stop());
+                console.log('Permisos de cámara concedidos');
+              } catch (cameraError) {
+                console.error('Error al solicitar cámara:', cameraError);
+                alert('Necesitas dar permisos de cámara para usar AR. Por favor, acepta los permisos cuando el navegador lo solicite.');
+                return;
+              }
+
               console.log('Solicitando sesión AR...');
               const session = await navigator.xr.requestSession('immersive-ar', {
-                requiredFeatures: ['local'],
-                optionalFeatures: ['dom-overlay', 'hit-test']
+                requiredFeatures: ['local', 'hit-test'],
+                optionalFeatures: ['dom-overlay']
               });
 
               await renderer.xr.setSession(session);

@@ -134,18 +134,25 @@ const AR = () => {
                   </h3>
                 </div>
                 <p className="text-amber-700 dark:text-amber-300 mb-4">
-                  La Realidad Aumentada no está disponible en tu dispositivo o navegador actual.
+                  La Realidad Aumentada no está disponible. Para usarla necesitas:
                 </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center text-amber-600 dark:text-amber-400">
-                    <Smartphone className="h-4 w-4 mr-2" />
-                    Usa un dispositivo móvil Android
+                <div className="grid grid-cols-1 gap-3 text-sm mb-4">
+                  <div className="flex items-start text-amber-700 dark:text-amber-300">
+                    <Smartphone className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>Dispositivo Android</strong> con ARCore instalado</span>
                   </div>
-                  <div className="flex items-center text-amber-600 dark:text-amber-400">
-                    <Chrome className="h-4 w-4 mr-2" />
-                    Utiliza Chrome o Firefox
+                  <div className="flex items-start text-amber-700 dark:text-amber-300">
+                    <Chrome className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>Navegador Chrome</strong> para Android actualizado</span>
+                  </div>
+                  <div className="flex items-start text-amber-700 dark:text-amber-300">
+                    <Info className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                    <span><strong>Conexión HTTPS</strong> (usa ngrok o despliega en producción)</span>
                   </div>
                 </div>
+                <p className="text-xs text-amber-600 dark:text-amber-400 italic">
+                  💡 Si estás en desarrollo local, usa ngrok o accede vía HTTPS para que funcione la cámara
+                </p>
               </div>
             )}
           </div>
