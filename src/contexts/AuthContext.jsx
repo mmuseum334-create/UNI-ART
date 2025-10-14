@@ -1,13 +1,7 @@
-/**
- * @fileoverview Context de autenticación de usuarios
- * @description Maneja el estado global de autenticación
- * Client Component - usa localStorage y hooks de React
- * NOTA: En producción con NestJS backend, reemplazar mock por llamadas API reales
- */
-
 'use client';
 
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authService } from '@/services/user/authService';
 
 const AuthContext = createContext();
 
@@ -40,31 +34,41 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Cargar usuario al iniciar
   useEffect(() => {
-    const storedUser = localStorage.getItem('museum_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const loadUser = async () => {
+      const storedUser = localStorage.getItem('museum_user');
+      const token = authService.getToken();
+      
+      if (storedUser && token) {
+        setUser(JSON.parse(storedUser));
+      }
+      
+      setIsLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   const login = async (email, password) => {
     setIsLoading(true);
     try {
-      const mockUser = {
-        id: '1',
-        name: 'Usuario Demo',
-        email,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        joinedAt: new Date().toISOString(),
-        artworks: [],
-        favorites: [],
-        isArtist: true
-      };
+      const result = await authService.login(email, password);
       
-      localStorage.setItem('museum_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      return { success: true };
+      if (result.success && result.data) {
+        // Guardar toda la info del usuario que viene del backend
+        const userData = {
+          ...result.data.user, // Toda la info del backend
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || email}`,
+        };
+        
+        localStorage.setItem('museum_user', JSON.stringify(userData));
+        setUser(userData);
+        
+        return { success: true };
+      }
+      
+      return result;
     } catch (error) {
       return { success: false, error: error.message };
     } finally {
@@ -75,20 +79,22 @@ export const AuthProvider = ({ children }) => {
   const register = async (name, email, password) => {
     setIsLoading(true);
     try {
-      const mockUser = {
-        id: Date.now().toString(),
-        name,
-        email,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
-        joinedAt: new Date().toISOString(),
-        artworks: [],
-        favorites: [],
-        isArtist: true
-      };
+      const result = await authService.register(name, email, password);
       
-      localStorage.setItem('museum_user', JSON.stringify(mockUser));
-      setUser(mockUser);
-      return { success: true };
+      if (result.success && result.data) {
+        // Auto-login: guardar usuario directamente
+        const userData = {
+          ...result.data,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.email}`,
+        };
+        
+        localStorage.setItem('museum_user', JSON.stringify(userData));
+        setUser(userData);
+        
+        return { success: true };
+      }
+      
+      return result;
     } catch (error) {
       return { success: false, error: error.message };
     } finally {
@@ -97,7 +103,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('museum_user');
+    authService.logout();
     setUser(null);
   };
 
