@@ -22,11 +22,19 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       const storedUser = localStorage.getItem('museum_user');
       const token = authService.getToken();
-      
+
+      console.log('🔍 Cargando usuario al iniciar...'); // DEBUG
+      console.log('👤 Usuario en localStorage:', storedUser); // DEBUG
+      console.log('🔑 Token en localStorage:', token); // DEBUG
+
       if (storedUser && token) {
-        setUser(JSON.parse(storedUser));
+        const parsedUser = JSON.parse(storedUser);
+        console.log('✅ Usuario cargado:', parsedUser); // DEBUG
+        setUser(parsedUser);
+      } else {
+        console.log('❌ No hay usuario o token guardado'); // DEBUG
       }
-      
+
       setIsLoading(false);
     };
 
@@ -37,22 +45,31 @@ export const AuthProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const result = await authService.login(email, password);
-      
+
+      console.log('🔐 Login result:', result); // DEBUG
+
       if (result.success && result.data) {
+        console.log('✅ Login exitoso, datos recibidos:', result.data); // DEBUG
+
         // Guardar toda la info del usuario que viene del backend
         const userData = {
           ...result.data.user, // Toda la info del backend
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || email}`,
         };
-        
+
+        console.log('👤 Usuario a guardar:', userData); // DEBUG
+        console.log('🔑 Token guardado:', localStorage.getItem('museum_token')); // DEBUG
+
         localStorage.setItem('museum_user', JSON.stringify(userData));
         setUser(userData);
-        
+
         return { success: true };
       }
-      
+
+      console.error('❌ Login falló:', result); // DEBUG
       return result;
     } catch (error) {
+      console.error('💥 Error en login:', error); // DEBUG
       return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
