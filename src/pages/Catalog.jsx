@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { CategoryShowcase } from '@/components/ui/CategoryShowcase';
-import { mockArtworks, artCategories, searchArtworks } from '@/data/mockData';
+import { artCategories } from '@/data/mockData';
+import { paintService } from '@/services/paint/paintService';
+import { getPublicImageUrl } from '@/lib/supabase';
 import {
   Search,
   Filter,
@@ -56,41 +58,97 @@ const Catalog = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [filteredArtworks, setFilteredArtworks] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allPaintings, setAllPaintings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
+  // Cargar pinturas del backend al montar el componente
   useEffect(() => {
-    const performSearch = async () => {
+    const loadPaintings = async () => {
       setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      let results = searchArtworks(searchQuery, selectedCategory);
-      
-      switch (sortBy) {
-        case 'popular':
-          results.sort((a, b) => (b.likes + b.views) - (a.likes + a.views));
-          break;
-        case 'views':
-          results.sort((a, b) => b.views - a.views);
-          break;
-        case 'likes':
-          results.sort((a, b) => b.likes - a.likes);
-          break;
-        case 'alphabetical':
-          results.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-        case 'recent':
-        default:
-          results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          break;
+      setLoadError(null);
+
+      try {
+        const response = await paintService.getAll();
+
+        if (response.success) {
+          // Transformar datos del backend al formato esperado por el componente
+          const transformedPaintings = response.data.map(paint => ({
+            id: paint.id,
+            title: paint.nombre_pintura,
+            artist: paint.artista,
+            description: paint.descripcion_pintura,
+            category: paint.categoria,
+            // Intentar obtener URL de Supabase, si no, usar el path del backend
+            imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
+            techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
+            createdAt: paint.fecha,
+            likes: 0, // Estos campos podrían agregarse en el futuro
+            views: 0,
+            uploadedBy: paint.publicado_por
+          }));
+
+          setAllPaintings(transformedPaintings);
+        } else {
+          setLoadError(response.error || 'Error al cargar las pinturas');
+        }
+      } catch (error) {
+        console.error('Error cargando pinturas:', error);
+        setLoadError('Error de conexión al cargar las pinturas');
+      } finally {
+        setIsLoading(false);
       }
-      
-      setFilteredArtworks(results);
-      setIsLoading(false);
     };
 
-    performSearch();
-  }, [searchQuery, selectedCategory, sortBy]);
+    loadPaintings();
+  }, []);
+
+  // Filtrar y ordenar pinturas basado en búsqueda, categoría y ordenamiento
+  useEffect(() => {
+    if (allPaintings.length === 0) return;
+
+    let results = [...allPaintings];
+
+    // Filtrar por búsqueda
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(painting =>
+        painting.title.toLowerCase().includes(query) ||
+        painting.artist.toLowerCase().includes(query) ||
+        painting.description.toLowerCase().includes(query) ||
+        painting.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== 'all') {
+      results = results.filter(painting => painting.category === selectedCategory);
+    }
+
+    // Ordenar
+    switch (sortBy) {
+      case 'popular':
+        results.sort((a, b) => (b.likes + b.views) - (a.likes + a.views));
+        break;
+      case 'views':
+        results.sort((a, b) => b.views - a.views);
+        break;
+      case 'likes':
+        results.sort((a, b) => b.likes - a.likes);
+        break;
+      case 'alphabetical':
+        results.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'recent':
+      default:
+        results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+    }
+
+    setFilteredArtworks(results);
+  }, [searchQuery, selectedCategory, sortBy, allPaintings]);
 
   useEffect(() => {
     // Update URL params (Next.js handles this differently via router)
@@ -232,14 +290,14 @@ const Catalog = () => {
               </span>
             </h1>
             <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
-              Descubre {mockArtworks.length} obras únicas de artistas talentosos de todo el mundo.
+              Descubre {allPaintings.length} obras únicas de artistas talentosos de todo el mundo.
               Filtra, busca y encuentra la inspiración que buscas.
             </p>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
               <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{mockArtworks.length}</div>
+                <div className="text-3xl font-bold text-white mb-2">{allPaintings.length}</div>
                 <div className="text-white/80">Obras de Arte</div>
               </div>
               <div className="text-center">
@@ -258,6 +316,13 @@ const Catalog = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Error Message */}
+        {loadError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{loadError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-64 flex-shrink-0">

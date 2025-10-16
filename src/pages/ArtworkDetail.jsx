@@ -11,7 +11,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { mockArtworks, artCategories } from '@/data/mockData';
+import { artCategories } from '@/data/mockData';
+import { paintService } from '@/services/paint/paintService';
+import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import {
   Heart,
@@ -43,14 +45,74 @@ const ArtworkDetail = () => {
   const [likes, setLikes] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showFullContent, setShowFullContent] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [relatedArtworks, setRelatedArtworks] = useState([]);
 
   useEffect(() => {
-    const foundArtwork = mockArtworks.find(art => art.id === id);
-    if (foundArtwork) {
-      setArtwork(foundArtwork);
-      setIsLiked(foundArtwork.isLiked);
-      setLikes(foundArtwork.likes);
-    }
+    const loadArtwork = async () => {
+      if (!id) return;
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const response = await paintService.getById(id);
+
+        if (response.success) {
+          const paint = response.data;
+
+          // Transformar datos del backend al formato esperado
+          const transformedArtwork = {
+            id: paint.id,
+            title: paint.nombre_pintura,
+            artist: paint.artista,
+            description: paint.descripcion_pintura,
+            category: paint.categoria,
+            imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
+            techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
+            createdAt: paint.fecha,
+            likes: 0,
+            views: 0,
+            uploadedBy: paint.publicado_por,
+            artistId: paint.artista.toLowerCase().replace(/\s+/g, '-')
+          };
+
+          setArtwork(transformedArtwork);
+          setIsLiked(false);
+          setLikes(0);
+
+          // Cargar obras relacionadas por categoría
+          const relatedResponse = await paintService.getByCategory(paint.categoria);
+          if (relatedResponse.success) {
+            const related = relatedResponse.data
+              .filter(p => p.id !== paint.id)
+              .slice(0, 3)
+              .map(p => ({
+                id: p.id,
+                title: p.nombre_pintura,
+                artist: p.artista,
+                imageUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
+                thumbnailUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
+                likes: 0,
+                views: 0
+              }));
+            setRelatedArtworks(related);
+          }
+        } else {
+          setLoadError(response.error || 'No se pudo cargar la pintura');
+        }
+      } catch (error) {
+        console.error('Error cargando pintura:', error);
+        setLoadError('Error de conexión al cargar la pintura');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadArtwork();
   }, [id]);
 
   const handleLike = () => {
@@ -80,12 +142,27 @@ const ArtworkDetail = () => {
     }
   };
 
-  if (!artwork) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Obra no encontrada</h2>
-          <p className="text-slate-600 mb-4">La obra que buscas no existe.</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nature-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Cargando pintura...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !artwork) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-slate-900 mb-2">
+            {loadError || 'Obra no encontrada'}
+          </h2>
+          <p className="text-slate-600 mb-4">
+            {loadError ? 'Hubo un problema al cargar la pintura.' : 'La obra que buscas no existe.'}
+          </p>
           <Link href="/catalog">
             <Button>Volver al catálogo</Button>
           </Link>
@@ -95,9 +172,6 @@ const ArtworkDetail = () => {
   }
 
   const category = artCategories.find(cat => cat.id === artwork.category);
-  const relatedArtworks = mockArtworks
-    .filter(art => art.id !== artwork.id && art.category === artwork.category)
-    .slice(0, 3);
 
   const renderContent = () => {
     switch (artwork.category) {
@@ -361,8 +435,14 @@ const ArtworkDetail = () => {
                     <p className="text-sm text-slate-600">Artista</p>
                   </div>
                 </div>
+                {artwork.uploadedBy && (
+                  <div className="mb-3 p-3 bg-slate-50 rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1">Publicado por:</p>
+                    <p className="text-sm font-medium text-slate-700">{artwork.uploadedBy}</p>
+                  </div>
+                )}
                 <p className="text-sm text-slate-600 mb-3">
-                  Artista apasionado por explorar nuevas formas de expresión creativa.
+                  Explora más obras de este talentoso artista en nuestra colección.
                 </p>
                 <Link href={`/profile/${artwork.artistId}`}>
                   <Button variant="outline" size="sm" className="w-full">
