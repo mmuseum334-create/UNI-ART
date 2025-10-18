@@ -161,6 +161,37 @@ export const paintService = {
   },
 
   /**
+   * Obtener pinturas del usuario actual autenticado
+   * Usa el endpoint de /paint/my-paintings que está protegido con JWT y devuelve las pinturas del usuario logueado
+   * @returns {Promise<Object>} Respuesta con lista de pinturas del usuario
+   */
+  async getMyPaintings() {
+    try {
+      const response = await fetch(`${API_URL}/paint/my-paintings`, {
+        method: 'GET',
+        headers: getHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || 'Error al obtener tus pinturas'
+        };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error en paintService.getMyPaintings:', error);
+      return {
+        success: false,
+        error: 'Error de conexión con el servidor'
+      };
+    }
+  },
+
+  /**
    * Obtener pinturas por categoría
    * @param {string} categoria - Categoría de la pintura
    * @returns {Promise<Object>} Respuesta con lista de pinturas

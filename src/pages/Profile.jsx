@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { mockArtworks } from '@/data/mockData';
 import { formatDate } from '@/lib/utils';
+import { paintService } from '@/services/paint/paintService';
 import {
   User,
   Mail,
@@ -37,9 +38,45 @@ const Profile = () => {
   });
   const [viewMode, setViewMode] = useState('grid');
   const [activeTab, setActiveTab] = useState('my-works');
+  const [userArtworks, setUserArtworks] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const userArtworks = mockArtworks.filter(artwork => artwork.artist === user?.name);
   const favoriteArtworks = mockArtworks.filter(artwork => artwork.isLiked);
+
+  // Cargar las pinturas del usuario
+  useEffect(() => {
+    const loadUserPaintings = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      const result = await paintService.getMyPaintings();
+
+      if (result.success) {
+        // Mapear los datos del backend al formato esperado por el frontend
+        const mappedPaintings = (result.data || []).map(painting => ({
+          id: painting.id,
+          imagen: painting.img_pintura, // Mapear img_pintura a imagen
+          nombre: painting.nombre_pintura, // Mapear nombre_pintura a nombre
+          categoria: painting.categoria,
+          artista: painting.artista,
+          fechaCreacion: painting.created_at, // Mapear created_at a fechaCreacion
+          likes: 0, // Por ahora no hay sistema de likes
+          views: 0, // Por ahora no hay sistema de views
+        }));
+        setUserArtworks(mappedPaintings);
+      } else {
+        setError(result.error);
+        console.error('Error al cargar pinturas:', result.error);
+      }
+
+      setIsLoading(false);
+    };
+
+    if (user) {
+      loadUserPaintings();
+    }
+  }, [user]);
 
   const handleSave = () => {
     updateProfile(editData);
@@ -80,24 +117,24 @@ const Profile = () => {
               <>
                 <div className="aspect-video w-full overflow-hidden rounded-t-xl">
                   <img
-                    src={artwork.imageUrl || artwork.thumbnailUrl}
-                    alt={artwork.title}
+                    src={artwork.imagen || artwork.imageUrl || artwork.thumbnailUrl}
+                    alt={artwork.nombre || artwork.title}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <CardHeader>
-                  <CardTitle className="text-lg">{artwork.title}</CardTitle>
-                  <p className="text-sm text-slate-600">{artwork.category}</p>
+                  <CardTitle className="text-lg">{artwork.nombre || artwork.title}</CardTitle>
+                  <p className="text-sm text-slate-600">{artwork.categoria || artwork.category}</p>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 text-sm text-slate-500">
                     <div className="flex items-center gap-1">
                       <Heart className="h-4 w-4" />
-                      <span>{artwork.likes}</span>
+                      <span>{artwork.likes || 0}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Eye className="h-4 w-4" />
-                      <span>{artwork.views}</span>
+                      <span>{artwork.views || 0}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -105,23 +142,23 @@ const Profile = () => {
             ) : (
               <div className="flex p-4">
                 <img
-                  src={artwork.imageUrl || artwork.thumbnailUrl}
-                  alt={artwork.title}
+                  src={artwork.imagen || artwork.imageUrl || artwork.thumbnailUrl}
+                  alt={artwork.nombre || artwork.title}
                   className="w-20 h-20 object-cover rounded-lg"
                 />
                 <div className="ml-4 flex-1">
-                  <h3 className="font-semibold text-slate-900">{artwork.title}</h3>
-                  <p className="text-sm text-slate-600 mb-2">{artwork.category}</p>
+                  <h3 className="font-semibold text-slate-900">{artwork.nombre || artwork.title}</h3>
+                  <p className="text-sm text-slate-600 mb-2">{artwork.categoria || artwork.category}</p>
                   <div className="flex items-center gap-4 text-sm text-slate-500">
                     <div className="flex items-center gap-1">
                       <Heart className="h-4 w-4" />
-                      <span>{artwork.likes}</span>
+                      <span>{artwork.likes || 0}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Eye className="h-4 w-4" />
-                      <span>{artwork.views}</span>
+                      <span>{artwork.views || 0}</span>
                     </div>
-                    <span>{formatDate(artwork.createdAt)}</span>
+                    <span>{formatDate(artwork.fechaCreacion || artwork.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -277,7 +314,29 @@ const Profile = () => {
             <div className="space-y-6">
               {activeTab === 'my-works' && (
                 <div>
-                  {userArtworks.length > 0 ? (
+                  {isLoading ? (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nature-600 mx-auto mb-4"></div>
+                        <p className="text-slate-600">Cargando tus obras...</p>
+                      </CardContent>
+                    </Card>
+                  ) : error ? (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <div className="text-red-500 mb-4">
+                          <X className="h-12 w-12 mx-auto" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                          Error al cargar tus obras
+                        </h3>
+                        <p className="text-slate-600 mb-4">{error}</p>
+                        <Button onClick={() => window.location.reload()}>
+                          Reintentar
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : userArtworks.length > 0 ? (
                     <ArtworkGrid artworks={userArtworks} />
                   ) : (
                     <Card>
