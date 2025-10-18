@@ -268,47 +268,55 @@ const Catalog = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-museum-900 via-nature-800 to-purple-900 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
-        </div>
+      {/* Hero Section with Video Background */}
+      <section className="relative py-20 overflow-hidden min-h-[500px] flex items-center">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/sesion3.mp4" type="video/mp4" />
+          Tu navegador no soporta videos HTML5.
+        </video>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Dark Overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-museum-900/30 to-nature-900/55"></div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="text-center">
-            <Badge className="bg-white/20 border-white/30 text-white mb-6">
+            <Badge className="bg-white/20 backdrop-blur-sm border-white/30 text-white mb-6 shadow-2xl">
               <Sparkles className="h-4 w-4 mr-2" />
               Catálogo Completo
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6">
+            <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6 drop-shadow-2xl">
               Explora Nuestro
-              <span className="block text-transparent bg-gradient-to-r from-nature-300 to-museum-300 bg-clip-text">
+              <span className="block text-transparent bg-gradient-to-r from-nature-300 to-museum-300 bg-clip-text drop-shadow-2xl">
                 Universo Artístico
               </span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
+            <p className="text-xl md:text-2xl text-white/95 mb-10 max-w-3xl mx-auto drop-shadow-lg leading-relaxed">
               Descubre {allPaintings.length} obras únicas de artistas talentosos de todo el mundo.
               Filtra, busca y encuentra la inspiración que buscas.
             </p>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{allPaintings.length}</div>
-                <div className="text-white/80">Obras de Arte</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">{allPaintings.length}</div>
+                <div className="text-white/90 text-lg">Obras de Arte</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{artCategories.length}</div>
-                <div className="text-white/80">Categorías</div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">{artCategories.length}</div>
+                <div className="text-white/90 text-lg">Categorías</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
                   {Math.floor(Math.random() * 50 + 150)}
                 </div>
-                <div className="text-white/80">Artistas</div>
+                <div className="text-white/90 text-lg">Artistas</div>
               </div>
             </div>
           </div>
