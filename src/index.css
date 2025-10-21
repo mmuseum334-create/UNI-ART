@@ -36,6 +36,29 @@
     @apply bg-white/80 dark:bg-dark-primary/90 backdrop-blur-md border border-white/20 dark:border-dark-tertiary/50;
   }
 
+  /* View Transition API styles for theme toggle */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-old(root) {
+    z-index: 1;
+  }
+
+  ::view-transition-new(root) {
+    z-index: 2147483646;
+  }
+
+  .dark::view-transition-old(root) {
+    z-index: 2147483646;
+  }
+
+  .dark::view-transition-new(root) {
+    z-index: 1;
+  }
+
   .animate-fade-in-up {
     animation: fadeInUp 0.8s ease-out forwards;
     opacity: 0;
@@ -65,5 +88,32 @@
   @keyframes glow {
     from { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
     to { box-shadow: 0 0 30px rgba(34, 197, 94, 0.8); }
+  }
+
+  /* Marquee animations */
+  .animate-marquee {
+    animation: marquee var(--duration) linear infinite;
+  }
+
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration) linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
+    }
   }
 }
