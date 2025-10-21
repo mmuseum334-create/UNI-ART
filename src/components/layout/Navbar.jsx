@@ -61,7 +61,7 @@ const Navbar = () => {
               className="h-11 w-11 object-contain"
             />
             <span className="text-xl font-display font-bold text-gradient dark:text-white">
-              The Gallery Peace
+              UniART
             </span>
           </Link>
 
