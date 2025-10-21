@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { CategoryShowcase } from '@/components/ui/CategoryShowcase';
-import { mockArtworks, artCategories, searchArtworks } from '@/data/mockData';
+import { artCategories } from '@/data/mockData';
+import { paintService } from '@/services/paint/paintService';
+import { getPublicImageUrl } from '@/lib/supabase';
 import {
   Search,
   Filter,
@@ -56,41 +58,97 @@ const Catalog = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [filteredArtworks, setFilteredArtworks] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [allPaintings, setAllPaintings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
 
+  // Cargar pinturas del backend al montar el componente
   useEffect(() => {
-    const performSearch = async () => {
+    const loadPaintings = async () => {
       setIsLoading(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      let results = searchArtworks(searchQuery, selectedCategory);
-      
-      switch (sortBy) {
-        case 'popular':
-          results.sort((a, b) => (b.likes + b.views) - (a.likes + a.views));
-          break;
-        case 'views':
-          results.sort((a, b) => b.views - a.views);
-          break;
-        case 'likes':
-          results.sort((a, b) => b.likes - a.likes);
-          break;
-        case 'alphabetical':
-          results.sort((a, b) => a.title.localeCompare(b.title));
-          break;
-        case 'recent':
-        default:
-          results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-          break;
+      setLoadError(null);
+
+      try {
+        const response = await paintService.getAll();
+
+        if (response.success) {
+          // Transformar datos del backend al formato esperado por el componente
+          const transformedPaintings = response.data.map(paint => ({
+            id: paint.id,
+            title: paint.nombre_pintura,
+            artist: paint.artista,
+            description: paint.descripcion_pintura,
+            category: paint.categoria,
+            // Intentar obtener URL de Supabase, si no, usar el path del backend
+            imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
+            techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
+            createdAt: paint.fecha,
+            likes: 0, // Estos campos podrían agregarse en el futuro
+            views: 0,
+            uploadedBy: paint.publicado_por
+          }));
+
+          setAllPaintings(transformedPaintings);
+        } else {
+          setLoadError(response.error || 'Error al cargar las pinturas');
+        }
+      } catch (error) {
+        console.error('Error cargando pinturas:', error);
+        setLoadError('Error de conexión al cargar las pinturas');
+      } finally {
+        setIsLoading(false);
       }
-      
-      setFilteredArtworks(results);
-      setIsLoading(false);
     };
 
-    performSearch();
-  }, [searchQuery, selectedCategory, sortBy]);
+    loadPaintings();
+  }, []);
+
+  // Filtrar y ordenar pinturas basado en búsqueda, categoría y ordenamiento
+  useEffect(() => {
+    if (allPaintings.length === 0) return;
+
+    let results = [...allPaintings];
+
+    // Filtrar por búsqueda
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      results = results.filter(painting =>
+        painting.title.toLowerCase().includes(query) ||
+        painting.artist.toLowerCase().includes(query) ||
+        painting.description.toLowerCase().includes(query) ||
+        painting.tags.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== 'all') {
+      results = results.filter(painting => painting.category === selectedCategory);
+    }
+
+    // Ordenar
+    switch (sortBy) {
+      case 'popular':
+        results.sort((a, b) => (b.likes + b.views) - (a.likes + a.views));
+        break;
+      case 'views':
+        results.sort((a, b) => b.views - a.views);
+        break;
+      case 'likes':
+        results.sort((a, b) => b.likes - a.likes);
+        break;
+      case 'alphabetical':
+        results.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'recent':
+      default:
+        results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        break;
+    }
+
+    setFilteredArtworks(results);
+  }, [searchQuery, selectedCategory, sortBy, allPaintings]);
 
   useEffect(() => {
     // Update URL params (Next.js handles this differently via router)
@@ -210,47 +268,55 @@ const Catalog = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-20 bg-gradient-to-br from-museum-900 via-nature-800 to-purple-900 overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }}></div>
-        </div>
+      {/* Hero Section with Video Background */}
+      <section className="relative py-20 overflow-hidden min-h-[500px] flex items-center">
+        {/* Video Background */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/sesion3.mp4" type="video/mp4" />
+          Tu navegador no soporta videos HTML5.
+        </video>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Dark Overlay for better text readability */}
+        <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-museum-900/30 to-nature-900/55"></div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="text-center">
-            <Badge className="bg-white/20 border-white/30 text-white mb-6">
+            <Badge className="bg-white/20 backdrop-blur-sm border-white/30 text-white mb-6 shadow-2xl">
               <Sparkles className="h-4 w-4 mr-2" />
               Catálogo Completo
             </Badge>
-            <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6">
+            <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6 drop-shadow-2xl">
               Explora Nuestro
-              <span className="block text-transparent bg-gradient-to-r from-nature-300 to-museum-300 bg-clip-text">
+              <span className="block text-transparent bg-gradient-to-r from-nature-300 to-museum-300 bg-clip-text drop-shadow-2xl">
                 Universo Artístico
               </span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 max-w-3xl mx-auto">
-              Descubre {mockArtworks.length} obras únicas de artistas talentosos de todo el mundo.
+            <p className="text-xl md:text-2xl text-white/95 mb-10 max-w-3xl mx-auto drop-shadow-lg leading-relaxed">
+              Descubre {allPaintings.length} obras únicas de artistas talentosos de todo el mundo.
               Filtra, busca y encuentra la inspiración que buscas.
             </p>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{mockArtworks.length}</div>
-                <div className="text-white/80">Obras de Arte</div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">{allPaintings.length}</div>
+                <div className="text-white/90 text-lg">Obras de Arte</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">{artCategories.length}</div>
-                <div className="text-white/80">Categorías</div>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">{artCategories.length}</div>
+                <div className="text-white/90 text-lg">Categorías</div>
               </div>
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-2">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
+                <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
                   {Math.floor(Math.random() * 50 + 150)}
                 </div>
-                <div className="text-white/80">Artistas</div>
+                <div className="text-white/90 text-lg">Artistas</div>
               </div>
             </div>
           </div>
@@ -258,6 +324,13 @@ const Catalog = () => {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Error Message */}
+        {loadError && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600">{loadError}</p>
+          </div>
+        )}
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="lg:w-64 flex-shrink-0">

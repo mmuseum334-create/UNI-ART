@@ -10,8 +10,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/Button';
+import { AnimatedThemeToggler } from '@/components/ui/AnimatedThemeToggler';
 import {
   Menu,
   X,
@@ -21,8 +21,6 @@ import {
   Heart,
   Search,
   Home,
-  Sun,
-  Moon,
   Box
 } from 'lucide-react';
 
@@ -30,7 +28,6 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
   const router = useRouter();
 
   const handleLogout = () => {
@@ -61,7 +58,7 @@ const Navbar = () => {
               className="h-11 w-11 object-contain"
             />
             <span className="text-xl font-display font-bold text-gradient dark:text-white">
-              The Gallery Peace
+              UniART
             </span>
           </Link>
 
@@ -82,17 +79,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
-              title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            >
-              {isDark ? (
-                <Sun className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-              ) : (
-                <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-              )}
-            </button>
+            <AnimatedThemeToggler />
             {isAuthenticated ? (
               <div className="relative">
                 <button
@@ -151,17 +138,7 @@ const Navbar = () => {
           </div>
 
           <div className="md:hidden flex items-center space-x-2">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
-              title={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
-            >
-              {isDark ? (
-                <Sun className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-              ) : (
-                <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
-              )}
-            </button>
+            <AnimatedThemeToggler />
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="p-2 rounded-lg hover:bg-white/50 dark:hover:bg-dark-tertiary/50 transition-colors"
