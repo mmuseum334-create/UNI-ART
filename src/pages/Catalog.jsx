@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { CategoryShowcase } from '@/components/ui/CategoryShowcase';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
 import { getPublicImageUrl } from '@/lib/supabase';
@@ -29,7 +28,9 @@ import {
   Palette,
   Image,
   Box,
-  Sparkles
+  Sparkles,
+  FileText,
+  Camera
 } from 'lucide-react';
 
 const iconMap = {
@@ -39,7 +40,9 @@ const iconMap = {
   Palette,
   Image,
   Box,
-  Sparkles
+  Sparkles,
+  FileText,
+  Camera
 };
 
 const sortOptions = [
