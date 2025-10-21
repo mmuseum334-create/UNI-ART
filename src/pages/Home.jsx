@@ -30,7 +30,9 @@ import {
   Palette,
   Image,
   Box,
-  Sparkles
+  Sparkles,
+  FileText,
+  Camera
 } from 'lucide-react';
 
 const iconMap = {
@@ -40,7 +42,9 @@ const iconMap = {
   Palette,
   Image,
   Box,
-  Sparkles
+  Sparkles,
+  FileText,
+  Camera
 };
 
 const Home = () => {

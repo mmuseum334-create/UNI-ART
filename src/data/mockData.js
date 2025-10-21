@@ -162,14 +162,56 @@ export const artCategories = [
     name: 'Pinturas',
     icon: 'Palette',
     description: 'Colores y formas en lienzo',
-    color: 'from-yellow-500 to-red-500'
+    color: 'from-yellow-500 to-red-500',
+    image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400'
   },
   {
     id: 'sculptures',
     name: 'Esculturas',
     icon: 'Box',
-    description: 'Formas tridimensionales del arte',
-    color: 'from-gray-500 to-slate-700'
+    description: 'Formas tridimensionales',
+    color: 'from-gray-500 to-slate-700',
+    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400'
+  },
+  {
+    id: 'poems',
+    name: 'Poesía',
+    icon: 'FileText',
+    description: 'Versos que tocan el alma',
+    color: 'from-purple-500 to-pink-500',
+    image: 'https://images.unsplash.com/photo-1455390582262-044cdead277a?w=400'
+  },
+  {
+    id: 'songs',
+    name: 'Música',
+    icon: 'Music',
+    description: 'Melodías que inspiran',
+    color: 'from-blue-500 to-cyan-500',
+    image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400'
+  },
+  {
+    id: 'videos',
+    name: 'Videos',
+    icon: 'Video',
+    description: 'Historias en movimiento',
+    color: 'from-red-500 to-orange-500',
+    image: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=400'
+  },
+  {
+    id: 'images',
+    name: 'Fotografía',
+    icon: 'Camera',
+    description: 'Momentos capturados',
+    color: 'from-green-500 to-emerald-500',
+    image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?w=400'
+  },
+  {
+    id: 'other',
+    name: 'Arte Digital',
+    icon: 'Sparkles',
+    description: 'Creaciones del futuro',
+    color: 'from-indigo-500 to-violet-500',
+    image: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400'
   }
 ];
 

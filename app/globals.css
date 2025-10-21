@@ -66,4 +66,31 @@
     from { box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
     to { box-shadow: 0 0 30px rgba(34, 197, 94, 0.8); }
   }
+
+  /* Marquee animations */
+  .animate-marquee {
+    animation: marquee var(--duration) linear infinite;
+  }
+
+  .animate-marquee-vertical {
+    animation: marquee-vertical var(--duration) linear infinite;
+  }
+
+  @keyframes marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+
+  @keyframes marquee-vertical {
+    from {
+      transform: translateY(0);
+    }
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
 }
