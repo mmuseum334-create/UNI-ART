@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { X, Info, Maximize2, RotateCw } from 'lucide-react';
 import Script from 'next/script';
+import { getModelUrl } from '@/data/arModels';
 
 const ARViewer = ({ artwork, onExit }) => {
   const modelViewerRef = useRef(null);
@@ -18,15 +19,7 @@ const ARViewer = ({ artwork, onExit }) => {
   const [modelInfo, setModelInfo] = useState(null);
 
   // Determinar URL del modelo basado en la obra
-  const getModelUrl = () => {
-    // Usar modelos GLB de ejemplo de Google Poly o repositorios públicos
-    const modelUrls = {
-      1: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // Escultura Digital
-      2: 'https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/Models/DamagedHelmet/glTF/DamagedHelmet.gltf', // Pintura Flotante
-      3: 'https://modelviewer.dev/shared-assets/models/reflective-sphere.gltf' // Arte Abstracto 3D
-    };
-    return modelUrls[artwork.id] || modelUrls[1];
-  };
+  const modelUrl = artwork.modelUrl || getModelUrl(artwork.id) || 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
 
   useEffect(() => {
     // Cargar el script de model-viewer
@@ -164,7 +157,7 @@ const ARViewer = ({ artwork, onExit }) => {
         {/* Model Viewer */}
         <model-viewer
           ref={modelViewerRef}
-          src={getModelUrl()}
+          src={modelUrl}
           alt={artwork.title}
           ar
           ar-modes="webxr scene-viewer quick-look"
