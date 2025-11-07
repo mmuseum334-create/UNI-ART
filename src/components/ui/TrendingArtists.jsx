@@ -6,11 +6,11 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
 import { getPublicImageUrl } from '@/lib/supabase';
+import { useColor } from '@/contexts/ColorContext';
 import {
   Palette,
   User
@@ -26,6 +26,8 @@ const TrendingArtists = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const { color } = useColor();
+  
 
   // Cargar pinturas del backend
   useEffect(() => {
@@ -39,6 +41,7 @@ const TrendingArtists = () => {
             id: paint.id,
             title: paint.nombre_pintura,
             artist: paint.artista,
+            userId: paint.publicado_por, // ID del usuario que publicó la pintura
             description: paint.descripcion_pintura,
             category: paint.categoria,
             imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
@@ -115,8 +118,12 @@ const TrendingArtists = () => {
     router.push(`/artwork/${artworkId}`);
   };
 
-  const goToArtistProfile = (artistName) => {
-    router.push(`/profile/${encodeURIComponent(artistName)}`);
+  const goToArtistProfile = (userId) => {
+    if (!userId) {
+      console.warn('No se puede navegar al perfil: userId no disponible');
+      return;
+    }
+    router.push(`/user/${userId}`);
   };
 
   // Detectar dimensiones de la imagen cuando se carga
@@ -278,24 +285,36 @@ const TrendingArtists = () => {
 
               {/* Botones de Acción */}
               <div className="flex gap-4 pt-4">
-                <Button
+                <button
                   onClick={() => goToArtwork(currentArtwork.id)}
-                  size="lg"
-                  className="flex items-center gap-2 bg-nature-600 hover:bg-nature-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  className="inline-flex items-center gap-2 rounded-lg px-8 py-3 text-base font-medium text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:opacity-90"
+                  style={{ background: color }}
                 >
                   <Palette className="h-5 w-5" />
                   Ver pintura
-                </Button>
+                </button>
 
-                <Button
-                  onClick={() => goToArtistProfile(currentArtwork.artist)}
-                  size="lg"
-                  variant="outline"
-                  className="flex items-center gap-2 border-2 border-nature-600 text-nature-700 hover:bg-nature-50 shadow-lg hover:shadow-xl transition-all duration-300"
+                <button
+                  onClick={() => goToArtistProfile(currentArtwork.userId)}
+                  disabled={!currentArtwork.userId}
+                  className="inline-flex items-center gap-2 rounded-lg px-8 py-3 text-base font-medium bg-transparent border-2 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
+                  style={{
+                    borderColor: color,
+                    color: color
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!currentArtwork.userId) return;
+                    e.currentTarget.style.background = color;
+                    e.currentTarget.style.color = 'white';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = color;
+                  }}
                 >
                   <User className="h-5 w-5" />
                   Artista
-                </Button>
+                </button>
               </div>
             </div>
 
@@ -332,9 +351,10 @@ const TrendingArtists = () => {
                     onClick={() => setCurrentSlide(index)}
                     className={`rounded-full transition-all duration-300 ${
                       index === currentSlide
-                        ? 'bg-nature-600 dark:bg-nature-500 w-3 h-8 animate-slide-indicator'
+                        ? 'w-3 h-8 animate-slide-indicator'
                         : 'bg-slate-300 dark:bg-slate-600 w-3 h-3 hover:bg-slate-400 dark:hover:bg-slate-500'
                     }`}
+                    style={index === currentSlide ? { background: color } : {}}
                     aria-label={`Ir a obra ${index + 1}`}
                   />
                 ))}

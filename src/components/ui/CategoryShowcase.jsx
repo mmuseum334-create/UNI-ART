@@ -7,6 +7,7 @@
 import Link from 'next/link';
 import { Marquee } from './Marquee';
 import { Badge } from './Badge';
+import { UserColorBadge, UserColorButton } from './UserColorElements';
 import { TrendingUp, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,13 +74,13 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
         {/* Header */}
         <div className="text-center">
-          <Badge className="bg-nature-100 text-nature-800 dark:bg-nature-900 dark:text-nature-200 mb-4">
+          <UserColorBadge className="mb-4">
             <TrendingUp className="h-4 w-4 mr-2" />
             Explora por Categorías
-          </Badge>
+          </UserColorBadge>
           <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 dark:text-white mb-6">
             Descubre el Arte en
-            <span className="text-gradient"> Todas sus Formas</span>
+            <span className="text-gradient-user"> Todas sus Formas</span>
           </h2>
           <p className="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
             Desde pinturas clásicas hasta arte digital moderno, explora nuestra colección organizada por categorías
@@ -111,10 +112,10 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
       {/* Call to Action */}
       <div className="text-center mt-16">
         <Link href="/catalog">
-          <div className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-nature-600 to-museum-600 text-white rounded-full font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
+          <UserColorButton className="px-8 py-4 rounded-full font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg">
             Ver Todas las Categorías
-            <ArrowRight className="h-5 w-5" />
-          </div>
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </UserColorButton>
         </Link>
       </div>
     </section>

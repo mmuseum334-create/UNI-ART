@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --user-color: #328CE7;
+    --user-hover-color: #2563EB;
+  }
+
   * {
     @apply border-slate-200 dark:border-dark-tertiary;
   }
@@ -20,12 +25,41 @@
 }
 
 @layer components {
+  /* Clases que usan el color personalizado del usuario */
+  .user-color-bg {
+    background: var(--user-color);
+  }
+
+  .user-color-text {
+    color: var(--user-color);
+  }
+
+  .user-color-border {
+    border-color: var(--user-color);
+  }
+
+  .user-color-hover:hover {
+    background: var(--user-hover-color);
+  }
+
+  .user-gradient-bg {
+    background: var(--user-color);
+  }
+
+  /* Clases originales */
   .gradient-museum {
     @apply bg-gradient-to-r from-nature-600 via-museum-500 to-nature-500;
   }
 
   .text-gradient {
     @apply bg-gradient-to-r from-nature-600 to-museum-600 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-user {
+    background: var(--user-color);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
   .card-hover {

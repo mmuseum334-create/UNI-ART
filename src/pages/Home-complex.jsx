@@ -9,13 +9,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useColor } from '@/contexts/ColorContext';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { HeroSection } from '../components/ui/HeroSection';
 import { CategoryShowcase } from '../components/ui/CategoryShowcase';
 import ArtCollageSection from '../components/ui/TrendingArtists';
-import { FeaturedCollections } from '../components/ui/FeaturedCollections';
 import { Carousel, CarouselItem } from '../components/ui/Carousel';
 import { featuredArtworks, artCategories } from '../data/mockData';
 import {
@@ -45,6 +45,7 @@ const iconMap = {
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  const { color } = useColor();
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -111,10 +112,24 @@ const Home = () => {
               <p className="text-slate-600 dark:text-slate-300">Las creaciones más populares de nuestra comunidad</p>
             </div>
             <Link href="/catalog">
-              <Button variant="outline">
+              <button
+                className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-transparent border-2 transition-all duration-200"
+                style={{
+                  borderColor: color,
+                  color: color
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = color;
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = color;
+                }}
+              >
                 Ver Todo
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
+                <ArrowRight className="h-4 w-4" />
+              </button>
             </Link>
           </div>
 
@@ -171,9 +186,6 @@ const Home = () => {
 
       {/* Trending Artists */}
       <ArtCollageSection />
-
-      {/* Featured Collections */}
-      <FeaturedCollections />
 
       <section className="py-16 bg-gradient-to-r from-nature-600 via-museum-500 to-nature-500">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

@@ -281,12 +281,12 @@ const Catalog = () => {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="/sesion3.mp4" type="video/mp4" />
+          <source src="/sesion6.mp4" type="video/mp4" />
           Tu navegador no soporta videos HTML5.
         </video>
 
         {/* Dark Overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/75 via-museum-900/30 to-nature-900/55"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-black/75"></div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <div className="text-center">
@@ -296,7 +296,7 @@ const Catalog = () => {
             </Badge>
             <h1 className="text-5xl md:text-6xl font-display font-bold text-white mb-6 drop-shadow-2xl">
               Explora Nuestro
-              <span className="block text-transparent bg-gradient-to-r from-nature-300 to-museum-300 bg-clip-text drop-shadow-2xl">
+              <span className="block text-gradient-user drop-shadow-2xl">
                 Universo Artístico
               </span>
             </h1>

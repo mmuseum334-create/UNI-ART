@@ -6,12 +6,13 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { AnimatedThemeToggler } from '@/components/ui/AnimatedThemeToggler';
+import ColorPicker from '@/components/ui/ColorPicker';
 import {
   Menu,
   X,
@@ -27,8 +28,37 @@ import {
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
+
+  // Control de visibilidad del navbar basado en scroll
+  useEffect(() => {
+    const controlNavbar = () => {
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY < 10) {
+        // Siempre visible en la parte superior
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY) {
+        // Scrolling hacia abajo - ocultar
+        setIsVisible(false);
+        setIsProfileOpen(false); // Cerrar menú de perfil al ocultar
+      } else {
+        // Scrolling hacia arriba - mostrar
+        setIsVisible(true);
+      }
+
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', controlNavbar);
+
+    return () => {
+      window.removeEventListener('scroll', controlNavbar);
+    };
+  }, [lastScrollY]);
 
   const handleLogout = () => {
     logout();
@@ -48,7 +78,9 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 glass-effect border-b border-white/20 dark:border-dark-tertiary/50 dark:bg-dark-primary/90">
+    <nav className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-dark-primary border-b border-slate-200 dark:border-dark-tertiary transition-transform duration-300 shadow-sm ${
+      isVisible ? 'translate-y-0' : '-translate-y-full'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2">
@@ -57,7 +89,7 @@ const Navbar = () => {
               alt="Logo Unipaz"
               className="h-11 w-11 object-contain"
             />
-            <span className="text-xl font-display font-bold text-gradient dark:text-white">
+            <span className="text-xl font-display font-bold text-gradient-user">
               UniART
             </span>
           </Link>
@@ -69,7 +101,7 @@ const Navbar = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 hover:text-nature-600 dark:hover:text-nature-400 transition-colors"
+                  className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 hover:user-color-text transition-colors"
                 >
                   <IconComponent className="h-4 w-4" />
                   <span>{link.label}</span>
@@ -80,6 +112,7 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center space-x-4">
             <AnimatedThemeToggler />
+            {isAuthenticated && <ColorPicker />}
             {isAuthenticated ? (
               <div className="relative">
                 <button

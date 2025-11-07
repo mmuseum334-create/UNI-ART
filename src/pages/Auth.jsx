@@ -4,12 +4,13 @@
  */
 'use client'
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/Card';
+import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import { Palette, Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
@@ -26,8 +27,29 @@ const Auth = () => {
 
   const { login, register } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const from = '/';
+
+  // Verificar el modo (login/register) desde la URL
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'register') {
+      setIsLogin(false);
+    } else if (mode === 'login') {
+      setIsLogin(true);
+    }
+  }, [searchParams]);
+
+  // Verificar si hay un error de Google OAuth en la URL
+  useEffect(() => {
+    const googleError = searchParams.get('error');
+    if (googleError) {
+      setErrors({ submit: decodeURIComponent(googleError) });
+      // Limpiar el error de la URL
+      router.replace('/auth', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -142,6 +164,32 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Botón de Google OAuth */}
+            <div className="mb-6">
+              <GoogleLoginButton
+                text={isLogin ? 'Iniciar sesión con Google' : 'Registrarse con Google'}
+              />
+
+              {/* Texto explicativo contextual */}
+              <p className="mt-3 text-xs text-center text-slate-500">
+                {isLogin
+                  ? 'Accede con tu cuenta de Google institucional'
+                  : 'Al continuar con Google, se creará automáticamente tu cuenta si es tu primera vez'
+                }
+              </p>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-slate-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-slate-500">
+                    {isLogin ? 'O inicia sesión con email' : 'O regístrate con email'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div>

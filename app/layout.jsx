@@ -8,6 +8,7 @@ import { Poppins } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ColorProvider } from '@/contexts/ColorContext';
 import Navbar from '@/components/layout/Navbar';
 
 // Configuración de la fuente Poppins
@@ -38,15 +39,18 @@ export default function RootLayout({ children }) {
         <ThemeProvider>
           {/* Provider de autenticación */}
           <AuthProvider>
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
-              {/* Barra de navegación global */}
-              <Navbar />
+            {/* Provider de color personalizado */}
+            <ColorProvider>
+              <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
+                {/* Barra de navegación global */}
+                <Navbar />
 
-              {/* Contenido principal de cada página */}
-              <main>
-                {children}
-              </main>
-            </div>
+                {/* Contenido principal de cada página */}
+                <main>
+                  {children}
+                </main>
+              </div>
+            </ColorProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

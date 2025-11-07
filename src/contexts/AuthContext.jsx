@@ -68,19 +68,20 @@ export const AuthProvider = ({ children }) => {
       if (result.success && result.data) {
         console.log('✅ Login exitoso, datos recibidos:', result.data); // DEBUG
 
-        // Guardar toda la info del usuario que viene del backend
+        // Guardar toda la info del usuario que viene del backend (incluye rol y permisos)
         const userData = {
-          ...result.data.user, // Toda la info del backend
+          ...result.data.user, // Toda la info del backend (id, name, email, role, etc.)
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || email}`,
         };
 
         console.log('👤 Usuario a guardar:', userData); // DEBUG
         console.log('🔑 Token guardado:', localStorage.getItem('museum_token')); // DEBUG
+        console.log('👑 Rol del usuario:', userData.role); // DEBUG
 
         localStorage.setItem('museum_user', JSON.stringify(userData));
         setUser(userData);
 
-        return { success: true };
+        return { success: true, user: userData };
       }
 
       console.error('❌ Login falló:', result); // DEBUG
@@ -99,16 +100,19 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.register(name, email, password);
       
       if (result.success && result.data) {
-        // Auto-login: guardar usuario directamente
+        // Auto-login: guardar usuario directamente (incluye rol asignado automáticamente)
         const userData = {
-          ...result.data,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.email}`,
+          ...result.data.user, // Datos del usuario con rol inicial
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || result.data.email}`,
         };
-        
+
+        console.log('👤 Usuario registrado:', userData); // DEBUG
+        console.log('👑 Rol asignado:', userData.role); // DEBUG
+
         localStorage.setItem('museum_user', JSON.stringify(userData));
         setUser(userData);
-        
-        return { success: true };
+
+        return { success: true, user: userData };
       }
       
       return result;

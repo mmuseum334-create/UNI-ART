@@ -8,8 +8,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useColor } from '@/contexts/ColorContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { UserColorBadge, UserColorButton } from '@/components/ui/UserColorElements';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
@@ -39,6 +41,7 @@ const ArtworkDetail = () => {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { color } = useColor();
   const id = params?.id;
   const [artwork, setArtwork] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
@@ -48,6 +51,7 @@ const ArtworkDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [relatedArtworks, setRelatedArtworks] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const loadArtwork = async () => {
@@ -63,14 +67,18 @@ const ArtworkDetail = () => {
           const paint = response.data;
 
           // Transformar datos del backend al formato esperado
+          const mainImageUrl = getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`;
+
           const transformedArtwork = {
             id: paint.id,
             title: paint.nombre_pintura,
             artist: paint.artista,
             description: paint.descripcion_pintura,
             category: paint.categoria,
-            imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
-            thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+            imageUrl: mainImageUrl,
+            thumbnailUrl: mainImageUrl,
+            // Soporte para múltiples imágenes (si el backend las proporciona)
+            images: paint.images || [mainImageUrl],
             tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
             techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
             createdAt: paint.fecha,
@@ -310,14 +318,33 @@ const ArtworkDetail = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="mb-6">
-              <div className="aspect-video w-full overflow-hidden rounded-xl mb-4">
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl mb-4">
                 <img
-                  src={artwork.imageUrl || artwork.thumbnailUrl}
+                  src={artwork.images?.[currentImageIndex] || artwork.imageUrl || artwork.thumbnailUrl}
                   alt={artwork.title}
                   className="w-full h-full object-cover"
                 />
+
+                {/* Indicadores de navegación - Solo mostrar si hay múltiples imágenes */}
+                {artwork.images && artwork.images.length > 1 && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                    {artwork.images.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index)}
+                        className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                          index === currentImageIndex
+                            ? 'scale-125'
+                            : 'bg-white/70 hover:bg-white'
+                        }`}
+                        style={index === currentImageIndex ? { background: 'var(--user-color)' } : {}}
+                        aria-label={`Ver imagen ${index + 1}`}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-              
+
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
@@ -330,9 +357,9 @@ const ArtworkDetail = () => {
                     por {artwork.artist}
                   </Link>
                 </div>
-                <Badge variant="info" className="text-lg px-3 py-1">
+                <UserColorBadge className="text-lg px-3 py-1">
                   {category?.name}
-                </Badge>
+                </UserColorBadge>
               </div>
 
               <p className="text-slate-700 text-lg leading-relaxed mb-6">
@@ -341,10 +368,41 @@ const ArtworkDetail = () => {
 
               <div className="flex flex-wrap gap-2 mb-6">
                 {artwork.tags.map((tag) => (
-                  <Badge key={tag} variant="outline" className="text-sm">
+                  <Badge key={tag} variant="outline" className="text-sm user-color-border user-color-text">
                     #{tag}
                   </Badge>
                 ))}
+              </div>
+
+              {/* Botones de acción */}
+              <div className="flex gap-3">
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:opacity-90"
+                  style={{ background: color }}
+                >
+                  <Palette className="h-4 w-4" />
+                  Ver pintura
+                </button>
+                <Link href={`/profile/${artwork.artistId || artwork.uploadedBy}`}>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-transparent border-2 transition-all duration-200 hover:text-white"
+                    style={{
+                      borderColor: color,
+                      color: color
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = color;
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = color;
+                    }}
+                  >
+                    <User className="h-4 w-4" />
+                    Artista
+                  </button>
+                </Link>
               </div>
             </div>
 

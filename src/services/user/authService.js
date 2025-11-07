@@ -1,5 +1,26 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
+/**
+ * Dominios institucionales permitidos
+ * Configura aquí los dominios de correo que pueden registrarse
+ */
+const INSTITUTIONAL_DOMAINS = [
+  'unipaz.edu.co',
+  'estudiantes.unipaz.edu.co',
+  // Agregar más dominios institucionales aquí
+];
+
+/**
+ * Valida si un correo es institucional
+ * @param {string} email - Correo a validar
+ * @returns {boolean}
+ */
+const isInstitutionalEmail = (email) => {
+  if (!email) return false;
+  const domain = email.split('@')[1]?.toLowerCase();
+  return INSTITUTIONAL_DOMAINS.includes(domain);
+};
+
 export const authService = {
   // Login
   async login(email, password) {
@@ -32,6 +53,14 @@ export const authService = {
   // Register
   async register(name, email, password) {
     try {
+      // Validar correo institucional
+      if (!isInstitutionalEmail(email)) {
+        return {
+          success: false,
+          error: 'Debes usar un correo institucional (@unipaz.edu.co)'
+        };
+      }
+
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: {
@@ -55,6 +84,14 @@ export const authService = {
     } catch (error) {
       return { success: false, error: error.message };
     }
+  },
+
+  // Validar si un correo es institucional (export para uso externo)
+  isInstitutionalEmail,
+
+  // Obtener dominios institucionales permitidos
+  getInstitutionalDomains() {
+    return INSTITUTIONAL_DOMAINS;
   },
 
   // Get token

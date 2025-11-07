@@ -6,7 +6,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '../components/ui/Button';
@@ -14,8 +14,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge';
 import { CategoryShowcase } from '../components/ui/CategoryShowcase';
 import ArtCollageSection from '../components/ui/TrendingArtists';
-import { FeaturedCollections } from '../components/ui/FeaturedCollections';
 import { Carousel, CarouselItem } from '../components/ui/Carousel';
+import { useColor } from '@/contexts/ColorContext';
+import { UserColorBadge, UserColorIconCircle, UserColorButton, UserColorSection } from '../components/ui/UserColorElements';
 import { artCategories } from '../data/mockData';
 import { paintService } from '../services/paint/paintService';
 import {
@@ -48,10 +49,11 @@ const iconMap = {
 };
 
 const Home = () => {
+  const { color } = useColor();
   const { isAuthenticated } = useAuth();
   const [featuredArtworks, setFeaturedArtworks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(null);  
 
   // Cargar todas las pinturas desde el backend
   useEffect(() => {
@@ -161,13 +163,10 @@ const Home = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/catalog">
-                <Button
-                  size="lg"
-                  className="flex items-center gap-2 bg-nature-600 hover:bg-nature-700 text-white shadow-2xl hover:shadow-nature-600/50 transition-all duration-300 transform hover:scale-105"
-                >
+                <UserColorButton className="px-8 py-3 text-base shadow-2xl transition-all duration-300 transform hover:scale-105">
                   Explorar Catálogo
-                  <ArrowRight className="h-5 w-5" />
-                </Button>
+                  <ArrowRight className="h-5 w-5 ml-2" />
+                </UserColorButton>
               </Link>
               {!isAuthenticated && (
                 <Link href="/auth">
@@ -208,9 +207,9 @@ const Home = () => {
                 <Card key={index} className="text-center card-hover">
                   <CardContent className="pt-6">
                     <div className="flex justify-center mb-4">
-                      <div className="p-3 rounded-full bg-gradient-to-r from-nature-100 to-museum-100 dark:from-dark-tertiary dark:to-dark-tertiary">
-                        <IconComponent className="h-8 w-8 text-nature-600 dark:text-nature-400" />
-                      </div>
+                      <UserColorIconCircle>
+                        <IconComponent className="h-8 w-8 text-white" />
+                      </UserColorIconCircle>
                     </div>
                     <div className="text-3xl font-display font-bold text-slate-900 dark:text-white mb-2">
                       {stat.value}
@@ -238,7 +237,19 @@ const Home = () => {
               </p>
             </div>
             <Link href="/catalog" className="hidden md:block">
-              <Button variant="outline" size="lg">
+              <Button variant="outline" size="lg" className="border-2 user-color-border user-color-text hover:user-color-bg hover:text-white transition-all"
+              style={{
+                  borderColor: color,
+                  color: color
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = color;
+                  e.currentTarget.style.color = 'white';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = color;
+                }}>
                 Ver Todo
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -263,9 +274,9 @@ const Home = () => {
               </p>
               {isAuthenticated && (
                 <Link href="/upload">
-                  <Button>
+                  <UserColorButton>
                     Subir tu Primera Obra
-                  </Button>
+                  </UserColorButton>
                 </Link>
               )}
             </div>
@@ -274,7 +285,7 @@ const Home = () => {
               itemsPerView={3}
               autoPlay={true}
               autoPlayInterval={5000}
-              shoDots={true}
+              showDots={true}
               className="p-5"
             >
               {featuredArtworks.map((artwork) => (
@@ -297,10 +308,10 @@ const Home = () => {
 
                         {/* Category Badge */}
                         <div className="absolute top-2 right-2">
-                          <Badge className="bg-white/90 dark:bg-dark-primary/90 backdrop-blur-sm text-slate-900 dark:text-white border border-white/20 shadow-lg text-xs">
+                          <UserColorBadge className="shadow-lg">
                             <Palette className="h-3 w-3 mr-1" />
                             {artCategories.find(cat => cat.id === artwork.category)?.name || 'Pintura'}
-                          </Badge>
+                          </UserColorBadge>
                         </div>
 
                         {/* Quick Stats on Hover */}
@@ -342,7 +353,7 @@ const Home = () => {
                                 <Badge
                                   key={idx}
                                   variant="outline"
-                                  className="text-xs bg-slate-50 dark:bg-dark-tertiary hover:bg-nature-50 dark:hover:bg-nature-900/20 transition-colors"
+                                  className="text-xs bg-slate-50 dark:bg-dark-tertiary user-color-border user-color-text transition-colors"
                                 >
                                   #{tag}
                                 </Badge>
@@ -356,14 +367,29 @@ const Home = () => {
                           )}
 
                           {/* Artist Info */}
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-nature-400 to-museum-500 flex items-center justify-center text-white text-xs font-bold">
-                              {artwork.artist.charAt(0).toUpperCase()}
+                          {artwork.publishedBy ? (
+                            <Link
+                              href={`/user/${artwork.publishedBy}`}
+                              className="flex items-center gap-2 flex-shrink-0 hover:opacity-80 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-nature-400 to-museum-500 flex items-center justify-center text-white text-xs font-bold">
+                                {artwork.artist.charAt(0).toUpperCase()}
+                              </div>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate hover:text-nature-600 dark:hover:text-nature-400">
+                                {artwork.artist}
+                              </p>
+                            </Link>
+                          ) : (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <div className="w-6 h-6 rounded-full bg-gradient-to-br from-nature-400 to-museum-500 flex items-center justify-center text-white text-xs font-bold">
+                                {artwork.artist.charAt(0).toUpperCase()}
+                              </div>
+                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
+                                {artwork.artist}
+                              </p>
                             </div>
-                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">
-                              {artwork.artist}
-                            </p>
-                          </div>
+                          )}
                         </div>
                       </CardHeader>
                     </Card>
@@ -381,11 +407,8 @@ const Home = () => {
       {/* Trending Artists */}
       <ArtCollageSection />
 
-      {/* Featured Collections */}
-      <FeaturedCollections />
-
       {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-r from-nature-600 via-museum-500 to-nature-500">
+      <UserColorSection className="py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-display font-bold text-white mb-4">
             ¿Eres un Artista?
@@ -397,25 +420,25 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             {!isAuthenticated ? (
               <Link href="/auth">
-                <Button size="lg" variant="secondary">
+                <Button size="lg" variant="secondary" className="bg-white hover:bg-white/90">
                   Crear Cuenta Gratis
                 </Button>
               </Link>
             ) : (
               <Link href="/upload">
-                <Button size="lg" variant="secondary">
+                <Button size="lg" variant="secondary" className="bg-white hover:bg-white/90">
                   Subir tu Primera Obra
                 </Button>
               </Link>
             )}
             <Link href="/catalog">
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-nature-600">
+              <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-slate-900 transition-all">
                 Explorar Galería
               </Button>
             </Link>
           </div>
         </div>
-      </section>
+      </UserColorSection>
     </div>
   );
 };

@@ -57,14 +57,13 @@ export const Carousel = ({
           className="flex transition-transform duration-500 ease-in-out"
           style={{
             transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
-            width: `${(totalItems / itemsPerView) * 100}%`
           }}
         >
           {children.map((child, index) => (
             <div
               key={index}
               className="flex-shrink-0"
-              style={{ width: `${100 / totalItems}%` }}
+              style={{ width: `${100 / itemsPerView}%` }}
             >
               {child}
             </div>
@@ -102,7 +101,7 @@ export const Carousel = ({
               key={index}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? 'bg-nature-600 dark:bg-nature-400 scale-110'
+                  ? 'user-color-bg scale-110'
                   : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500'
               }`}
               onClick={() => goToSlide(index)}
