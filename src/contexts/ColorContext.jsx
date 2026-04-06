@@ -9,14 +9,17 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 
-const ColorContext = createContext();
+const DEFAULT_COLOR = '#328CE7';
+
+const ColorContext = createContext({
+  color: DEFAULT_COLOR,
+  setColor: () => {},
+});
 
 export const useColor = () => {
-  const context = useContext(ColorContext);
-  if (!context) {
-    throw new Error('useColor debe usarse dentro de un ColorProvider');
-  }
-  return context;
+  // useContext never throws — returns the default value if used outside provider.
+  // This makes the hook SSR-safe and prevents prerender crashes.
+  return useContext(ColorContext);
 };
 
 /**
@@ -39,7 +42,7 @@ const darkenColor = (color, amount) => {
 };
 
 export const ColorProvider = ({ children }) => {
-  const [color, setColorState] = useState('#328CE7'); // Azul por defecto
+  const [color, setColorState] = useState(DEFAULT_COLOR);
   const [mounted, setMounted] = useState(false);
   const { user } = useAuth();
 
@@ -47,7 +50,7 @@ export const ColorProvider = ({ children }) => {
   useEffect(() => {
     setMounted(true);
     const loadUserColor = async () => {
-      const localColor = localStorage.getItem('userColor') || '#328CE7';
+      const localColor = localStorage.getItem('userColor') || DEFAULT_COLOR;
 
       if (user?.color && user?.color === localColor) {
         setColorState(user.color);
@@ -91,7 +94,7 @@ export const ColorProvider = ({ children }) => {
 
   if (!mounted) {
     return (
-      <ColorContext.Provider value={{ color: '#328CE7', setColor: () => {} }}>
+      <ColorContext.Provider value={{ color: DEFAULT_COLOR, setColor: () => {} }}>
         {children}
       </ColorContext.Provider>
     );

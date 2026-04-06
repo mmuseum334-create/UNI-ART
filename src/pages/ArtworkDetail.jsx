@@ -4,9 +4,6 @@
  */
 'use client'
 
-
-export const dynamic = 'force-dynamic';
-
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -40,6 +37,13 @@ import {
   Box
 } from 'lucide-react';
 
+// Necesario en pages/ para evitar el prerender estático.
+// Sin esto, Next.js intenta renderizar la página en build time,
+// donde useColor/useAuth no tienen provider disponible y crashean.
+export async function getServerSideProps() {
+  return { props: {} };
+}
+
 const ArtworkDetail = () => {
   const params = useParams();
   const router = useRouter();
@@ -69,7 +73,6 @@ const ArtworkDetail = () => {
         if (response.success) {
           const paint = response.data;
 
-          // Transformar datos del backend al formato esperado
           const mainImageUrl = getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`;
 
           const transformedArtwork = {
@@ -80,7 +83,6 @@ const ArtworkDetail = () => {
             category: paint.categoria,
             imageUrl: mainImageUrl,
             thumbnailUrl: mainImageUrl,
-            // Soporte para múltiples imágenes (si el backend las proporciona)
             images: paint.images || [mainImageUrl],
             tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
             techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
@@ -95,7 +97,6 @@ const ArtworkDetail = () => {
           setIsLiked(false);
           setLikes(0);
 
-          // Cargar obras relacionadas por categoría
           const relatedResponse = await paintService.getByCategory(paint.categoria);
           if (relatedResponse.success) {
             const related = relatedResponse.data
@@ -131,7 +132,6 @@ const ArtworkDetail = () => {
       router.push('/auth');
       return;
     }
-    
     setIsLiked(!isLiked);
     setLikes(prev => isLiked ? prev - 1 : prev + 1);
   };
@@ -240,7 +240,7 @@ const ArtworkDetail = () => {
                     <p className="text-sm text-slate-600 mt-2">Audio no disponible en demo</p>
                   </div>
                 )}
-                
+
                 {artwork.lyrics && (
                   <div>
                     <h4 className="font-medium mb-2">Letra:</h4>
@@ -288,7 +288,7 @@ const ArtworkDetail = () => {
                   </div>
                 </div>
                 <p className="text-sm text-slate-600">Video no disponible en demo</p>
-                
+
                 <div className="flex flex-wrap gap-2">
                   {artwork.duration && <Badge variant="outline">Duración: {artwork.duration}</Badge>}
                   {artwork.format && <Badge variant="outline">{artwork.format}</Badge>}
@@ -328,7 +328,6 @@ const ArtworkDetail = () => {
                   className="w-full h-full object-cover"
                 />
 
-                {/* Indicadores de navegación - Solo mostrar si hay múltiples imágenes */}
                 {artwork.images && artwork.images.length > 1 && (
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2">
                     {artwork.images.map((_, index) => (
@@ -377,7 +376,6 @@ const ArtworkDetail = () => {
                 ))}
               </div>
 
-              {/* Botones de acción */}
               <div className="flex gap-3">
                 <button
                   className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:opacity-90"
@@ -389,10 +387,7 @@ const ArtworkDetail = () => {
                 <Link href={`/profile/${artwork.artistId || artwork.uploadedBy}`}>
                   <button
                     className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-transparent border-2 transition-all duration-200 hover:text-white"
-                    style={{
-                      borderColor: color,
-                      color: color
-                    }}
+                    style={{ borderColor: color, color: color }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = color;
                       e.currentTarget.style.color = 'white';
@@ -445,7 +440,7 @@ const ArtworkDetail = () => {
                     <Calendar className="h-4 w-4" />
                     <span>Publicado el {formatDate(artwork.createdAt)}</span>
                   </div>
-                  
+
                   {artwork.year && (
                     <div className="flex items-center gap-2 text-slate-600">
                       <Palette className="h-4 w-4" />
