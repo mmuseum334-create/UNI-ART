@@ -142,17 +142,7 @@ const TrendingArtists = () => {
     const aspectRatio = imageDimensions.width / imageDimensions.height;
 
     // Horizontal (más ancha que alta)
-    if (aspectRatio > 1.3) {
-      return '/cuadro5.png';  // cuadro3 para imágenes horizontales
-    }
-    // Vertical (más alta que ancha)
-    else if (aspectRatio < 0.8) {
-      return '/cuadro6.png';  // cuadro2 para imágenes verticales
-    }
-    // Cuadrada o casi cuadrada (vertical)
-    else {
-      return '/cuadro6.PNG';  // cuadro para imágenes cuadradas/verticales
-    }
+    
   };
 
   if (isLoading) {
@@ -332,14 +322,7 @@ const TrendingArtists = () => {
                     className="block max-h-[55vh] w-auto"
                   />
 
-                  {/* Marco decorativo que se posiciona alrededor */}
-                  <div className="absolute inset-0 -m-[12%]">
-                    <img
-                      src={getFrameImage()}
-                      alt="Marco decorativo"
-                      className="w-full h-full object-fill pointer-events-none drop-shadow-2xl"
-                    />
-                  </div>
+                  
                 </div>
               </div>
 
