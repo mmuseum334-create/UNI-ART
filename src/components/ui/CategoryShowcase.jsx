@@ -55,7 +55,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
                 {category.name}
               </figcaption>
               <p className="text-xs font-medium text-slate-600 dark:text-slate-400 truncate">
-                {Math.floor(Math.random() * 500 + 50)} obras
+                {category.count ?? ''} obras
               </p>
             </div>
           </div>
