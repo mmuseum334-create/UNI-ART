@@ -45,8 +45,9 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint`, {
         method: 'POST',
-        headers: getHeaders(true), // true = no incluir Content-Type (FormData lo maneja)
-        body: paintFormData, // Enviar FormData directamente
+        credentials: 'include',
+        headers: getHeaders(true),
+        body: paintFormData,
       });
 
       const data = await response.json();
@@ -76,6 +77,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint`, {
         method: 'GET',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -107,6 +109,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/${id}`, {
         method: 'GET',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -138,6 +141,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/artist/${artista}`, {
         method: 'GET',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -169,6 +173,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/my-paintings`, {
         method: 'GET',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -200,6 +205,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/category/${categoria}`, {
         method: 'GET',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -234,6 +240,7 @@ export const paintService = {
 
       const response = await fetch(`${API_URL}/paint/${id}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: getHeaders(isFormData),
         body: isFormData ? paintData : JSON.stringify(paintData),
       });
@@ -266,6 +273,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/${id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: getHeaders(),
       });
 
@@ -297,6 +305,7 @@ export const paintService = {
     try {
       const response = await fetch(`${API_URL}/paint/restore/${id}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: getHeaders(),
       });
 

@@ -27,6 +27,7 @@ export const authService = {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -39,9 +40,10 @@ export const authService = {
         return { success: false, error: data.message || 'Error al iniciar sesión' };
       }
 
-      // Guardar token
-      if (data.token) {
-        localStorage.setItem('museum_token', data.token);
+      // El backend usa sesiones (cookie), guardamos el userId como token para el AuthContext
+      const token = data.token || (data.user?.id ? String(data.user.id) : null);
+      if (token) {
+        localStorage.setItem('museum_token', token);
       }
 
       return { success: true, data };
@@ -63,6 +65,7 @@ export const authService = {
 
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         },

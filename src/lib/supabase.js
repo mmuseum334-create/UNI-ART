@@ -24,19 +24,21 @@ if (supabaseUrl && supabaseAnonKey) {
  * @returns {string|null} URL pública de la imagen o null si no hay cliente configurado
  */
 export const getPublicImageUrl = (path) => {
-  if (!supabase || !path) return null;
+  if (!path) return null;
 
   // Si el path ya es una URL completa, retornarla tal cual
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
 
+  if (!supabase) return null;
+
   // Eliminar el slash inicial si existe
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
 
   // Obtener URL pública del storage
   const { data } = supabase.storage
-    .from('Paint') // Nombre del bucket en Supabase
+    .from('Gallery') // Nombre del bucket en Supabase
     .getPublicUrl(cleanPath);
 
   return data?.publicUrl || null;
@@ -64,7 +66,7 @@ export const uploadImage = async (file, folder = 'paintings') => {
 
     // Subir archivo a Supabase
     const { data, error } = await supabase.storage
-      .from('Paint')
+      .from('Gallery')
       .upload(filePath, file, {
         cacheControl: '3600',
         upsert: false
@@ -107,7 +109,7 @@ export const deleteImage = async (path) => {
     const cleanPath = path.startsWith('/') ? path.slice(1) : path;
 
     const { error } = await supabase.storage
-      .from('Paint')
+      .from('Gallery')
       .remove([cleanPath]);
 
     if (error) {

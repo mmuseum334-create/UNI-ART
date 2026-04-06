@@ -64,6 +64,7 @@ const Catalog = () => {
   const [allPaintings, setAllPaintings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
+  const [artistCount] = useState(175);
 
   // Cargar pinturas del backend al montar el componente
   useEffect(() => {
@@ -317,7 +318,7 @@ const Catalog = () => {
               </div>
               <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-6 shadow-2xl transform hover:scale-105 transition-transform duration-300">
                 <div className="text-4xl md:text-5xl font-bold text-white mb-2 drop-shadow-lg">
-                  {Math.floor(Math.random() * 50 + 150)}
+                  {artistCount}
                 </div>
                 <div className="text-white/90 text-lg">Artistas</div>
               </div>
