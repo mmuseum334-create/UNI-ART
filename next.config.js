@@ -26,9 +26,11 @@ const nextConfig = {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
   },
 
+  // Deshabilitar Turbopack para compatibilidad con webpack personalizado
+  turbopack: {},
+
   // Configuración para WebXR y Three.js
   webpack: (config) => {
-    // Permite importar archivos GLSL/GLB para Three.js
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag|glb|gltf)$/,
       exclude: /node_modules/,
