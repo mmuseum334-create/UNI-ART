@@ -353,11 +353,11 @@ const Profile = () => {
                 </div>
 
                 <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                     <Calendar className="h-4 w-4" />
                     <span>Miembro desde {formatDate(user?.joinedAt)}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                     <User className="h-4 w-4" />
                     <span>{user?.isArtist ? 'Artista' : 'Visitante'}</span>
                   </div>
@@ -367,19 +367,19 @@ const Profile = () => {
                   <h3 className="font-semibold text-slate-900 mb-3">Estadísticas</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Obras:</span>
+                      <span className="text-slate-600 dark:text-white/80">Obras:</span>
                       <span className="font-medium">{stats.artworks}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Likes totales:</span>
+                      <span className="text-slate-600 dark:text-white/80">Likes totales:</span>
                       <span className="font-medium">{stats.totalLikes}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Vistas totales:</span>
+                      <span className="text-slate-600 dark:text-white/80">Vistas totales:</span>
                       <span className="font-medium">{stats.totalViews}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Favoritos:</span>
+                      <span className="text-slate-600 dark:text-white/80">Favoritos:</span>
                       <span className="font-medium">{stats.favorites}</span>
                     </div>
                   </div>
@@ -527,16 +527,16 @@ const Profile = () => {
                   <CardContent>
                     <div className="space-y-6">
                       <div>
-                        <h3 className="font-medium text-slate-900 mb-3">Información Personal</h3>
+                        <h3 className="font-medium text-slate-900 dark:text-white mb-3">Información Personal</h3>
                         <div className="space-y-3">
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-1">
                               Nombre completo
                             </label>
                             <Input value={user?.name} readOnly />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">
+                            <label className="block text-sm font-medium text-slate-700 dark:text-white mb-1">
                               Email
                             </label>
                             <Input value={user?.email} readOnly />
@@ -545,12 +545,12 @@ const Profile = () => {
                       </div>
 
                       <div>
-                        <h3 className="font-medium text-slate-900 mb-3">Preferencias</h3>
+                        <h3 className="font-medium text-slate-900 dark:text-white mb-3">Preferencias</h3>
                         <div className="space-y-3">
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="font-medium">Notificaciones por email</p>
-                              <p className="text-sm text-slate-600">Recibir actualizaciones sobre tu cuenta</p>
+                              <p className="text-sm text-slate-600 dark:text-white">Recibir actualizaciones sobre tu cuenta</p>
                             </div>
                             <Button variant="outline" size="sm">
                               Configurar
@@ -559,7 +559,7 @@ const Profile = () => {
                           <div className="flex items-center justify-between">
                             <div>
                               <p className="font-medium">Privacidad del perfil</p>
-                              <p className="text-sm text-slate-600">Controla quién puede ver tu perfil</p>
+                              <p className="text-sm text-slate-600 dark:text-white">Controla quién puede ver tu perfil</p>
                             </div>
                             <Button variant="outline" size="sm">
                               Configurar

@@ -263,10 +263,10 @@ const Upload = () => {
       <div className="space-y-4">
         <div className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center">
           <UploadIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
             Sube la imagen de la pintura
           </h3>
-          <p className="text-slate-600 mb-4">
+          <p className="text-slate-600 dark:text-white/80 mb-4">
             Arrastra y suelta o haz clic para seleccionar (máximo 5MB)
           </p>
           <input
@@ -289,7 +289,7 @@ const Upload = () => {
 
         {imagePreview && (
           <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-            <p className="text-sm font-medium text-slate-900 mb-2">Vista previa:</p>
+            <p className="text-sm font-medium text-slate-900 dark:text-white mb-2">Vista previa:</p>
             <img
               src={imagePreview}
               alt="Preview"
@@ -326,10 +326,10 @@ const Upload = () => {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2 dark:text-white">
             Subir Nueva Obra
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-white/80">
             Comparte tu arte con la comunidad del museo virtual
           </p>
         </div>

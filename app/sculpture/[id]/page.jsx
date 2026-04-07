@@ -121,7 +121,7 @@ const SculptureDetailPage = () => {
           <Button
             variant="ghost"
             onClick={() => router.push('/sculptures')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 dark:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver a Galería
@@ -188,10 +188,10 @@ const SculptureDetailPage = () => {
             <div>
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
+                  <h1 className="text-3xl font-display font-bold text-slate-900 mb-2 dark:text-white">
                     {sculpture.nombre_escultura}
                   </h1>
-                  <p className="text-xl text-slate-600 flex items-center gap-2">
+                  <p className="text-xl text-slate-600 flex items-center gap-2 dark:text-white/80">
                     <User className="h-5 w-5" />
                     {sculpture.artista}
                   </p>

@@ -408,7 +408,7 @@ const EditPaintingModal = ({ painting, isOpen, onClose, onSave }) => {
             <div className="space-y-4">
               {imagePreview && (
                 <div className="p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm font-medium text-slate-900 mb-2">Imagen actual:</p>
+                  <p className="text-sm font-medium text-slate-900 mb-2 dark:text-white">Imagen actual:</p>
                   <img
                     src={imagePreview}
                     alt="Preview"
@@ -419,10 +419,10 @@ const EditPaintingModal = ({ painting, isOpen, onClose, onSave }) => {
 
               <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
                 <UploadIcon className="h-10 w-10 text-slate-400 mx-auto mb-3" />
-                <h4 className="text-sm font-medium text-slate-900 mb-2">
+                <h4 className="text-sm font-medium text-slate-900 mb-2 dark:text-white">
                   Cambiar imagen (opcional)
                 </h4>
-                <p className="text-xs text-slate-600 mb-3">
+                <p className="text-xs text-slate-600 mb-3 dark:text-white/80">
                   Máximo 5MB
                 </p>
                 <input

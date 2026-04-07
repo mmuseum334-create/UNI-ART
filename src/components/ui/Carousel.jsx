@@ -1,12 +1,10 @@
 'use client'
 
 /**
- * Carousel - Interactive carousel component with autoplay, navigation arrows, and dot indicators
- * Supports multiple items per view and customizable autoplay settings
+ * Carousel - Interactive carousel component with autoplay, navigation arrows, and indicators
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Button } from './Button';
 
 export const Carousel = ({
   children,
@@ -15,51 +13,48 @@ export const Carousel = ({
   showDots = true,
   showArrows = true,
   className = "",
-  itemsPerView = 1
+  itemsPerView = 1,
+  accentColor = null,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const totalItems = children.length;
+  const [isPaused, setIsPaused] = useState(false);
+  const items = Array.isArray(children) ? children : [children];
+  const totalItems = items.length;
   const maxIndex = Math.max(0, totalItems - itemsPerView);
 
-  useEffect(() => {
-    if (!autoPlay) return;
+  const goToNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  }, [maxIndex]);
 
-    const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) =>
-        prevIndex >= maxIndex ? 0 : prevIndex + 1
-      );
-    }, autoPlayInterval);
-
-    return () => clearInterval(interval);
-  }, [autoPlay, autoPlayInterval, maxIndex]);
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
+  }, [maxIndex]);
 
   const goToSlide = (index) => {
     setCurrentIndex(Math.max(0, Math.min(index, maxIndex)));
   };
 
-  const goToPrevious = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex <= 0 ? maxIndex : prevIndex - 1
-    );
-  };
+  useEffect(() => {
+    if (!autoPlay || isPaused) return;
+    const interval = setInterval(goToNext, autoPlayInterval);
+    return () => clearInterval(interval);
+  }, [autoPlay, autoPlayInterval, isPaused, goToNext]);
 
-  const goToNext = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex >= maxIndex ? 0 : prevIndex + 1
-    );
-  };
+  const totalDots = maxIndex + 1;
 
   return (
-    <div className={`relative overflow-hidden ${className}`}>
-      {/* Carousel Container */}
-      <div className="relative">
+    <div
+      className={`relative ${className}`}
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Track */}
+      <div className="overflow-hidden rounded-xl">
         <div
-          className="flex transition-transform duration-500 ease-in-out"
-          style={{
-            transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)`,
-          }}
+          className="flex transition-transform duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)]"
+          style={{ transform: `translateX(-${currentIndex * (100 / itemsPerView)}%)` }}
         >
-          {children.map((child, index) => (
+          {items.map((child, index) => (
             <div
               key={index}
               className="flex-shrink-0"
@@ -69,54 +64,65 @@ export const Carousel = ({
             </div>
           ))}
         </div>
-
-        {/* Navigation Arrows */}
-        {showArrows && totalItems > itemsPerView && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full w-10 h-10 p-0 bg-white/90 dark:bg-dark-primary/90 backdrop-blur-sm border-white/20 hover:bg-white dark:hover:bg-dark-primary shadow-lg z-10"
-              onClick={goToPrevious}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full w-10 h-10 p-0 bg-white/90 dark:bg-dark-primary/90 backdrop-blur-sm border-white/20 hover:bg-white dark:hover:bg-dark-primary shadow-lg z-10"
-              onClick={goToNext}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </>
-        )}
       </div>
 
-      {/* Dots Indicator */}
-      {showDots && totalItems > itemsPerView && (
-        <div className="flex justify-center space-x-2 mt-6">
-          {Array.from({ length: maxIndex + 1 }).map((_, index) => (
-            <button
-              key={index}
-              className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentIndex
-                  ? 'user-color-bg scale-110'
-                  : 'bg-slate-300 dark:bg-slate-600 hover:bg-slate-400 dark:hover:bg-slate-500'
-              }`}
-              onClick={() => goToSlide(index)}
-            />
-          ))}
+      {/* Arrows */}
+      {showArrows && totalItems > itemsPerView && (
+        <>
+          <button
+            onClick={goToPrevious}
+            className="absolute left-0 top-[42%] -translate-y-1/2 -translate-x-1/2 z-10
+              w-9 h-9 rounded-full flex items-center justify-center
+              bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700
+              text-slate-600 dark:text-slate-300
+              hover:bg-slate-50 dark:hover:bg-slate-700 hover:shadow-lg
+              transition-all duration-200 active:scale-95"
+            aria-label="Anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={goToNext}
+            className="absolute right-0 top-[42%] -translate-y-1/2 translate-x-1/2 z-10
+              w-9 h-9 rounded-full flex items-center justify-center
+              bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700
+              text-slate-600 dark:text-slate-300
+              hover:bg-slate-50 dark:hover:bg-slate-700 hover:shadow-lg
+              transition-all duration-200 active:scale-95"
+            aria-label="Siguiente"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </>
+      )}
+
+      {/* Indicators — barras en lugar de puntos */}
+      {showDots && totalDots > 1 && (
+        <div className="flex justify-center items-center gap-1.5 mt-5">
+          {Array.from({ length: totalDots }).map((_, index) => {
+            const isActive = index === currentIndex;
+            return (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                aria-label={`Ir a ${index + 1}`}
+                className="h-1 rounded-full transition-all duration-300 bg-slate-300 dark:bg-slate-600"
+                style={{
+                  width: isActive ? '2rem' : '0.5rem',
+                  background: isActive ? (accentColor || '#6366f1') : undefined,
+                  opacity: isActive ? 1 : 0.5,
+                }}
+              />
+            );
+          })}
         </div>
       )}
     </div>
   );
 };
 
-export const CarouselItem = ({ children, className = "" }) => {
-  return (
-    <div className={`px-2 ${className}`}>
-      {children}
-    </div>
-  );
-};
+export const CarouselItem = ({ children, className = "" }) => (
+  <div className={`px-2 ${className}`}>
+    {children}
+  </div>
+);

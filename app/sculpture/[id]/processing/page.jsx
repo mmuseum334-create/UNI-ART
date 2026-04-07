@@ -134,10 +134,10 @@ const SculptureProcessingPage = () => {
 
         {/* Título */}
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2 dark:text-white">
             {sculpture?.nombre_escultura || 'Procesando Escultura'}
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-white/80">
             por {sculpture?.artista || 'Cargando...'}
           </p>
         </div>

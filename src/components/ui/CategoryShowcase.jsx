@@ -70,7 +70,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
   };
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-dark-secondary dark:via-dark-primary dark:to-dark-secondary overflow-hidden">
+    <section className="pt-20 pb-5 bg-gradient-to-br from-white via-white to-white dark:from-dark-secondary dark:via-dark-primary dark:to-dark-secondary overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
         {/* Header */}
         <div className="text-center">

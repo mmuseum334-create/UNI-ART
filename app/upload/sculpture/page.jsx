@@ -394,10 +394,10 @@ const UploadSculpture = () => {
           onDrop={handleDrop}
         >
           <UploadIcon className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-slate-900 mb-2">
+          <h3 className="text-lg font-medium text-slate-900 mb-2 dark:text-white">
             Sube las fotos de la escultura
           </h3>
-          <p className="text-slate-600 mb-2">
+          <p className="text-slate-600 mb-2 dark:text-white/80">
             Arrastra y suelta o haz clic para seleccionar
           </p>
           <p className="text-sm text-slate-500 mb-4">
@@ -466,10 +466,10 @@ const UploadSculpture = () => {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
+          <h1 className="text-3xl font-display font-bold text-slate-900 mb-2 dark:text-white">
             Subir Nueva Escultura
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-white/80">
             Sube fotos de tu escultura y generaremos un modelo 3D para realidad aumentada
           </p>
         </div>

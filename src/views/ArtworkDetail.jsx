@@ -349,7 +349,7 @@ const ArtworkDetail = () => {
 
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h1 className="text-3xl font-display font-bold text-slate-900 mb-2">
+                  <h1 className="text-3xl font-display font-bold text-slate-900 mb-2 dark:text-white">
                     {artwork.title}
                   </h1>
                   <Link
@@ -364,7 +364,7 @@ const ArtworkDetail = () => {
                 </UserColorBadge>
               </div>
 
-              <p className="text-slate-700 text-lg leading-relaxed mb-6">
+              <p className="text-slate-700 text-lg leading-relaxed mb-6 dark:text-white">
                 {artwork.description}
               </p>
 
@@ -420,7 +420,7 @@ const ArtworkDetail = () => {
                       <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
                       {likes}
                     </Button>
-                    <div className="flex items-center gap-1 text-slate-600">
+                    <div className="flex items-center gap-1 text-slate-600 dark:text-white/80">
                       <Eye className="h-4 w-4" />
                       <span>{artwork.views}</span>
                     </div>
@@ -436,34 +436,34 @@ const ArtworkDetail = () => {
                 </div>
 
                 <div className="space-y-3 text-sm">
-                  <div className="flex items-center gap-2 text-slate-600">
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                     <Calendar className="h-4 w-4" />
                     <span>Publicado el {formatDate(artwork.createdAt)}</span>
                   </div>
 
                   {artwork.year && (
-                    <div className="flex items-center gap-2 text-slate-600">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                       <Palette className="h-4 w-4" />
                       <span>Año: {artwork.year}</span>
                     </div>
                   )}
 
                   {artwork.dimensions && (
-                    <div className="flex items-center gap-2 text-slate-600">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                       <ImageIcon className="h-4 w-4" />
                       <span>Dimensiones: {artwork.dimensions}</span>
                     </div>
                   )}
 
                   {artwork.techniques && (
-                    <div className="flex items-center gap-2 text-slate-600">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                       <Tag className="h-4 w-4" />
                       <span>Técnicas: {artwork.techniques.join(', ')}</span>
                     </div>
                   )}
 
                   {artwork.material && (
-                    <div className="flex items-center gap-2 text-slate-600">
+                    <div className="flex items-center gap-2 text-slate-600 dark:text-white/80">
                       <Box className="h-4 w-4" />
                       <span>Material: {artwork.material}</span>
                     </div>
@@ -487,17 +487,17 @@ const ArtworkDetail = () => {
                     className="w-12 h-12 rounded-full"
                   />
                   <div>
-                    <h3 className="font-medium text-slate-900">{artwork.artist}</h3>
-                    <p className="text-sm text-slate-600">Artista</p>
+                    <h3 className="font-medium text-slate-900 dark:text-white">{artwork.artist}</h3>
+                    <p className="text-sm text-slate-600 dark:text-white/80">Artista</p>
                   </div>
                 </div>
                 {artwork.uploadedBy && (
-                  <div className="mb-3 p-3 bg-slate-50 rounded-lg">
-                    <p className="text-xs text-slate-500 mb-1">Publicado por:</p>
-                    <p className="text-sm font-medium text-slate-700">{artwork.uploadedBy}</p>
+                  <div className="mb-3 p-3 bg-slate-50 dark:bg-[#171717] rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1 dark:text-white">Publicado por:</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-white">{artwork.uploadedBy}</p>
                   </div>
                 )}
-                <p className="text-sm text-slate-600 mb-3">
+                <p className="text-sm text-slate-600 dark:text-white/80 mb-3">
                   Explora más obras de este talentoso artista en nuestra colección.
                 </p>
                 <Link href={`/profile/${artwork.artistId}`}>
