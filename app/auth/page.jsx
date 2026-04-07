@@ -6,7 +6,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import Auth from '@/pages/Auth';
+import Auth from '@/views/Auth';
 
 function AuthFallback() {
   return (

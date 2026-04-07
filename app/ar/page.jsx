@@ -6,7 +6,7 @@
 
 'use client';
 
-import AR from '@/pages/AR';
+import AR from '@/views/AR';
 
 /**
  * ARPage - Página de realidad aumentada

@@ -6,7 +6,7 @@
 
 'use client';
 
-import Home from '@/pages/Home';
+import Home from '@/views/Home';
 
 /**
  * HomePage - Componente de la página principal

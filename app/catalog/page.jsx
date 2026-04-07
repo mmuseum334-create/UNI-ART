@@ -7,7 +7,7 @@
 'use client';
 
 import { Suspense } from 'react';
-import Catalog from '@/pages/Catalog';
+import Catalog from '@/views/Catalog';
 
 /**
  * CatalogPage - Página del catálogo de arte

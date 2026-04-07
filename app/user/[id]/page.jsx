@@ -5,7 +5,7 @@
 'use client'
 
 import { use } from 'react';
-import PublicProfile from '@/pages/PublicProfile';
+import PublicProfile from '@/views/PublicProfile';
 
 export default function UserProfilePage({ params }) {
   const { id } = use(params);

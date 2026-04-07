@@ -6,7 +6,7 @@
 
 'use client';
 
-import Profile from '@/pages/Profile';
+import Profile from '@/views/Profile';
 
 /**
  * ProfilePage - Página de perfil de usuario

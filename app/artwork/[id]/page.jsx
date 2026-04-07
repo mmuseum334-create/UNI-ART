@@ -6,7 +6,7 @@
 
 'use client';
 
-import ArtworkDetail from '@/pages/ArtworkDetail';
+import ArtworkDetail from '@/views/ArtworkDetail';
 
 /**
  * ArtworkDetailPage - Página de detalle de obra

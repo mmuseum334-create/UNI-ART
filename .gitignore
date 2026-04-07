@@ -35,6 +35,14 @@ lerna-debug.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Local files in app/ that are not part of the project
+app/GoogleChromePortable
+app/GoogleChromePortable.rar
+app/Simulador*
+app/appss/
+app/captura/
+/dist/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

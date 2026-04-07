@@ -1,6 +1,6 @@
 'use client';
 
-import Upload from '@/pages/Upload';
+import Upload from '@/views/Upload';
 
 export default function PaintingUploadPage() {
   return <Upload />;
