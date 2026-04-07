@@ -72,23 +72,22 @@ export const ColorProvider = ({ children }) => {
   }, [color, mounted]);
 
   // Función para cambiar el color
-  const setColor = async (newColor) => {
-    try {
-      // Si el usuario está autenticado, actualizar en la BD
-      if (user?.id) {
-        const { userService } = await import('@/services/user/userService');
-        const result = await userService.updateColor(user.id, newColor);
+  const setColor = (newColor) => {
+    // Actualizar UI de inmediato
+    setColorState(newColor);
+    localStorage.setItem('userColor', newColor);
 
-        if (!result.success) {
-          console.error('Error actualizando color en BD:', result.error);
-          // Aún así actualizamos localmente
-        }
-      }
-
-      setColorState(newColor);
-      localStorage.setItem('userColor', newColor);
-    } catch (error) {
-      console.error('Error actualizando el color del usuario:', error);
+    // Persistir en BD en segundo plano
+    if (user?.id) {
+      import('@/services/user/userService').then(({ userService }) => {
+        userService.updateColor(user.id, newColor).then((result) => {
+          if (!result.success) {
+            console.error('Error actualizando color en BD:', result.error);
+          }
+        });
+      }).catch((error) => {
+        console.error('Error actualizando el color del usuario:', error);
+      });
     }
   };
 
