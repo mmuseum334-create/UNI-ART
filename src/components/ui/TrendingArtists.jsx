@@ -154,10 +154,7 @@ const TrendingArtists = () => {
         {/* Left Panel - Image */}
         <div className="relative h-[45vh] lg:h-full lg:w-1/2 bg-muted/30 flex items-center justify-center p-6 lg:p-12">
           {/* Decorative frame corners */}
-          <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-primary/20" />
-          <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-primary/20" />
           <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-primary/20" />
-          <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-primary/20" />
 
           {/* Image Container */}
           <div 
@@ -197,7 +194,7 @@ const TrendingArtists = () => {
         </div>
 
         {/* Right Panel - Info */}
-        <div className="relative h-[55vh] lg:h-full lg:w-1/2 flex flex-col justify-center px-6 py-8 lg:px-16 lg:py-12">
+        <div className="relative h-[55vh] lg:h-full lg:w-1/2 flex flex-col justify-center pr-12 pl-4 py-8 lg:py-12">
           {/* Navigation Arrows - Desktop */}
           <div className="hidden lg:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col gap-2">
             <Button
