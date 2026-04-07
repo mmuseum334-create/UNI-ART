@@ -85,13 +85,10 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center space-x-2">
             <img
-              src="/LogoUnipaz.png"
+              src="/logoazul.png"
               alt="Logo Unipaz"
-              className="h-11 w-11 object-contain"
+              className="h-17 w-20 object-contain"
             />
-            <span className="text-xl font-display font-bold text-gradient-user">
-              UniART
-            </span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">

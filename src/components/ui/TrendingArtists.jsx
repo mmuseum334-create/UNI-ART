@@ -1,353 +1,361 @@
 'use client'
 
 /**
- * TrendingArtists - Carousel display of artworks with frame decoration
- * Features background with Obra3, title section, description panel, and framed artwork
+ * TrendingArtists - Modern carousel display of artworks
+ * Features elegant animations, smooth transitions, and museum-like presentation
  */
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Badge } from '@/components/ui/Badge';
-import { artCategories } from '@/data/mockData';
-import { paintService } from '@/services/paint/paintService';
-import { getPublicImageUrl } from '@/lib/supabase';
-import { useColor } from '@/contexts/ColorContext';
+import React, { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/utils'
+import { paintService } from '@/services/paint/paintService'
+import { getPublicImageUrl } from '@/lib/supabase'
 import {
-  Palette,
-  User
-} from 'lucide-react';
+  ChevronUp,
+  ChevronDown,
+  Eye,
+  User,
+  Sparkles
+} from 'lucide-react'
 
 const TrendingArtists = () => {
-  const router = useRouter();
-  const [paintings, setPaintings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
-  const imageRef = React.useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startY, setStartY] = useState(0);
-  const [scrollY, setScrollY] = useState(0);
-  const { color } = useColor();
-  
+  const router = useRouter()
+  const [paintings, setPaintings] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const [direction, setDirection] = useState('up')
 
-  // Cargar pinturas del backend
   useEffect(() => {
     const loadPaintings = async () => {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
-        const response = await paintService.getAll();
-
+        const response = await paintService.getAll()
         if (response.success) {
           const transformedPaintings = response.data.map(paint => ({
             id: paint.id,
             title: paint.nombre_pintura,
             artist: paint.artista,
-            userId: paint.publicado_por, // ID del usuario que publicó la pintura
+            userId: paint.publicado_por,
             description: paint.descripcion_pintura,
             category: paint.categoria,
             imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
             tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
-          }));
-
-          setPaintings(transformedPaintings);
+          }))
+          setPaintings(transformedPaintings)
         }
       } catch (error) {
-        console.error('Error cargando pinturas:', error);
+        console.error('Error loading paintings:', error)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
-    };
+    }
+    loadPaintings()
+  }, [])
 
-    loadPaintings();
-  }, []);
-
-  // Auto-play: avanzar automáticamente cada 3 segundos
+  // Auto-play carousel
   useEffect(() => {
-    if (paintings.length === 0) return;
+    if (paintings.length === 0) return
 
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev === paintings.length - 1 ? 0 : prev + 1));
-    }, 3000); // Cambiar cada 3 segundos
+      goToNext()
+    }, 5000)
 
-    return () => clearInterval(interval);
-  }, [paintings.length]);
+    return () => clearInterval(interval)
+  }, [paintings.length, currentSlide])
 
-  // Funcionalidad de arrastrar (drag)
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setStartY(e.clientY);
-    setScrollY(0);
-  };
+  const goToNext = useCallback(() => {
+    if (isTransitioning) return
+    setDirection('up')
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentSlide((prev) => (prev === paintings.length - 1 ? 0 : prev + 1))
+      setIsTransitioning(false)
+    }, 300)
+  }, [isTransitioning, paintings.length])
 
-  const handleTouchStart = (e) => {
-    setIsDragging(true);
-    setStartY(e.touches[0].clientY);
-    setScrollY(0);
-  };
+  const goToPrev = useCallback(() => {
+    if (isTransitioning) return
+    setDirection('down')
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentSlide((prev) => (prev === 0 ? paintings.length - 1 : prev - 1))
+      setIsTransitioning(false)
+    }, 300)
+  }, [isTransitioning, paintings.length])
 
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    const currentY = e.clientY;
-    const diff = startY - currentY;
-    setScrollY(diff);
-  };
-
-  const handleTouchMove = (e) => {
-    if (!isDragging) return;
-    const currentY = e.touches[0].clientY;
-    const diff = startY - currentY;
-    setScrollY(diff);
-  };
-
-  const handleDragEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
-
-    // Si arrastraron hacia abajo (diff negativo), ir a slide anterior
-    if (scrollY < -50) {
-      setCurrentSlide((prev) => (prev === 0 ? paintings.length - 1 : prev - 1));
-    }
-    // Si arrastraron hacia arriba (diff positivo), ir a siguiente slide
-    else if (scrollY > 50) {
-      setCurrentSlide((prev) => (prev === paintings.length - 1 ? 0 : prev + 1));
-    }
-
-    setScrollY(0);
-  };
+  const goToSlide = useCallback((index) => {
+    if (isTransitioning || index === currentSlide) return
+    setDirection(index > currentSlide ? 'up' : 'down')
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentSlide(index)
+      setIsTransitioning(false)
+    }, 300)
+  }, [isTransitioning, currentSlide])
 
   const goToArtwork = (artworkId) => {
-    router.push(`/artwork/${artworkId}`);
-  };
+    router.push(`/artwork/${artworkId}`)
+  }
 
   const goToArtistProfile = (userId) => {
-    if (!userId) {
-      console.warn('No se puede navegar al perfil: userId no disponible');
-      return;
+    if (!userId) return
+    router.push(`/user/${userId}`)
+  }
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        goToPrev()
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        goToNext()
+      }
     }
-    router.push(`/user/${userId}`);
-  };
 
-  // Detectar dimensiones de la imagen cuando se carga
-  const handleImageLoad = (e) => {
-    const img = e.target;
-    setImageDimensions({
-      width: img.naturalWidth,
-      height: img.naturalHeight
-    });
-  };
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [goToNext, goToPrev])
 
-  // Seleccionar el marco según las proporciones de la imagen
-  const getFrameImage = () => {
-    if (!imageDimensions.width || !imageDimensions.height) return '/cuadro6.PNG';
-
-    const aspectRatio = imageDimensions.width / imageDimensions.height;
-
-    // Horizontal (más ancha que alta)
-    
-  };
 
   if (isLoading) {
     return (
-      <section className="relative w-full h-screen flex items-center justify-center bg-slate-100" style={{ backgroundColor: 'var(--dark-bg, rgb(241 245 249))' }}>
+      <section className="relative h-screen w-full flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
-          <div className="w-16 h-16 border-4 border-nature-200 dark:border-nature-800 border-t-nature-600 dark:border-t-nature-500 rounded-full animate-spin mx-auto"></div>
-          <p className="text-slate-600 dark:text-slate-300 text-lg">Cargando obras de arte...</p>
+          <div className="w-12 h-12 border-2 border-muted border-t-primary rounded-full animate-spin mx-auto" />
+          <p className="text-muted-foreground text-sm tracking-wide uppercase">
+            Cargando obras de arte...
+          </p>
         </div>
       </section>
-    );
+    )
   }
 
   if (paintings.length === 0) {
     return (
-      <section className="relative w-full h-screen flex items-center justify-center bg-slate-100" style={{ backgroundColor: 'var(--dark-bg, rgb(241 245 249))' }}>
-        <div className="text-center">
-          <p className="text-slate-600 dark:text-slate-300 text-lg">No hay obras disponibles</p>
+      <section className="relative h-screen w-full flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <Sparkles className="w-12 h-12 text-muted-foreground mx-auto" />
+          <p className="text-muted-foreground">No hay obras disponibles</p>
         </div>
       </section>
-    );
+    )
   }
 
-  const currentArtwork = paintings[currentSlide];
+  const currentArtwork = paintings[currentSlide]
 
   return (
-    <section className="relative w-full h-screen">
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .slide-animation {
-          animation: slideUp 1.2s ease-out;
-        }
-        @keyframes slideIndicator {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(5px);
-          }
-        }
-        .animate-slide-indicator {
-          animation: slideIndicator 2s ease-in-out infinite;
-        }
+    <section className="relative h-screen w-full overflow-hidden bg-background">
+      {/* Main Content */}
+      <div className="h-full w-full flex flex-col lg:flex-row">
+        {/* Left Panel - Image */}
+        <div className="relative h-[45vh] lg:h-full lg:w-1/2 bg-muted/30 flex items-center justify-center p-6 lg:p-12">
+          {/* Decorative frame corners */}
+          <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-primary/20" />
+          <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-primary/20" />
+          <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-primary/20" />
+          <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-primary/20" />
 
-        :global(.dark) section {
-          --dark-bg: #0a0a0a;
-          --section-bg: #0a0a0a;
-        }
-      `}</style>
-
-      {/* Sección Superior (20% - Fondo con Obra3 + Título) */}
-      <div
-        className="relative h-[20vh] w-full bg-cover bg-center flex items-center justify-center"
-        style={{
-          backgroundImage: 'url(/Obra9.jpg)',
-          backgroundPosition: 'center',
-          backgroundSize: 'cover'
-        }}
-      >
-        {/* Overlay oscuro para mejor legibilidad */}
-        <div className="absolute inset-0 bg-black/50"></div>
-
-        {/* Título de la pintura */}
-        <h1 key={currentSlide} className="relative z-10 text-4xl md:text-6xl font-display font-bold text-white drop-shadow-2xl px-4 text-center slide-animation">
-          {currentArtwork.title}
-        </h1>
-      </div>
-
-      {/* Sección Inferior (80% - Descripción + Marco con Pintura + Botones) */}
-      <div
-        className="relative h-[80vh] w-full bg-gradient-to-br from-slate-100 via-white to-slate-50 cursor-grab active:cursor-grabbing overflow-hidden"
-        style={{
-          background: 'var(--section-bg, linear-gradient(to bottom right, rgb(241 245 249), rgb(255 255 255), rgb(248 250 252)))'
-        }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleDragEnd}
-        onMouseLeave={handleDragEnd}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleDragEnd}
-      >
-        <div className="max-w-7xl mx-auto h-full flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8">
-
-          {/* Contenido Central */}
-          <div key={currentSlide} className="w-full h-full grid grid-cols-1 lg:grid-cols-2 gap-8 items-center slide-animation">
-
-            {/* Panel Izquierdo - Descripción y Botones */}
-            <div className="flex flex-col justify-center space-y-6 h-full">
-              <div className="space-y-4">
-                <Badge variant="secondary" className="text-lg px-4 py-2">
-                  {artCategories.find(cat => cat.id === currentArtwork.category)?.name || currentArtwork.category}
-                </Badge>
-
-                <h2 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-slate-100">
-                  {currentArtwork.title}
-                </h2>
-
-                <div className="flex items-center gap-3 text-xl text-slate-600 dark:text-slate-300">
-                  <User className="h-6 w-6" />
-                  <span className="font-semibold">{currentArtwork.artist}</span>
-                </div>
+          {/* Image Container */}
+          <div 
+            className={cn(
+              "relative max-w-full max-h-full transition-all duration-500 ease-out",
+              isTransitioning && direction === 'up' && "opacity-0 translate-y-8",
+              isTransitioning && direction === 'down' && "opacity-0 -translate-y-8"
+            )}
+          >
+            {/* Shadow effect */}
+            <div className="absolute inset-0 translate-x-4 translate-y-4 bg-primary/10 rounded-sm" />
+            
+            {/* Main image with frame */}
+            <div className="relative bg-card p-3 shadow-2xl">
+              <div className="relative overflow-hidden">
+                <img
+                  src={currentArtwork.imageUrl}
+                  alt={currentArtwork.title}
+                  className="w-auto h-auto max-h-[35vh] lg:max-h-[70vh] object-contain"
+                />
               </div>
-
-              <div className="prose prose-lg max-w-none">
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg">
-                  {currentArtwork.description}
-                </p>
-              </div>
-
-              {/* Etiquetas */}
-              {currentArtwork.tags && currentArtwork.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {currentArtwork.tags.map((tag, index) => (
-                    <Badge key={index} variant="outline" className="text-sm">
-                      #{tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Botones de Acción */}
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={() => goToArtwork(currentArtwork.id)}
-                  className="inline-flex items-center gap-2 rounded-lg px-8 py-3 text-base font-medium text-white shadow-lg hover:shadow-xl transition-all duration-300 hover:opacity-90"
-                  style={{ background: color }}
-                >
-                  <Palette className="h-5 w-5" />
-                  Ver pintura
-                </button>
-
-                <button
-                  onClick={() => goToArtistProfile(currentArtwork.userId)}
-                  disabled={!currentArtwork.userId}
-                  className="inline-flex items-center gap-2 rounded-lg px-8 py-3 text-base font-medium bg-transparent border-2 shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50"
-                  style={{
-                    borderColor: color,
-                    color: color
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!currentArtwork.userId) return;
-                    e.currentTarget.style.background = color;
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = color;
-                  }}
-                >
-                  <User className="h-5 w-5" />
-                  Artista
-                </button>
-              </div>
+              {/* Inner frame border */}
+              <div className="absolute inset-3 border border-primary/10 pointer-events-none" />
             </div>
+          </div>
 
-            {/* Panel Derecho - Marco con Imagen */}
-            <div className="flex items-center justify-center h-full w-full px-7 pl-7 relative">
-              <div className="relative inline-flex items-center justify-center">
-                {/* Wrapper que define el tamaño basado en la imagen con espacio para el marco */}
-                <div className="relative p-[12%]">
-                  {/* Imagen de la pintura */}
-                  <img
-                    ref={imageRef}
-                    src={currentArtwork.imageUrl}
-                    alt={currentArtwork.title}
-                    onLoad={handleImageLoad}
-                    className="block max-h-[55vh] w-auto"
-                  />
-
-                  
-                </div>
-              </div>
-
-              {/* Indicadores de progreso - vertical a la derecha */}
-              <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex flex-col items-center gap-3">
-                {paintings.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`rounded-full transition-all duration-300 ${
-                      index === currentSlide
-                        ? 'w-3 h-8 animate-slide-indicator'
-                        : 'bg-slate-300 dark:bg-slate-600 w-3 h-3 hover:bg-slate-400 dark:hover:bg-slate-500'
-                    }`}
-                    style={index === currentSlide ? { background: color } : {}}
-                    aria-label={`Ir a obra ${index + 1}`}
-                  />
-                ))}
-              </div>
+          {/* Slide counter */}
+          <div className="absolute bottom-6 left-6 lg:bottom-12 lg:left-12">
+            <div className="flex items-baseline gap-1 text-muted-foreground">
+              <span className="text-3xl lg:text-5xl font-light text-foreground">
+                {String(currentSlide + 1).padStart(2, '0')}
+              </span>
+              <span className="text-sm">/</span>
+              <span className="text-sm">{String(paintings.length).padStart(2, '0')}</span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
-  );
-};
 
-export default TrendingArtists;
+        {/* Right Panel - Info */}
+        <div className="relative h-[55vh] lg:h-full lg:w-1/2 flex flex-col justify-center px-6 py-8 lg:px-16 lg:py-12">
+          {/* Navigation Arrows - Desktop */}
+          <div className="hidden lg:flex absolute right-12 top-1/2 -translate-y-1/2 flex-col gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPrev}
+              className="rounded-full border-muted-foreground/20 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+              aria-label="Obra anterior"
+            >
+              <ChevronUp className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNext}
+              className="rounded-full border-muted-foreground/20 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+              aria-label="Siguiente obra"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </Button>
+          </div>
+
+          {/* Progress indicators - Desktop */}
+          <div className="hidden lg:flex absolute right-12 bottom-12 flex-col items-center gap-2">
+            {paintings.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => goToSlide(index)}
+                className={cn(
+                  "w-1.5 rounded-full transition-all duration-300",
+                  index === currentSlide
+                    ? "h-8 bg-primary"
+                    : "h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                )}
+                aria-label={`Ir a obra ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          {/* Content */}
+          <div 
+            className={cn(
+              "space-y-6 transition-all duration-500 ease-out",
+              isTransitioning && direction === 'up' && "opacity-0 translate-y-8",
+              isTransitioning && direction === 'down' && "opacity-0 -translate-y-8"
+            )}
+          >
+            {/* Category Badge */}
+            <Badge 
+              variant="outline" 
+              className="uppercase tracking-widest text-xs font-normal border-primary/30 text-primary"
+            >
+              {currentArtwork.category}
+            </Badge>
+
+            {/* Title */}
+            <h1 className="text-3xl lg:text-5xl xl:text-6xl font-light tracking-tight text-foreground text-balance">
+              {currentArtwork.title}
+            </h1>
+
+            {/* Artist */}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                <User className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground uppercase tracking-wide">Artista</p>
+                <p className="font-medium text-foreground">{currentArtwork.artist}</p>
+              </div>
+            </div>
+
+            {/* Description */}
+            <p className="text-muted-foreground leading-relaxed max-w-lg text-pretty">
+              {currentArtwork.description}
+            </p>
+
+            {/* Tags */}
+            {currentArtwork.tags && currentArtwork.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {currentArtwork.tags.map((tag, index) => (
+                  <span 
+                    key={index} 
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-4 pt-4">
+              <Button
+                onClick={() => goToArtwork(currentArtwork.id)}
+                className="group"
+                size="lg"
+              >
+                <Eye className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                Ver pintura
+              </Button>
+
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => goToArtistProfile(currentArtwork.userId)}
+                disabled={!currentArtwork.userId}
+                className="group"
+              >
+                <User className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" />
+                Ver artista
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Navigation */}
+          <div className="flex lg:hidden items-center justify-center gap-4 mt-8">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPrev}
+              className="rounded-full"
+              aria-label="Obra anterior"
+            >
+              <ChevronUp className="h-5 w-5" />
+            </Button>
+            
+            <div className="flex items-center gap-2">
+              {paintings.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={cn(
+                    "rounded-full transition-all duration-300",
+                    index === currentSlide
+                      ? "w-6 h-2 bg-primary"
+                      : "w-2 h-2 bg-muted-foreground/30"
+                  )}
+                  aria-label={`Ir a obra ${index + 1}`}
+                />
+              ))}
+            </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNext}
+              className="rounded-full"
+              aria-label="Siguiente obra"
+            >
+              <ChevronDown className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+
+    </section>
+  )
+}
+
+export default TrendingArtists
