@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/PC/Desktop/Nueva carpeta \\(7\\)/UNI-ART-BACK/src/**)",
+      "Read(//c/Users/PC/Desktop/Nueva carpeta \\(7\\)/UNI-ART-BACK/**)",
+      "WebSearch"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\PC\\Desktop\\Nueva carpeta (7)\\UNI-ART-BACK\\src\\sculpture",
+      "C:\\Users\\PC\\Desktop\\Nueva carpeta (7)\\UNI-ART-BACK\\src"
+    ]
+  }
+}

@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -48,8 +48,8 @@ const UploadSculpture = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const MIN_IMAGES = 10;
-  const MAX_IMAGES = 50;
+  const MIN_IMAGES = 1;
+  const MAX_IMAGES = 4;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB por imagen
 
   // Redirigir si no está autenticado
@@ -400,8 +400,11 @@ const UploadSculpture = () => {
           <p className="text-slate-600 mb-2 dark:text-white/80">
             Arrastra y suelta o haz clic para seleccionar
           </p>
-          <p className="text-sm text-slate-500 mb-4">
-            Se requieren entre {MIN_IMAGES} y {MAX_IMAGES} fotos (máximo 10MB cada una)
+          <p className="text-sm text-slate-500 mb-1">
+            Sube hasta {MAX_IMAGES} fotos desde ángulos distintos (máximo 10MB cada una)
+          </p>
+          <p className="text-xs text-slate-400 mb-4">
+            💡 Para mejor resultado: <strong>frente, atrás, lado izquierdo y lado derecho</strong>
           </p>
           <input
             type="file"

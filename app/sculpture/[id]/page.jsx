@@ -42,8 +42,8 @@ const SculptureDetailPage = () => {
 
           // Si aún está procesando, redirigir a la página de procesamiento
           if (
-            response.data.processing_status === 'uploading' ||
-            response.data.processing_status === 'processing'
+            response.data.estado_procesamiento === 'procesando' ||
+            response.data.estado_procesamiento === 'pendiente'
           ) {
             router.push(`/sculpture/${sculptureId}/processing`);
           }
@@ -110,8 +110,8 @@ const SculptureDetailPage = () => {
     );
   }
 
-  const isProcessingFailed = sculpture.processing_status === 'failed';
-  const isCompleted = sculpture.processing_status === 'completed';
+  const isProcessingFailed = sculpture.estado_procesamiento === 'fallido';
+  const isCompleted = sculpture.estado_procesamiento === 'completado';
 
   return (
     <div className="min-h-screen py-8">
@@ -132,32 +132,32 @@ const SculptureDetailPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Columna izquierda: Modelo 3D o Estado */}
           <div>
-            {isCompleted && sculpture.model_3d_url ? (
+            {isCompleted && sculpture.modelo_3d_url ? (
               <SculptureARViewer
-                modelUrl={sculpture.model_3d_url}
+                modelUrl={sculpture.modelo_3d_url}
                 sculptureTitle={sculpture.nombre_escultura}
-                posterUrl={sculpture.images?.[0]}
+                posterUrl={sculpture.imagenes?.[0]}
               />
             ) : (
               <ProcessingStatus
-                status={sculpture.processing_status}
-                progress={sculpture.processing_progress}
-                errorMessage={sculpture.error_message}
+                status={sculpture.estado_procesamiento === 'pendiente' ? 'uploading' : sculpture.estado_procesamiento === 'procesando' ? 'processing' : sculpture.estado_procesamiento === 'completado' ? 'completed' : 'failed'}
+                progress={sculpture.progreso || 0}
+                errorMessage={null}
               />
             )}
 
             {/* Galería de fotos originales */}
-            {sculpture.images && sculpture.images.length > 0 && (
+            {sculpture.imagenes && sculpture.imagenes.length > 0 && (
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle>Fotografías Originales</CardTitle>
                   <p className="text-sm text-slate-600">
-                    {sculpture.images.length} fotos usadas para generar el modelo 3D
+                    {sculpture.imagenes.length} fotos usadas para generar el modelo 3D
                   </p>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-4 gap-2">
-                    {sculpture.images.slice(0, 8).map((imageUrl, index) => (
+                    {sculpture.imagenes.slice(0, 8).map((imageUrl, index) => (
                       <div
                         key={index}
                         className="aspect-square rounded-lg overflow-hidden border border-slate-200 hover:scale-105 transition-transform cursor-pointer"
@@ -169,10 +169,10 @@ const SculptureDetailPage = () => {
                         />
                       </div>
                     ))}
-                    {sculpture.images.length > 8 && (
+                    {sculpture.imagenes.length > 8 && (
                       <div className="aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
                         <span className="text-sm text-slate-600 font-medium">
-                          +{sculpture.images.length - 8}
+                          +{sculpture.imagenes.length - 8}
                         </span>
                       </div>
                     )}
@@ -213,10 +213,10 @@ const SculptureDetailPage = () => {
                     isCompleted ? 'success' : isProcessingFailed ? 'destructive' : 'default'
                   }
                 >
-                  {sculpture.processing_status === 'completed' && '✓ Modelo 3D Listo'}
-                  {sculpture.processing_status === 'processing' && '⏳ Procesando...'}
-                  {sculpture.processing_status === 'uploading' && '📤 Subiendo...'}
-                  {sculpture.processing_status === 'failed' && '✗ Error'}
+                  {sculpture.estado_procesamiento === 'completado' && '✓ Modelo 3D Listo'}
+                  {sculpture.estado_procesamiento === 'procesando' && '⏳ Procesando...'}
+                  {sculpture.estado_procesamiento === 'pendiente' && '📤 Preparando...'}
+                  {sculpture.estado_procesamiento === 'fallido' && '✗ Error'}
                 </Badge>
                 <Badge variant="outline">{sculpture.categoria}</Badge>
               </div>
@@ -295,7 +295,7 @@ const SculptureDetailPage = () => {
                 <CardContent>
                   <p className="text-sm text-green-800">
                     Este modelo 3D fue generado mediante fotogrametría a partir de{' '}
-                    {sculpture.images?.length || 0} fotografías. Puedes visualizarlo en tu
+                    {sculpture.imagenes?.length || 0} fotografías. Puedes visualizarlo en tu
                     dispositivo móvil usando realidad aumentada.
                   </p>
                 </CardContent>

@@ -21,8 +21,9 @@ import {
   LogOut,
   Upload,
   Home,
-  Palette,
-  Glasses,
+  BookImage,
+  ScanEye,
+  Images,
   ChevronDown,
 } from 'lucide-react';
 
@@ -83,8 +84,8 @@ const Navbar = () => {
 
   const navLinks = [
     { href: '/', icon: Home, label: 'Inicio' },
-    { href: '/catalog', icon: Palette, label: 'Catálogo' },
-    { href: '/ar', icon: Glasses, label: 'Realidad Aumentada' },
+    { href: '/catalog', icon: Images, label: 'Catálogo' },
+    { href: '/ar', icon: ScanEye, label: 'Realidad Aumentada' },
   ];
 
   const userLinks = [
@@ -129,7 +130,7 @@ const Navbar = () => {
           </Link>
 
           {/* Nav Links - Desktop */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-1 gap-2">
             {navLinks.map((link) => {
               const IconComponent = link.icon;
               const active = isActive(link.href);

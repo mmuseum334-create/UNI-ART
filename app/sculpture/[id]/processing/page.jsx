@@ -57,7 +57,7 @@ const SculptureProcessingPage = () => {
           setProcessingStatus(response.data);
 
           // Si se completó, redirigir a la página de detalles después de 3 segundos
-          if (response.data.status === 'completed') {
+          if (response.data.status === 'completed' || response.data.estado_procesamiento === 'completado') {
             setTimeout(() => {
               router.push(`/sculpture/${sculptureId}`);
             }, 3000);
@@ -73,7 +73,7 @@ const SculptureProcessingPage = () => {
 
     // Polling cada 5 segundos si está procesando
     const interval = setInterval(() => {
-      if (processingStatus?.status === 'uploading' || processingStatus?.status === 'processing') {
+      if (!processingStatus || processingStatus?.status === 'uploading' || processingStatus?.status === 'processing') {
         fetchStatus();
       }
     }, 5000);
@@ -185,17 +185,17 @@ const SculptureProcessingPage = () => {
 
               <div>
                 <h3 className="text-sm font-medium text-slate-700 mb-1">Imágenes cargadas</h3>
-                <p className="text-sm text-slate-600">{sculpture.images?.length || 0} fotografías</p>
+                <p className="text-sm text-slate-600">{sculpture.imagenes?.length || 0} fotografías</p>
               </div>
 
               {/* Galería de miniaturas */}
-              {sculpture.images && sculpture.images.length > 0 && (
+              {sculpture.imagenes && sculpture.imagenes.length > 0 && (
                 <div>
                   <h3 className="text-sm font-medium text-slate-700 mb-2">
                     Vista previa de fotografías
                   </h3>
                   <div className="grid grid-cols-6 gap-2">
-                    {sculpture.images.slice(0, 12).map((imageUrl, index) => (
+                    {sculpture.imagenes.slice(0, 12).map((imageUrl, index) => (
                       <div
                         key={index}
                         className="aspect-square rounded-lg overflow-hidden border border-slate-200"
@@ -207,10 +207,10 @@ const SculptureProcessingPage = () => {
                         />
                       </div>
                     ))}
-                    {sculpture.images.length > 12 && (
+                    {sculpture.imagenes.length > 12 && (
                       <div className="aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100 flex items-center justify-center">
                         <span className="text-xs text-slate-600">
-                          +{sculpture.images.length - 12}
+                          +{sculpture.imagenes.length - 12}
                         </span>
                       </div>
                     )}

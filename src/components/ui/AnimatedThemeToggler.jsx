@@ -5,7 +5,7 @@
 'use client';
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
+import { MoonStar, Sun } from 'lucide-react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { flushSync } from 'react-dom';
 
@@ -108,7 +108,7 @@ export function AnimatedThemeToggler({ className = '', duration = 400 }) {
           transition: `all ${duration}ms cubic-bezier(0.34, 1.56, 0.64, 1)`,
         }}
       >
-        <Moon
+        <MoonStar
           className="h-5 w-5 text-blue-400 transition-all duration-300 group-hover:text-blue-500"
           style={{
             filter: isDark ? 'drop-shadow(0 0 8px rgba(96, 165, 250, 0.5))' : 'none',

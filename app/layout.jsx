@@ -10,6 +10,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ColorProvider } from '@/contexts/ColorContext';
 import Navbar from '@/components/layout/Navbar';
+import Footer from '@/components/layout/Footer';
 
 // Configuración de la fuente Poppins
 const poppins = Poppins({
@@ -49,6 +50,9 @@ export default function RootLayout({ children }) {
                 <main>
                   {children}
                 </main>
+
+                {/* Footer global */}
+                <Footer />
               </div>
             </ColorProvider>
           </AuthProvider>
