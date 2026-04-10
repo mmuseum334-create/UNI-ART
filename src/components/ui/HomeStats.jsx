@@ -1,16 +1,31 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent } from './Card';
 import { UserColorIconCircle } from './UserColorElements';
-import { TrendingUp, Users, Palette } from 'lucide-react';
-
-const stats = [
-  { label: 'Obras de Arte', value: '...', icon: Palette },
-  { label: 'Artistas', value: '312', icon: Users },
-  { label: 'Visitantes', value: '125k', icon: TrendingUp },
-];
+import { Box, Users, Palette } from 'lucide-react';
+import { paintService } from '@/services/paint/paintService';
+import { sculptureService } from '@/services/sculpture/sculptureService';
 
 const HomeStats = () => {
+  const [paintCount, setPaintCount] = useState(null);
+  const [sculptureCount, setSculptureCount] = useState(null);
+
+  useEffect(() => {
+    paintService.getAll().then(res => {
+      if (res.success) setPaintCount(res.data.length);
+    });
+    sculptureService.getAll().then(res => {
+      if (res.success) setSculptureCount(res.data.length);
+    });
+  }, []);
+
+  const stats = [
+    { label: 'Obras de Arte',      value: paintCount    ?? '...', icon: Palette },
+    { label: 'Artistas',           value: '312',                  icon: Users   },
+    { label: 'Obras de Escultura', value: sculptureCount ?? '...', icon: Box    },
+  ];
+
   return (
     <section className="py-16 bg-white dark:bg-dark-primary">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

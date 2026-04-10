@@ -139,7 +139,7 @@ const TrendingArtists = () => {
 
               return (
                 <div
-                  key={art.id}
+                  key={`${art.id}-${i}`}
                   className="absolute inset-0 rounded-2xl overflow-hidden cursor-pointer"
                   style={{
                     transform: `translateX(${exitTranslateX}px) translateY(${translateY}px) scale(${scale}) rotate(${exitRotate}deg)`,

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { mockArtworks } from '@/data/mockData';
+import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { paintService } from '@/services/paint/paintService';
 import EditPaintingModal from '@/components/ui/EditPaintingModal';
@@ -45,8 +45,8 @@ const Profile = () => {
   const [error, setError] = useState(null);
   const [editingPainting, setEditingPainting] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  const favoriteArtworks = mockArtworks.filter(artwork => artwork.isLiked);
+  const [favoriteArtworks, setFavoriteArtworks] = useState([]);
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
 
   // Cargar las pinturas del usuario
   useEffect(() => {
@@ -65,8 +65,8 @@ const Profile = () => {
           categoria: painting.categoria,
           artista: painting.artista,
           fechaCreacion: painting.created_at, // Mapear created_at a fechaCreacion
-          likes: 0, // Por ahora no hay sistema de likes
-          views: 0, // Por ahora no hay sistema de views
+          likes: painting.likes || 0,
+          views: painting.views || 0,
           // Incluir todos los datos originales para el modal de edición
           img_pintura: painting.img_pintura,
           nombre_pintura: painting.nombre_pintura,
@@ -88,6 +88,30 @@ const Profile = () => {
     if (user) {
       loadUserPaintings();
     }
+  }, [user]);
+
+  // Cargar favoritos al montar (para que el contador sea correcto desde el inicio)
+  useEffect(() => {
+    if (!user) return;
+    const loadFavorites = async () => {
+      setIsLoadingFavorites(true);
+      const result = await paintService.getMyLikes();
+      if (result.success) {
+        setFavoriteArtworks((result.data || []).map(p => ({
+          id: p.id,
+          imagen: getPublicImageUrl(p.img_pintura) || p.img_pintura,
+          nombre: p.nombre_pintura,
+          categoria: p.categoria,
+          artista: p.artista,
+          fechaCreacion: p.created_at,
+          likes: p.likes || 0,
+          views: p.views || 0,
+          descripcion_pintura: p.descripcion_pintura,
+        })));
+      }
+      setIsLoadingFavorites(false);
+    };
+    loadFavorites();
   }, [user]);
 
   const handleSave = () => {
@@ -124,8 +148,8 @@ const Profile = () => {
         categoria: painting.categoria,
         artista: painting.artista,
         fechaCreacion: painting.created_at,
-        likes: 0,
-        views: 0,
+        likes: painting.likes || 0,
+        views: painting.views || 0,
         // Incluir todos los datos originales para el modal de edición
         img_pintura: painting.img_pintura,
         nombre_pintura: painting.nombre_pintura,
@@ -189,7 +213,7 @@ const Profile = () => {
                 <div className="flex items-start justify-between">
                   <Link href={`/artwork/${artwork.id}`} className="flex-1">
                     <CardTitle className="text-lg">{artwork.nombre || artwork.title}</CardTitle>
-                    <p className="text-sm text-slate-600">{artwork.categoria || artwork.category}</p>
+                    <p className="text-sm text-slate-600 dark:text-white/60">{artwork.categoria || artwork.category}</p>
                   </Link>
                   {showActions && (
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -221,19 +245,17 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 {artwork.descripcion_pintura && (
-                  <p className="text-sm text-slate-600 mb-3 line-clamp-2">
+                  <p className="text-sm text-slate-600 dark:text-white/60 mb-3 line-clamp-2">
                     {artwork.descripcion_pintura}
                   </p>
                 )}
-                <div className="flex items-center gap-4 text-sm text-slate-500">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-4 w-4" />
-                    <span>{artwork.likes || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span>{artwork.views || 0}</span>
-                  </div>
+                <div className="flex items-center gap-3 text-sm">
+                  <span className="inline-flex items-center gap-1 font-semibold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full">
+                    <Heart className="h-3 w-3 fill-current" />{artwork.likes || 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-sky-500 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 px-2 py-0.5 rounded-full">
+                    <Eye className="h-3 w-3" />{artwork.views || 0}
+                  </span>
                 </div>
               </CardContent>
             </>
@@ -248,24 +270,22 @@ const Profile = () => {
               </Link>
               <div className="ml-4 flex-1">
                 <Link href={`/artwork/${artwork.id}`}>
-                  <h3 className="font-semibold text-slate-900">{artwork.nombre || artwork.title}</h3>
-                  <p className="text-sm text-slate-600">{artwork.categoria || artwork.category}</p>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">{artwork.nombre || artwork.title}</h3>
+                  <p className="text-sm text-slate-600 dark:text-white/60">{artwork.categoria || artwork.category}</p>
                   {artwork.descripcion_pintura && (
-                    <p className="text-sm text-slate-500 mt-1 line-clamp-1">
+                    <p className="text-sm text-slate-500 dark:text-white/40 mt-1 line-clamp-1">
                       {artwork.descripcion_pintura}
                     </p>
                   )}
                 </Link>
-                <div className="flex items-center gap-4 text-sm text-slate-500 mt-2">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-4 w-4" />
-                    <span>{artwork.likes || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Eye className="h-4 w-4" />
-                    <span>{artwork.views || 0}</span>
-                  </div>
-                  <span>{formatDate(artwork.fechaCreacion || artwork.createdAt)}</span>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full">
+                    <Heart className="h-3 w-3 fill-current" />{artwork.likes || 0}
+                  </span>
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-500 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 px-2 py-0.5 rounded-full">
+                    <Eye className="h-3 w-3" />{artwork.views || 0}
+                  </span>
+                  <span className="text-xs text-slate-400 dark:text-white/30">{formatDate(artwork.fechaCreacion || artwork.createdAt)}</span>
                 </div>
               </div>
               {showActions && (
@@ -336,10 +356,10 @@ const Profile = () => {
                     </div>
                   ) : (
                     <>
-                      <h1 className="text-2xl font-display font-bold text-slate-900">
+                      <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white">
                         {user?.name}
                       </h1>
-                      <p className="text-slate-600 mb-4">{user?.email}</p>
+                      <p className="text-slate-600 dark:text-white/60 mb-4">{user?.email}</p>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -363,29 +383,29 @@ const Profile = () => {
                   </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-200">
-                  <h3 className="font-semibold text-slate-900 mb-3">Estadísticas</h3>
+                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
+                  <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Estadísticas</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-white/80">Obras:</span>
-                      <span className="font-medium">{stats.artworks}</span>
+                      <span className="text-slate-600 dark:text-white/60">Obras:</span>
+                      <span className="font-medium dark:text-white">{stats.artworks}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-white/80">Likes totales:</span>
-                      <span className="font-medium">{stats.totalLikes}</span>
+                      <span className="text-slate-600 dark:text-white/60">Likes totales:</span>
+                      <span className="font-medium dark:text-white">{stats.totalLikes}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-white/80">Vistas totales:</span>
-                      <span className="font-medium">{stats.totalViews}</span>
+                      <span className="text-slate-600 dark:text-white/60">Vistas totales:</span>
+                      <span className="font-medium dark:text-white">{stats.totalViews}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-white/80">Favoritos:</span>
-                      <span className="font-medium">{stats.favorites}</span>
+                      <span className="text-slate-600 dark:text-white/60">Favoritos:</span>
+                      <span className="font-medium dark:text-white">{stats.favorites}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 pt-6 border-t border-slate-200">
+                <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10">
                   <Link href="/upload">
                     <Button className="w-full">
                       <Upload className="h-4 w-4 mr-2" />
@@ -407,8 +427,8 @@ const Profile = () => {
                       onClick={() => setActiveTab(tab.id)}
                       className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                         activeTab === tab.id
-                          ? 'bg-nature-100 text-nature-700'
-                          : 'text-slate-600 hover:bg-slate-100'
+                          ? 'bg-nature-100 text-nature-700 dark:bg-nature-700/20 dark:text-nature-400'
+                          : 'text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       {tab.label}
@@ -493,7 +513,14 @@ const Profile = () => {
 
               {activeTab === 'favorites' && (
                 <div>
-                  {favoriteArtworks.length > 0 ? (
+                  {isLoadingFavorites ? (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-nature-600 mx-auto mb-4"></div>
+                        <p className="text-slate-600">Cargando favoritos...</p>
+                      </CardContent>
+                    </Card>
+                  ) : favoriteArtworks.length > 0 ? (
                     <ArtworkGrid artworks={favoriteArtworks} />
                   ) : (
                     <Card>

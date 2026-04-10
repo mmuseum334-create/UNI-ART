@@ -46,7 +46,8 @@ const Catalog = () => {
             thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
             tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
             createdAt: paint.fecha,
-            likes: 0, views: 0,
+            likes: paint.likes || 0,
+            views: paint.views || 0,
             uploadedBy: paint.publicado_por,
           })));
         } else {
@@ -179,12 +180,12 @@ const Catalog = () => {
                 </span>
               </div>
             )}
-            <div className="absolute bottom-2.5 left-2.5 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
-              <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full">
-                <Heart className="h-2.5 w-2.5 text-rose-400" /> {artwork.likes}
+            <div className="absolute bottom-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+              <span className="inline-flex items-center gap-1.5 bg-rose-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-md">
+                <Heart className="h-3.5 w-3.5 fill-current" /> {artwork.likes}
               </span>
-              <span className="inline-flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full">
-                <Eye className="h-2.5 w-2.5 text-sky-300" /> {artwork.views}
+              <span className="inline-flex items-center gap-1.5 bg-sky-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-md">
+                <Eye className="h-3.5 w-3.5" /> {artwork.views}
               </span>
             </div>
           </div>
@@ -234,9 +235,13 @@ const Catalog = () => {
             </div>
             <p className="text-xs text-slate-500 dark:text-white/40 mb-1.5">por {artwork.artist}</p>
             <p className="text-xs text-slate-400 dark:text-white/25 line-clamp-2 leading-relaxed mb-2">{artwork.description}</p>
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-white/30"><Heart className="h-3 w-3" /> {artwork.likes}</span>
-              <span className="inline-flex items-center gap-1 text-xs text-slate-400 dark:text-white/30"><Eye className="h-3 w-3" /> {artwork.views}</span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-rose-500 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 px-2 py-0.5 rounded-full">
+                <Heart className="h-3 w-3 fill-current" /> {artwork.likes}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-500 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10 px-2 py-0.5 rounded-full">
+                <Eye className="h-3 w-3" /> {artwork.views}
+              </span>
               {artwork.tags.slice(0, 2).map(tag => (
                 <span key={tag} className="text-[11px] text-slate-400 dark:text-white/25 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded-full">#{tag}</span>
               ))}

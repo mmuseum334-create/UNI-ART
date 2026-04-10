@@ -38,7 +38,9 @@ const Upload = () => {
     categoria: '',
     tecnicas: '',
     etiqueta: '',
-    publicado_por: user?.name || user?.email || ''
+    publicado_por: user?.name || user?.email || '',
+    carrera: '',
+    semestre: '',
   });
   const [tagInput, setTagInput] = useState('');
   const [techniqueInput, setTechniqueInput] = useState('');
@@ -232,6 +234,8 @@ const Upload = () => {
       paintFormData.append('tecnicas', formData.tecnicas);
       paintFormData.append('etiqueta', formData.etiqueta);
       paintFormData.append('publicado_por', formData.publicado_por);
+      if (formData.carrera) paintFormData.append('carrera', formData.carrera);
+      if (formData.semestre) paintFormData.append('semestre', formData.semestre);
 
       // Enviar al backend
       const response = await paintService.create(paintFormData);
@@ -409,6 +413,50 @@ const Upload = () => {
                   <p className="text-xs text-slate-500 mt-1">
                     Este campo se autocompletará con tu información de usuario
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Carrera universitaria
+                    </label>
+                    <select
+                      name="carrera"
+                      value={formData.carrera}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-nature-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Selecciona tu carrera</option>
+                      <option value="Artes Plásticas">Artes Plásticas</option>
+                      <option value="Diseño Gráfico">Diseño Gráfico</option>
+                      <option value="Ingeniería de Sistemas">Ingeniería de Sistemas</option>
+                      <option value="Ingeniería Civil">Ingeniería Civil</option>
+                      <option value="Administración de Empresas">Administración de Empresas</option>
+                      <option value="Contaduría Pública">Contaduría Pública</option>
+                      <option value="Derecho">Derecho</option>
+                      <option value="Psicología">Psicología</option>
+                      <option value="Medicina">Medicina</option>
+                      <option value="Enfermería">Enfermería</option>
+                      <option value="Licenciatura en Educación">Licenciatura en Educación</option>
+                      <option value="Otra">Otra</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Semestre
+                    </label>
+                    <select
+                      name="semestre"
+                      value={formData.semestre}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-nature-500 focus:border-transparent bg-white"
+                    >
+                      <option value="">Selecciona tu semestre</option>
+                      {[1,2,3,4,5,6,7,8,9,10].map(s => (
+                        <option key={s} value={s}>Semestre {s}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <div>

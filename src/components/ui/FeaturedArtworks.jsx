@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from './Button';
 import { Card, CardContent } from './Card';
@@ -16,6 +17,7 @@ import { ArrowRight, Palette, Heart, Eye } from 'lucide-react';
 const FeaturedArtworks = () => {
   const { color } = useColor();
   const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [featuredArtworks, setFeaturedArtworks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -127,10 +129,10 @@ const FeaturedArtworks = () => {
           </div>
         ) : (
           <Carousel itemsPerView={3} autoPlay={true} autoPlayInterval={5000} showDots={true} accentColor={color} className="px-6">
-            {featuredArtworks.map((artwork) => (
-              <CarouselItem key={artwork.id}>
-                <Link href={`/artwork/${artwork.id}`} className="block h-full">
-                  <Card className="group cursor-pointer h-full bg-white dark:bg-dark-primary border border-slate-200 dark:border-dark-tertiary hover:shadow-xl transition-all duration-300 overflow-hidden">
+            {featuredArtworks.map((artwork, idx) => (
+              <CarouselItem key={`${artwork.id}-${idx}`}>
+                <div onClick={() => router.push(`/artwork/${artwork.id}`)} className="block h-full cursor-pointer">
+                  <Card className="group h-full bg-white dark:bg-dark-primary border border-slate-200 dark:border-dark-tertiary hover:shadow-xl transition-all duration-300 overflow-hidden">
                     {/* Imagen grande */}
                     <div className="relative aspect-[3/2] w-full overflow-hidden bg-slate-100 dark:bg-dark-tertiary">
                       <img
@@ -153,15 +155,15 @@ const FeaturedArtworks = () => {
                       </div>
 
                       {/* Stats en hover */}
-                      <div className="absolute bottom-3 left-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
-                        <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-white text-xs">
-                          <Heart className="h-3 w-3" />
-                          <span>{artwork.likes}</span>
-                        </div>
-                        <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-white text-xs">
-                          <Eye className="h-3 w-3" />
-                          <span>{artwork.views}</span>
-                        </div>
+                      <div className="absolute bottom-3 left-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+                        <span className="inline-flex items-center gap-1.5 bg-rose-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-md">
+                          <Heart className="h-3.5 w-3.5 fill-current" />
+                          {artwork.likes}
+                        </span>
+                        <span className="inline-flex items-center gap-1.5 bg-sky-500/90 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full shadow-md">
+                          <Eye className="h-3.5 w-3.5" />
+                          {artwork.views}
+                        </span>
                       </div>
                     </div>
 
@@ -225,7 +227,7 @@ const FeaturedArtworks = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </Link>
+                </div>
               </CarouselItem>
             ))}
           </Carousel>

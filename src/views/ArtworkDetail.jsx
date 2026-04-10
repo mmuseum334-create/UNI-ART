@@ -87,15 +87,26 @@ const ArtworkDetail = () => {
             tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
             techniques: paint.tecnicas ? paint.tecnicas.split(', ') : [],
             createdAt: paint.fecha,
-            likes: 0,
-            views: 0,
+            likes: paint.likes || 0,
+            views: paint.views || 0,
             uploadedBy: paint.publicado_por,
             artistId: paint.artista.toLowerCase().replace(/\s+/g, '-')
           };
 
           setArtwork(transformedArtwork);
-          setIsLiked(false);
-          setLikes(0);
+          setLikes(paint.likes || 0);
+
+          // Solo usuarios autenticados: registrar vista y verificar like
+          if (isAuthenticated) {
+            const [likeRes, viewRes] = await Promise.all([
+              paintService.getMyLike(paint.id),
+              paintService.registerView(paint.id),
+            ]);
+            if (likeRes.success) setIsLiked(likeRes.data.isLiked);
+            if (viewRes.success) {
+              setArtwork(prev => ({ ...prev, views: viewRes.data.views }));
+            }
+          }
 
           const relatedResponse = await paintService.getByCategory(paint.categoria);
           if (relatedResponse.success) {
@@ -108,8 +119,8 @@ const ArtworkDetail = () => {
                 artist: p.artista,
                 imageUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
                 thumbnailUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
-                likes: 0,
-                views: 0
+                likes: p.likes || 0,
+                views: p.views || 0,
               }));
             setRelatedArtworks(related);
           }
@@ -127,13 +138,29 @@ const ArtworkDetail = () => {
     loadArtwork();
   }, [id]);
 
-  const handleLike = () => {
+  const handleLike = async () => {
     if (!isAuthenticated) {
       router.push('/auth');
       return;
     }
-    setIsLiked(!isLiked);
-    setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    // Optimistic update
+    const newLiked = !isLiked;
+    setIsLiked(newLiked);
+    setLikes(prev => newLiked ? prev + 1 : prev - 1);
+
+    const res = newLiked
+      ? await paintService.like(artwork.id)
+      : await paintService.unlike(artwork.id);
+
+    if (res.success) {
+      // Sincronizar con el valor real del servidor
+      setLikes(res.data.likes);
+      setIsLiked(res.data.isLiked);
+    } else {
+      // Revertir si falla
+      setIsLiked(!newLiked);
+      setLikes(prev => newLiked ? prev - 1 : prev + 1);
+    }
   };
 
   const handleShare = async () => {

@@ -46,8 +46,8 @@ export default function RootLayout({ children }) {
                 {/* Barra de navegación global */}
                 <Navbar />
 
-                {/* Contenido principal de cada página */}
-                <main>
+                {/* Contenido principal de cada página — pt-16 compensa el navbar fixed (h-16) */}
+                <main className="pt-16">
                   {children}
                 </main>
 

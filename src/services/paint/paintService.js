@@ -165,6 +165,24 @@ export const paintService = {
   },
 
   /**
+   * Obtener todas las pinturas a las que el usuario autenticado dio like (favoritos)
+   */
+  async getMyLikes() {
+    try {
+      const response = await fetch(`${API_URL}/paint/my-likes`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al obtener favoritos' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
    * Obtener pinturas del usuario actual autenticado
    * Usa el endpoint de /paint/my-paintings que está protegido con JWT y devuelve las pinturas del usuario logueado
    * @returns {Promise<Object>} Respuesta con lista de pinturas del usuario
@@ -203,7 +221,7 @@ export const paintService = {
    */
   async getByCategory(categoria) {
     try {
-      const response = await fetch(`${API_URL}/paint/category/${categoria}`, {
+      const response = await fetch(`${API_URL}/paint/category?nombre=${encodeURIComponent(categoria)}`, {
         method: 'GET',
         credentials: 'include',
         headers: getHeaders(),
@@ -293,6 +311,86 @@ export const paintService = {
         success: false,
         error: 'Error de conexión con el servidor'
       };
+    }
+  },
+
+  /**
+   * Registrar una visualización única por usuario (no suma si el usuario ya la vio)
+   * @param {number} id - ID de la pintura
+   * @returns {Promise<{views: number}>}
+   */
+  async registerView(id) {
+    try {
+      const response = await fetch(`${API_URL}/paint/${id}/view`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
+   * Verificar si el usuario autenticado ya dio like a una pintura
+   * @param {number} id - ID de la pintura
+   * @returns {Promise<{isLiked: boolean, likes: number}>}
+   */
+  async getMyLike(id) {
+    try {
+      const response = await fetch(`${API_URL}/paint/${id}/my-like`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
+   * Dar me gusta a una pintura (requiere autenticación)
+   * @param {number} id - ID de la pintura
+   * @returns {Promise<{likes: number, isLiked: boolean}>}
+   */
+  async like(id) {
+    try {
+      const response = await fetch(`${API_URL}/paint/${id}/like`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al dar me gusta' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
+   * Quitar me gusta de una pintura (requiere autenticación)
+   * @param {number} id - ID de la pintura
+   * @returns {Promise<{likes: number, isLiked: boolean}>}
+   */
+  async unlike(id) {
+    try {
+      const response = await fetch(`${API_URL}/paint/${id}/unlike`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al quitar me gusta' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
     }
   },
 
