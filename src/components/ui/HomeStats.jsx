@@ -39,7 +39,7 @@ const HomeStats = () => {
           {stats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
-              <Card key={index} className="text-center card-hover">
+              <Card key={index} className="text-center card-hover bg-[#fcfcfc] dark:bg-[#171717]">
                 <CardContent className="pt-6">
                   <div className="flex justify-center mb-4">
                     <UserColorIconCircle>
