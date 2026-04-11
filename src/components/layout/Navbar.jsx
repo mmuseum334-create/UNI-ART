@@ -25,7 +25,9 @@ import {
   ScanEye,
   Images,
   ChevronDown,
+  Shield,
 } from 'lucide-react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,6 +38,7 @@ const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const profileRef = useRef(null);
   const { user, logout, isAuthenticated } = useAuth();
+  const { isAdmin } = usePermissions();
   const { color } = useColor();
   const router = useRouter();
   const pathname = usePathname();
@@ -221,6 +224,20 @@ const Navbar = () => {
                       </Link>
                     );
                   })}
+                  {isAdmin() && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsProfileOpen(false)}
+                      className={`flex items-center space-x-2.5 px-4 py-2.5 text-sm transition-colors ${
+                        isActive('/admin')
+                          ? 'text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/20'
+                          : 'text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                      }`}
+                    >
+                      <Shield className="h-4 w-4 flex-shrink-0" />
+                      <span>Administrador</span>
+                    </Link>
+                  )}
                   <div className="border-t border-slate-100 dark:border-dark-tertiary/50">
                     <button
                       onClick={handleLogout}
@@ -342,6 +359,16 @@ const Navbar = () => {
                     </Link>
                   );
                 })}
+                {isAdmin() && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors"
+                  >
+                    <Shield className="h-4 w-4 flex-shrink-0" />
+                    <span>Administrador</span>
+                  </Link>
+                )}
                 <button
                   onClick={() => {
                     handleLogout();

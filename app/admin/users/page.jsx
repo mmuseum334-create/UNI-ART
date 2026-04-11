@@ -1,314 +1,177 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Users, Pencil, X, ChevronDown } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { usePermissions } from '@/hooks/usePermissions';
 import { roleService } from '@/services/rbac/roleService';
 import { ROLES } from '@/services/rbac/permissionService';
+import { useColor } from '@/contexts/ColorContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  AdminPage, AdminHeader, SearchInput,
+  TableCard, Table, EmptyRow, IconBtn,
+  Field, FormTextarea, ErrorBanner, Avatar, GhostBtn, PrimaryBtn,
+} from '@/components/admin/AdminShell';
 
-/**
- * Página de administración de usuarios
- * Solo accesible para administradores
- */
+const ROLE_COLORS = {
+  super_admin: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  admin:       'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
+  moderator:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  artist:      'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+};
+
 export default function UsersAdminPage() {
   return (
     <ProtectedRoute adminOnly redirectTo="/">
-      <UsersAdminContent />
+      <UsersContent />
     </ProtectedRoute>
   );
 }
 
-function UsersAdminContent() {
-  const router = useRouter();
-  const { isSuperAdmin, canAssignSuperAdmin } = usePermissions();
+function UsersContent() {
+  const { color }            = useColor();
+  const { canAssignSuperAdmin } = usePermissions();
 
-  const [users, setUsers] = useState([]);
-  const [roles, setRoles] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [users,   setUsers]   = useState([]);
+  const [roles,   setRoles]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
+  const [search,  setSearch]  = useState('');
+  const [modal,   setModal]   = useState(false);
+  const [sel,     setSel]     = useState(null);
+  const [roleId,  setRoleId]  = useState('');
+  const [saving,  setSaving]  = useState(false);
 
-  // Modal states
-  const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedRoleId, setSelectedRoleId] = useState(null);
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    loadUsers();
-    loadRoles();
-  }, []);
-
-  const loadUsers = async () => {
-    setIsLoading(true);
-    const result = await roleService.getAllUsers();
-    if (result.success) {
-      setUsers(result.data);
-    } else {
-      setError(result.error);
-    }
-    setIsLoading(false);
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    const [ur, rr] = await Promise.all([roleService.getAllUsers(), roleService.getAllRoles()]);
+    if (ur.success) setUsers(ur.data);
+    else setError(ur.error || 'Error al cargar usuarios');
+    if (rr.success) setRoles(rr.data);
+    setLoading(false);
   };
 
-  const loadRoles = async () => {
-    const result = await roleService.getAllRoles();
-    if (result.success) {
-      setRoles(result.data);
-    }
+  const openModal  = (u)  => { setSel(u); setRoleId(u.role?.id ?? ''); setModal(true); };
+  const closeModal = ()   => { setModal(false); setSaving(false); };
+
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    if (!roleId) return;
+    setSaving(true);
+    const res = await roleService.assignRoleToUser(sel.id, Number(roleId));
+    if (res.success) { closeModal(); load(); }
+    else { setError(res.error); setSaving(false); }
   };
 
-  const openAssignRoleModal = (user) => {
-    setSelectedUser(user);
-    setSelectedRoleId(user.role?.id || null);
-    setShowAssignRoleModal(true);
-  };
-
-  const handleAssignRole = async () => {
-    if (!selectedRoleId) {
-      alert('Selecciona un rol');
-      return;
-    }
-
-    // Verificar si está tratando de asignar Super Admin
-    const selectedRole = roles.find(r => r.id === selectedRoleId);
-    if (selectedRole?.name === ROLES.SUPER_ADMIN && !canAssignSuperAdmin()) {
-      alert('Solo los Super Admins pueden asignar el rol de Super Admin');
-      return;
-    }
-
-    const result = await roleService.assignRoleToUser(selectedUser.id, selectedRoleId);
-
-    if (result.success) {
-      setShowAssignRoleModal(false);
-      setSelectedUser(null);
-      setSelectedRoleId(null);
-      loadUsers();
-      alert('Rol asignado exitosamente');
-    } else {
-      alert(result.error);
-    }
-  };
-
-  const filteredUsers = users.filter(user =>
-    user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = users.filter(u =>
+    u.name?.toLowerCase().includes(search.toLowerCase()) ||
+    u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const getRoleBadgeColor = (roleName) => {
-    switch (roleName) {
-      case ROLES.SUPER_ADMIN:
-        return 'bg-red-100 text-red-800';
-      case ROLES.ADMIN:
-        return 'bg-purple-100 text-purple-800';
-      case ROLES.MODERATOR:
-        return 'bg-blue-100 text-blue-800';
-      case ROLES.ARTIST:
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando usuarios...</p>
-        </div>
-      </div>
-    );
-  }
+  const roleBadgeClass = (name) => ROLE_COLORS[name] ?? 'bg-slate-100 text-slate-600 dark:bg-dark-tertiary dark:text-slate-400';
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-purple-600 hover:text-purple-800 mb-4 flex items-center"
-          >
-            ← Volver al Admin
-          </button>
+    <AdminPage>
+      <AdminHeader
+        icon={Users}
+        title="Usuarios"
+        subtitle={`${users.length} usuarios registrados`}
+      />
 
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestión de Usuarios</h1>
-              <p className="text-gray-600 mt-2">Administra usuarios y asigna roles</p>
-            </div>
-
-            {isSuperAdmin() && (
-              <span className="px-4 py-2 bg-red-100 text-red-800 rounded-full text-sm font-semibold">
-                Super Admin
-              </span>
-            )}
-          </div>
-
-          {/* Search bar */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar por nombre o email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 pl-10 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-            />
-            <svg
-              className="absolute left-3 top-3 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-          </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* Users table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuario
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rol Actual
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Fecha de Registro
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                        <span className="text-purple-600 font-semibold">
-                          {user.name?.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="ml-4">
-                        <div className="font-medium text-gray-900">{user.name}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{user.email}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(user.role?.name)}`}>
-                      {user.role?.name || 'Sin rol'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => openAssignRoleModal(user)}
-                      className="text-purple-600 hover:text-purple-900"
-                    >
-                      Cambiar Rol
-                    </button>
-                  </td>
-                </tr>
-              ))}
-
-              {filteredUsers.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
-                    No se encontraron usuarios
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal: Asignar Rol */}
-        {showAssignRoleModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h2 className="text-2xl font-bold mb-4">Asignar Rol</h2>
-
-              <div className="mb-4">
-                <p className="text-gray-600 mb-2">Usuario: <strong>{selectedUser?.name}</strong></p>
-                <p className="text-gray-600 mb-4">Email: {selectedUser?.email}</p>
-
-                <label className="block text-gray-700 mb-2">Seleccionar Rol</label>
-                <select
-                  value={selectedRoleId || ''}
-                  onChange={(e) => setSelectedRoleId(Number(e.target.value))}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                >
-                  <option value="">Selecciona un rol</option>
-                  {roles.map((role) => {
-                    // Solo mostrar Super Admin si el usuario actual es Super Admin
-                    if (role.name === ROLES.SUPER_ADMIN && !canAssignSuperAdmin()) {
-                      return null;
-                    }
-
-                    return (
-                      <option key={role.id} value={role.id}>
-                        {role.name} {role.description ? `- ${role.description}` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
-
-                {/* Warning para Super Admin */}
-                {roles.find(r => r.id === selectedRoleId)?.name === ROLES.SUPER_ADMIN && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-800 text-sm font-semibold">
-                      ⚠️ Advertencia: Estás asignando el rol de Super Admin
-                    </p>
-                    <p className="text-red-600 text-sm mt-1">
-                      Este rol tiene acceso total al sistema y puede asignar otros Super Admins.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={() => setShowAssignRoleModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleAssignRole}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  Asignar Rol
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="flex items-center gap-4 flex-wrap">
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nombre o correo..." />
       </div>
-    </div>
+
+      <ErrorBanner message={error} />
+
+      <TableCard>
+        <Table headers={['Usuario', 'Correo', 'Rol', 'Registro', 'Acciones']} loading={loading} color={color}>
+          {!loading && filtered.length === 0 && <EmptyRow cols={5} message="No se encontraron usuarios" />}
+          {filtered.map(user => (
+            <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-dark-tertiary/30 transition-colors">
+              {/* Usuario */}
+              <td className="px-5 py-4">
+                <div className="flex items-center gap-3">
+                  <Avatar name={user.name} color={color} />
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{user.name}</span>
+                </div>
+              </td>
+              {/* Correo */}
+              <td className="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">{user.email}</td>
+              {/* Rol */}
+              <td className="px-5 py-4">
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${roleBadgeClass(user.role?.name)}`}>
+                  {user.role?.name ?? 'Sin rol'}
+                </span>
+              </td>
+              {/* Registro */}
+              <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                {user.createdAt ? new Date(user.createdAt).toLocaleDateString('es-CO') : '—'}
+              </td>
+              {/* Acciones */}
+              <td className="px-5 py-4">
+                <IconBtn icon={Pencil} onClick={() => openModal(user)} title="Cambiar rol" />
+              </td>
+            </tr>
+          ))}
+        </Table>
+      </TableCard>
+
+      {/* ── Modal asignar rol ── */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-sm rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 dark:border-dark-tertiary">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">Asignar Rol</h2>
+              <button onClick={closeModal} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssign} className="px-6 py-5 space-y-4">
+              {/* User info */}
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 dark:bg-dark-tertiary/50 px-4 py-3">
+                <Avatar name={sel?.name} color={color} />
+                <div>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">{sel?.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{sel?.email}</p>
+                </div>
+              </div>
+
+              {/* Selector */}
+              <Field label="Nuevo rol">
+                <div className="relative">
+                  <select
+                    required
+                    value={roleId}
+                    onChange={e => setRoleId(e.target.value)}
+                    className="w-full appearance-none rounded-xl border border-slate-200 dark:border-dark-tertiary bg-slate-50 dark:bg-dark-tertiary px-3.5 py-2.5 pr-9 text-sm text-slate-900 dark:text-white focus:outline-none"
+                  >
+                    <option value="">Selecciona un rol...</option>
+                    {roles
+                      .filter(r => r.name !== ROLES.SUPER_ADMIN || canAssignSuperAdmin())
+                      .map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                </div>
+              </Field>
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <GhostBtn onClick={closeModal}>Cancelar</GhostBtn>
+                <PrimaryBtn type="submit" disabled={saving}>
+                  {saving ? 'Guardando...' : 'Asignar'}
+                </PrimaryBtn>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AdminPage>
   );
 }

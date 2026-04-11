@@ -1,419 +1,276 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Shield, Plus, Pencil, Trash2, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { usePermissions } from '@/hooks/usePermissions';
 import { roleService } from '@/services/rbac/roleService';
-import { RESOURCES, PERMISSIONS } from '@/services/rbac/permissionService';
+import { useColor } from '@/contexts/ColorContext';
+import {
+  AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
+  TableCard, Table, EmptyRow, IconBtn, Field, FormInput,
+  FormTextarea, ErrorBanner,
+} from '@/components/admin/AdminShell';
 
-/**
- * Página de administración de roles
- * Solo accesible para administradores
- */
+const RESOURCES = [
+  { key: 'paintings',  label: 'Pinturas',   desc: 'Catálogo de pinturas' },
+  { key: 'sculptures', label: 'Esculturas', desc: 'Catálogo de esculturas' },
+  { key: 'categories', label: 'Categorías', desc: 'Categorías de obras' },
+  { key: 'techniques', label: 'Técnicas',   desc: 'Técnicas artísticas' },
+  { key: 'users',      label: 'Usuarios',   desc: 'Gestión de usuarios' },
+  { key: 'roles',      label: 'Roles',      desc: 'Roles y permisos' },
+];
+
+const getLevel = (p) => {
+  if (!p) return 'ninguno';
+  if (p.canEdit || p.canCreate || p.canDelete) return 'editar';
+  if (p.canView) return 'ver';
+  return 'ninguno';
+};
+
+const levelToPerms = (l) => ({
+  canView:   l !== 'ninguno',
+  canCreate: l === 'editar',
+  canEdit:   l === 'editar',
+  canDelete: l === 'editar',
+});
+
 export default function RolesAdminPage() {
   return (
     <ProtectedRoute adminOnly redirectTo="/">
-      <RolesAdminContent />
+      <RolesContent />
     </ProtectedRoute>
   );
 }
 
-function RolesAdminContent() {
-  const router = useRouter();
-  const { isAdmin, isSuperAdmin } = usePermissions();
+function RolesContent() {
+  const { color } = useColor();
 
-  const [roles, setRoles] = useState([]);
-  const [resources, setResources] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [roles,   setRoles]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
+  const [search,  setSearch]  = useState('');
+  const [modal,   setModal]   = useState(null);
+  const [sel,     setSel]     = useState(null);
+  const [name,    setName]    = useState('');
+  const [desc,    setDesc]    = useState('');
+  const [levels,  setLevels]  = useState({});
+  const [openSec, setOpenSec] = useState({});
+  const [saving,  setSaving]  = useState(false);
 
-  // Modal states
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
+  useEffect(() => { load(); }, []);
 
-  // Form states
-  const [roleName, setRoleName] = useState('');
-  const [roleDescription, setRoleDescription] = useState('');
-  const [rolePermissions, setRolePermissions] = useState({});
-
-  useEffect(() => {
-    loadRoles();
-    loadResources();
-  }, []);
-
-  const loadRoles = async () => {
-    setIsLoading(true);
-    const result = await roleService.getAllRoles();
-    if (result.success) {
-      setRoles(result.data);
-    } else {
-      setError(result.error);
-    }
-    setIsLoading(false);
+  const load = async () => {
+    setLoading(true);
+    setError('');
+    const res = await roleService.getAllRoles();
+    if (res.success) setRoles(res.data);
+    else setError(res.error || 'Error al cargar roles');
+    setLoading(false);
   };
 
-  const loadResources = async () => {
-    const result = await roleService.getAvailableResources();
-    if (result.success) {
-      setResources(result.data);
-    }
+  const openCreate = () => { setSel(null); setName(''); setDesc(''); setLevels({}); setOpenSec({}); setModal('create'); };
+  const openEdit   = (r)  => {
+    setSel(r); setName(r.name); setDesc(r.description ?? '');
+    const lvls = {};
+    r.permissions?.forEach(p => { lvls[p.resource] = getLevel(p); });
+    setLevels(lvls); setOpenSec({}); setModal('edit');
   };
+  const closeModal = () => { setModal(null); setSaving(false); };
 
-  const handleCreateRole = async (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
+    setSaving(true);
+    const perms = RESOURCES
+      .filter(r => levels[r.key] && levels[r.key] !== 'ninguno')
+      .map(r  => ({ resource: r.key, ...levelToPerms(levels[r.key]) }));
 
-    const result = await roleService.createRole({
-      name: roleName,
-      description: roleDescription,
-    });
-
-    if (result.success) {
-      setShowCreateModal(false);
-      setRoleName('');
-      setRoleDescription('');
-      loadRoles();
+    if (modal === 'create') {
+      const res = await roleService.createRole({ name, description: desc });
+      if (!res.success) { setError(res.error); setSaving(false); return; }
+      if (perms.length) await roleService.assignPermissions(res.data.id, perms);
     } else {
-      alert(result.error);
+      const res = await roleService.updateRole(sel.id, { name, description: desc });
+      if (!res.success) { setError(res.error); setSaving(false); return; }
+      await roleService.assignPermissions(sel.id, perms);
     }
+    closeModal(); load();
   };
 
-  const handleEditRole = async (e) => {
-    e.preventDefault();
-
-    const result = await roleService.updateRole(selectedRole.id, {
-      name: roleName,
-      description: roleDescription,
-    });
-
-    if (result.success) {
-      setShowEditModal(false);
-      setSelectedRole(null);
-      setRoleName('');
-      setRoleDescription('');
-      loadRoles();
-    } else {
-      alert(result.error);
-    }
+  const handleDelete = async (r) => {
+    if (!confirm(`¿Eliminar "${r.name}"?`)) return;
+    const res = await roleService.deleteRole(r.id);
+    if (!res.success) setError(res.error);
+    else load();
   };
 
-  const handleDeleteRole = async (roleId) => {
-    if (!confirm('¿Estás seguro de eliminar este rol?')) return;
-
-    const result = await roleService.deleteRole(roleId);
-    if (result.success) {
-      loadRoles();
-    } else {
-      alert(result.error);
-    }
+  const toggleAll = () => {
+    const allOpen = RESOURCES.every(r => openSec[r.key]);
+    const next = {};
+    RESOURCES.forEach(r => { next[r.key] = !allOpen; });
+    setOpenSec(next);
   };
 
-  const openEditModal = (role) => {
-    setSelectedRole(role);
-    setRoleName(role.name);
-    setRoleDescription(role.description);
-    setShowEditModal(true);
-  };
-
-  const openPermissionsModal = (role) => {
-    setSelectedRole(role);
-
-    // Convertir permisos del rol a formato del estado
-    const perms = {};
-    role.permissions?.forEach(p => {
-      perms[p.resource] = {
-        canView: p.canView,
-        canCreate: p.canCreate,
-        canEdit: p.canEdit,
-        canDelete: p.canDelete,
-      };
-    });
-
-    setRolePermissions(perms);
-    setShowPermissionsModal(true);
-  };
-
-  const handlePermissionChange = (resource, permission, value) => {
-    setRolePermissions(prev => ({
-      ...prev,
-      [resource]: {
-        ...prev[resource],
-        [permission]: value,
-      },
-    }));
-  };
-
-  const handleSavePermissions = async () => {
-    // Convertir permisos a formato del backend
-    const permissions = Object.entries(rolePermissions).map(([resource, perms]) => ({
-      resource,
-      ...perms,
-    }));
-
-    const result = await roleService.assignPermissions(selectedRole.id, permissions);
-
-    if (result.success) {
-      setShowPermissionsModal(false);
-      setSelectedRole(null);
-      setRolePermissions({});
-      loadRoles();
-    } else {
-      alert(result.error);
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando roles...</p>
-        </div>
-      </div>
-    );
-  }
+  const filtered = roles.filter(r =>
+    r.name?.toLowerCase().includes(search.toLowerCase()) ||
+    r.description?.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <button
-            onClick={() => router.push('/admin')}
-            className="text-purple-600 hover:text-purple-800 mb-4 flex items-center"
-          >
-            ← Volver al Admin
-          </button>
+    <AdminPage>
+      <AdminHeader
+        icon={Shield}
+        title="Roles"
+        subtitle={`${roles.length} roles en el sistema`}
+        action={<PrimaryBtn icon={Plus} onClick={openCreate}>Nuevo Rol</PrimaryBtn>}
+      />
 
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Gestión de Roles</h1>
-              <p className="text-gray-600 mt-2">Administra los roles y permisos del sistema</p>
-            </div>
-
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-            >
-              + Crear Rol
-            </button>
-          </div>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-            {error}
-          </div>
-        )}
-
-        {/* Roles table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Rol
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Descripción
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Usuarios
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{role.name}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm text-gray-600">{role.description || 'Sin descripción'}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="text-sm text-gray-600">{role.userCount || 0} usuarios</span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button
-                      onClick={() => openPermissionsModal(role)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
-                    >
-                      Permisos
-                    </button>
-                    <button
-                      onClick={() => openEditModal(role)}
-                      className="text-purple-600 hover:text-purple-900 mr-4"
-                    >
-                      Editar
-                    </button>
-                    {role.name !== 'super_admin' && (
-                      <button
-                        onClick={() => handleDeleteRole(role.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Eliminar
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Modal: Crear Rol */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h2 className="text-2xl font-bold mb-4">Crear Nuevo Rol</h2>
-
-              <form onSubmit={handleCreateRole}>
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Nombre del Rol</label>
-                  <input
-                    type="text"
-                    value={roleName}
-                    onChange={(e) => setRoleName(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Descripción</label>
-                  <textarea
-                    value={roleDescription}
-                    onChange={(e) => setRoleDescription(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    rows="3"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                  >
-                    Crear
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal: Editar Rol */}
-        {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h2 className="text-2xl font-bold mb-4">Editar Rol</h2>
-
-              <form onSubmit={handleEditRole}>
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Nombre del Rol</label>
-                  <input
-                    type="text"
-                    value={roleName}
-                    onChange={(e) => setRoleName(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    required
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-gray-700 mb-2">Descripción</label>
-                  <textarea
-                    value={roleDescription}
-                    onChange={(e) => setRoleDescription(e.target.value)}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
-                    rows="3"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowEditModal(false)}
-                    className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                  >
-                    Guardar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal: Permisos */}
-        {showPermissionsModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 overflow-y-auto">
-            <div className="bg-white rounded-lg p-8 max-w-4xl w-full my-8 max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4">
-                Permisos del Rol: {selectedRole?.name}
-              </h2>
-
-              <div className="space-y-4">
-                {Object.values(RESOURCES).map((resource) => (
-                  <div key={resource} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-3 text-lg">{resource}</h3>
-
-                    <div className="grid grid-cols-4 gap-4">
-                      {['canView', 'canCreate', 'canEdit', 'canDelete'].map((permission) => (
-                        <label key={permission} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={rolePermissions[resource]?.[permission] || false}
-                            onChange={(e) => handlePermissionChange(resource, permission, e.target.checked)}
-                            className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                          />
-                          <span className="text-sm">
-                            {permission.replace('can', '')}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex justify-end space-x-4 mt-6">
-                <button
-                  onClick={() => setShowPermissionsModal(false)}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleSavePermissions}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                >
-                  Guardar Permisos
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+      <div className="flex items-center gap-4 flex-wrap">
+        <SearchInput value={search} onChange={setSearch} placeholder="Buscar roles..." />
       </div>
-    </div>
+
+      <ErrorBanner message={error} />
+
+      <TableCard>
+        <Table headers={['Rol', 'Descripción', 'Permisos', 'Creado', 'Acciones']} loading={loading} color={color}>
+          {!loading && filtered.length === 0 && <EmptyRow cols={5} message="No hay roles registrados" />}
+          {filtered.map(role => (
+            <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-dark-tertiary/30 transition-colors">
+              <td className="px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg shrink-0" style={{ backgroundColor: `${color}18` }}>
+                    <Shield className="h-4 w-4" style={{ color }} />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{role.name}</span>
+                </div>
+              </td>
+              <td className="px-5 py-4 text-sm text-slate-500 dark:text-slate-400">
+                {role.description || '—'}
+              </td>
+              <td className="px-5 py-4">
+                <div className="flex flex-wrap gap-1.5">
+                  {role.permissions?.filter(p => getLevel(p) !== 'ninguno').length > 0
+                    ? role.permissions.filter(p => getLevel(p) !== 'ninguno').map(p => {
+                        const lvl = getLevel(p);
+                        const lbl = RESOURCES.find(r => r.key === p.resource)?.label ?? p.resource;
+                        return (
+                          <span
+                            key={p.resource}
+                            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${lvl === 'editar' ? 'text-white' : 'bg-slate-100 dark:bg-dark-tertiary text-slate-600 dark:text-slate-300'}`}
+                            style={lvl === 'editar' ? { backgroundColor: color } : undefined}
+                          >
+                            {lbl}: {lvl === 'editar' ? 'Editar' : 'Ver'}
+                          </span>
+                        );
+                      })
+                    : <span className="text-xs italic text-slate-400">Sin permisos</span>
+                  }
+                </div>
+              </td>
+              <td className="px-5 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                {role.createdAt ? new Date(role.createdAt).toLocaleDateString('es-CO') : '—'}
+              </td>
+              <td className="px-5 py-4">
+                <div className="flex items-center gap-1">
+                  <IconBtn icon={Pencil} onClick={() => openEdit(role)} title="Editar" />
+                  {role.name !== 'super_admin' && (
+                    <IconBtn icon={Trash2} onClick={() => handleDelete(role)} variant="danger" title="Eliminar" />
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </Table>
+      </TableCard>
+
+      {/* ── Modal ── */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 dark:border-dark-tertiary">
+              <h2 className="text-base font-semibold text-slate-900 dark:text-white">
+                {modal === 'create' ? 'Nuevo Rol' : `Editar: ${sel?.name}`}
+              </h2>
+              <button onClick={closeModal} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSave} className="flex flex-col overflow-hidden flex-1">
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+                <Field label="Nombre *">
+                  <FormInput value={name} onChange={setName} placeholder="ej. editor_arte" required />
+                </Field>
+                <Field label="Descripción">
+                  <FormTextarea value={desc} onChange={setDesc} placeholder="Describe brevemente el rol..." />
+                </Field>
+
+                {/* Permisos */}
+                <div>
+                  <div className="flex items-center justify-between mb-2.5">
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">Permisos por sección</p>
+                    <button type="button" onClick={toggleAll} className="text-xs font-medium" style={{ color }}>
+                      {RESOURCES.every(r => openSec[r.key]) ? 'Contraer todo' : 'Expandir todo'}
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {RESOURCES.map(res => {
+                      const lvl    = levels[res.key] ?? 'ninguno';
+                      const isOpen = openSec[res.key] ?? false;
+                      return (
+                        <div key={res.key} className="rounded-xl border border-slate-200 dark:border-dark-tertiary overflow-hidden">
+                          <button
+                            type="button"
+                            onClick={() => setOpenSec(p => ({ ...p, [res.key]: !p[res.key] }))}
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 dark:hover:bg-dark-tertiary/40 transition-colors text-left"
+                          >
+                            <div>
+                              <p className="text-sm font-medium text-slate-900 dark:text-white">{res.label}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{res.desc}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0 ml-4">
+                              {lvl !== 'ninguno' && (
+                                <span className="rounded-full px-2 py-0.5 text-xs font-medium text-white" style={{ backgroundColor: color }}>
+                                  {lvl === 'ver' ? 'Ver' : 'Editar'}
+                                </span>
+                              )}
+                              {isOpen ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+                            </div>
+                          </button>
+                          {isOpen && (
+                            <div className="flex items-center gap-6 px-4 py-3 bg-slate-50 dark:bg-dark-tertiary/30 border-t border-slate-100 dark:border-dark-tertiary">
+                              {['ninguno', 'ver', 'editar'].map(opt => (
+                                <label key={opt} className="flex items-center gap-2 cursor-pointer select-none" onClick={() => setLevels(p => ({ ...p, [res.key]: opt }))}>
+                                  <div
+                                    className={`h-4 w-4 rounded-full border-2 flex items-center justify-center transition-all ${lvl === opt ? 'border-transparent' : 'border-slate-300 dark:border-slate-600'}`}
+                                    style={lvl === opt ? { backgroundColor: color, borderColor: color } : undefined}
+                                  >
+                                    {lvl === opt && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+                                  </div>
+                                  <span className="text-sm text-slate-700 dark:text-slate-300 capitalize">{opt}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-dark-tertiary flex items-center justify-end gap-3">
+                <GhostBtn onClick={closeModal}>Cancelar</GhostBtn>
+                <PrimaryBtn type="submit" disabled={saving}>
+                  {saving ? 'Guardando...' : modal === 'create' ? 'Crear Rol' : 'Guardar cambios'}
+                </PrimaryBtn>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </AdminPage>
   );
 }

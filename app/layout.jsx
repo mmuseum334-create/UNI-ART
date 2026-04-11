@@ -43,15 +43,10 @@ export default function RootLayout({ children }) {
             {/* Provider de color personalizado */}
             <ColorProvider>
               <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
-                {/* Barra de navegación global */}
                 <Navbar />
-
-                {/* Contenido principal de cada página — pt-16 compensa el navbar fixed (h-16) */}
                 <main className="pt-16">
                   {children}
                 </main>
-
-                {/* Footer global */}
                 <Footer />
               </div>
             </ColorProvider>
