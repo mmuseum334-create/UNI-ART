@@ -1,10 +1,17 @@
 import { sileo } from 'sileo';
 
 // sileo expects an object: { title, description }
-// We accept either a string (becomes title) or { title, description }
+// autopilot: { expand: 0 } → expande inmediatamente
+// autopilot: { collapse: 5500 } → colapsa justo antes de que desaparezca
 const toOpts = (msg, desc) => {
-  if (typeof msg === 'object' && msg !== null) return msg;
-  return { title: msg, ...(desc ? { description: desc } : {}) };
+  const base = typeof msg === 'object' && msg !== null
+    ? msg
+    : { title: msg, ...(desc ? { description: desc } : {}) };
+  // Si tiene descripción, auto-expandir de inmediato
+  if (base.description) {
+    base.autopilot = { expand: 0, collapse: 5500 };
+  }
+  return base;
 };
 
 export const toast = {
