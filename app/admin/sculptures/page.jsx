@@ -11,7 +11,7 @@ import { artCategories } from '@/data/mockData';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
   EmptyRow, IconBtn, Field, FormInput, FormTextarea, FormSelect,
-  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination, useConfirm,
+  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 import { toast } from '@/lib/toast';
 
@@ -32,7 +32,6 @@ export default function AdminSculpturesPage() {
 
 function SculpturesContent() {
   const { color } = useColor();
-  const { confirm, ConfirmDialog } = useConfirm();
 
   const [sculptures,  setSculptures]  = useState([]);
   const [categories,  setCategories]  = useState([]);
@@ -98,12 +97,16 @@ function SculpturesContent() {
     closeModal(); load();
   };
 
-  const handleDelete = async (s) => {
-    const ok = await confirm(`¿Eliminar "${s.nombre_escultura}"?`);
-    if (!ok) return;
-    const res = await sculptureService.delete(s.id);
-    if (!res.success) toast.error('Error al eliminar', res.error);
-    else { toast.success('Escultura eliminada', 'La escultura fue eliminada del sistema.'); load(); }
+  const handleDelete = (s) => {
+    toast.confirm(
+      `¿Eliminar "${s.nombre_escultura}"?`,
+      'Confirma para eliminar. Ignora para cancelar.',
+      async () => {
+        const res = await sculptureService.delete(s.id);
+        if (!res.success) toast.error('Error al eliminar', res.error);
+        else { toast.success('Escultura eliminada', 'La escultura fue eliminada del sistema.'); load(); }
+      }
+    );
   };
 
   const allCats = [
@@ -227,7 +230,6 @@ function SculpturesContent() {
           </div>
         </div>
       )}
-      <ConfirmDialog />
     </AdminPage>
   );
 }

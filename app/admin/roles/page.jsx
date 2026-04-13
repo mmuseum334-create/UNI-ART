@@ -8,7 +8,7 @@ import { useColor } from '@/contexts/ColorContext';
 import {
   AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
   TableCard, Table, EmptyRow, IconBtn, Field, FormInput,
-  FormTextarea, ErrorBanner, usePagination, Pagination, useConfirm,
+  FormTextarea, ErrorBanner, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 import { toast } from '@/lib/toast';
 
@@ -45,7 +45,6 @@ export default function RolesAdminPage() {
 
 function RolesContent() {
   const { color } = useColor();
-  const { confirm, ConfirmDialog } = useConfirm();
 
   const [roles,   setRoles]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -100,12 +99,16 @@ function RolesContent() {
     closeModal(); load();
   };
 
-  const handleDelete = async (r) => {
-    const ok = await confirm(`¿Eliminar el rol "${r.name}"?`);
-    if (!ok) return;
-    const res = await roleService.deleteRole(r.id);
-    if (!res.success) toast.error('Error al eliminar', res.error);
-    else { toast.success('Rol eliminado', `El rol "${r.name}" fue eliminado.`); load(); }
+  const handleDelete = (r) => {
+    toast.confirm(
+      `¿Eliminar el rol "${r.name}"?`,
+      'Confirma para eliminar. Ignora para cancelar.',
+      async () => {
+        const res = await roleService.deleteRole(r.id);
+        if (!res.success) toast.error('Error al eliminar', res.error);
+        else { toast.success('Rol eliminado', `El rol "${r.name}" fue eliminado.`); load(); }
+      }
+    );
   };
 
   const toggleAll = () => {
@@ -194,7 +197,6 @@ function RolesContent() {
         )}
       </TableCard>
 
-      <ConfirmDialog />
       {/* ── Modal ── */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">

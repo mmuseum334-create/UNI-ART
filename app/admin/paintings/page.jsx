@@ -13,7 +13,7 @@ import { artCategories } from '@/data/mockData';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
   EmptyRow, IconBtn, Field, FormInput, FormTextarea, FormSelect,
-  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination, useConfirm,
+  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 import { toast } from '@/lib/toast';
 
@@ -27,7 +27,6 @@ export default function AdminPaintingsPage() {
 
 function PaintingsContent() {
   const { color } = useColor();
-  const { confirm, ConfirmDialog } = useConfirm();
 
   const [paintings,   setPaintings]   = useState([]);
   const [categories,  setCategories]  = useState([]);
@@ -95,12 +94,16 @@ function PaintingsContent() {
     closeModal(); load();
   };
 
-  const handleDelete = async (p) => {
-    const ok = await confirm(`¿Eliminar "${p.nombre_pintura}"?`);
-    if (!ok) return;
-    const res = await paintService.delete(p.id);
-    if (!res.success) toast.error('Error al eliminar', res.error);
-    else { toast.success('Pintura eliminada', 'La obra fue eliminada del sistema.'); load(); }
+  const handleDelete = (p) => {
+    toast.confirm(
+      `¿Eliminar "${p.nombre_pintura}"?`,
+      'Confirma para eliminar. Ignora para cancelar.',
+      async () => {
+        const res = await paintService.delete(p.id);
+        if (!res.success) toast.error('Error al eliminar', res.error);
+        else { toast.success('Pintura eliminada', 'La obra fue eliminada del sistema.'); load(); }
+      }
+    );
   };
   const handleRestore = async (p) => {
     const res = await paintService.restore(p.id);
@@ -245,7 +248,6 @@ function PaintingsContent() {
           </div>
         </div>
       )}
-      <ConfirmDialog />
     </AdminPage>
   );
 }

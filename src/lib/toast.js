@@ -18,4 +18,14 @@ export const toast = {
   loading: (msg, desc) => sileo.show({ ...toOpts(msg, desc), type: 'loading' }),
   promise: (p, msgs)   => sileo.promise(p, msgs),
   dismiss: ()          => sileo.dismiss(),
+
+  // Confirmación: dura 5 s, pausa con hover, "Eliminar" confirma, timeout = cancelar
+  confirm: (title, description, onConfirm) =>
+    sileo.action({
+      title,
+      description,
+      duration: 5000,
+      autopilot: { expand: 0, collapse: 4000 },
+      button: { title: 'Eliminar', onClick: onConfirm },
+    }),
 };
