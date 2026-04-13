@@ -11,7 +11,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ColorProvider } from '@/contexts/ColorContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { Toaster } from 'sileo';
+import ThemedToaster from '@/components/layout/ThemedToaster';
 
 // Configuración de la fuente Poppins
 const poppins = Poppins({
@@ -28,20 +28,12 @@ export const metadata = {
   keywords: ['museo', 'arte', 'AR', 'realidad aumentada', 'galería'],
 };
 
-/**
- * RootLayout - Componente de layout principal
- * @param {Object} props - Propiedades del componente
- * @param {React.ReactNode} props.children - Componentes hijos
- */
 export default function RootLayout({ children }) {
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={poppins.className}>
-        {/* Provider de tema (dark/light mode) */}
         <ThemeProvider>
-          {/* Provider de autenticación */}
           <AuthProvider>
-            {/* Provider de color personalizado */}
             <ColorProvider>
               <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
                 <Navbar />
@@ -50,7 +42,7 @@ export default function RootLayout({ children }) {
                 </main>
                 <Footer />
               </div>
-              <Toaster position="top-center" />
+              <ThemedToaster />
             </ColorProvider>
           </AuthProvider>
         </ThemeProvider>
