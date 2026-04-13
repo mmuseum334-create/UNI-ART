@@ -7,7 +7,7 @@ import { techniqueService } from '@/services/techniqueService';
 import { useColor } from '@/contexts/ColorContext';
 import {
   AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
-  Field, FormInput, FormTextarea, ErrorBanner,
+  Field, FormInput, FormTextarea, ErrorBanner, useConfirm,
 } from '@/components/admin/AdminShell';
 import { toast } from '@/lib/toast';
 
@@ -21,6 +21,7 @@ export default function TechniquesAdminPage() {
 
 function TechniquesContent() {
   const { color } = useColor();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,16 +63,12 @@ function TechniquesContent() {
     closeModal(); load();
   };
 
-  const handleDelete = (item) => {
-    toast.confirm(
-      `¿Eliminar "${item.name}"?`,
-      'Esta acción no se puede deshacer.',
-      async () => {
-        const res = await techniqueService.delete(item.id);
-        if (!res.success) toast.error('Error al eliminar', res.error);
-        else { toast.success('Técnica eliminada', `"${item.name}" fue eliminada del sistema.`); load(); }
-      }
-    );
+  const handleDelete = async (item) => {
+    const ok = await confirm(`¿Eliminar "${item.name}"?`);
+    if (!ok) return;
+    const res = await techniqueService.delete(item.id);
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Técnica eliminada', `"${item.name}" fue eliminada del sistema.`); load(); }
   };
 
   const filtered = items.filter(t =>
@@ -158,6 +155,8 @@ function TechniquesContent() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog />
 
       {/* Modal */}
       {modal && (

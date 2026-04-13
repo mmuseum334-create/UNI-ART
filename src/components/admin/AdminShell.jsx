@@ -1,46 +1,51 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
 
 /* ── useConfirm hook ── */
 export function useConfirm() {
-  const [state, setState] = useState({ open: false, msg: '', resolve: null });
+  const [state, setState] = useState({ open: false, title: '', desc: '', resolve: null });
 
-  const confirm = (msg) => new Promise(resolve => {
-    setState({ open: true, msg, resolve });
-  });
+  const confirm = (title, desc = 'Esta acción no se puede deshacer.') =>
+    new Promise(resolve => setState({ open: true, title, desc, resolve }));
 
   const handleResponse = (value) => {
     state.resolve?.(value);
-    setState({ open: false, msg: '', resolve: null });
+    setState({ open: false, title: '', desc: '', resolve: null });
   };
 
   const Dialog = () => {
     if (!state.open) return null;
     return (
-      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl p-6 space-y-4">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+      <div className="fixed inset-0 z-[60] flex items-start justify-center pt-6 px-4">
+        {/* backdrop */}
+        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px]" onClick={() => handleResponse(false)} />
+        {/* card — mismo estilo oscuro que sileo */}
+        <div className="relative w-full max-w-sm rounded-2xl bg-[#1a1a1a] shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-3 duration-200">
+          {/* header badge area */}
+          <div className="flex items-center gap-2.5 px-5 pt-4 pb-1">
+            <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20">
+              <div className="h-2 w-2 rounded-full bg-red-500" />
             </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white">¿Confirmar acción?</p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{state.msg}</p>
-            </div>
+            <p className="text-sm font-semibold text-red-400">{state.title}</p>
           </div>
-          <div className="flex items-center justify-end gap-3">
+          {/* description */}
+          <p className="px-5 pb-4 pt-1 text-[13px] text-white/50 leading-relaxed">{state.desc}</p>
+          {/* divider */}
+          <div className="h-px bg-white/8" />
+          {/* actions */}
+          <div className="flex items-center gap-2 px-4 py-3">
             <button
               onClick={() => handleResponse(false)}
-              className="rounded-xl border border-slate-200 dark:border-dark-tertiary px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-dark-tertiary transition-colors"
+              className="flex-1 rounded-xl py-2 text-sm font-medium text-white/60 hover:text-white hover:bg-white/8 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={() => handleResponse(true)}
-              className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+              className="flex-1 rounded-xl py-2 text-sm font-semibold bg-red-500 hover:bg-red-600 text-white transition-colors"
             >
               Eliminar
             </button>
