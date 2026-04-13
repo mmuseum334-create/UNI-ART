@@ -128,3 +128,12 @@
     }
   }
 }
+
+
+/* ── Sileo toast background ── */
+[data-sileo-toast] > svg {
+  fill: #eeeeee;
+}
+.dark [data-sileo-toast] > svg {
+  fill: #171717;
+}

@@ -1,14 +1,9 @@
 import { sileo } from 'sileo';
 
-// Fill actual — se actualiza sincrónicamente desde ThemedToaster al cambiar el tema
-let _fill = '#eeeeee';
-export const setToastFill = (fill) => { _fill = fill; };
-
 const toOpts = (msg, desc) => {
   const base = typeof msg === 'object' && msg !== null
     ? msg
     : { title: msg, ...(desc ? { description: desc } : {}) };
-  base.fill = _fill;
   if (base.description) {
     base.autopilot = { expand: 0, collapse: 5500 };
   }
@@ -24,11 +19,11 @@ export const toast = {
   promise: (p, msgs)   => sileo.promise(p, msgs),
   dismiss: ()          => sileo.dismiss(),
 
+  // Confirmación: dura 5 s, pausa con hover, "Eliminar" confirma, timeout = cancelar
   confirm: (title, description, onConfirm) =>
     sileo.action({
       title,
       description,
-      fill: _fill,
       duration: 5000,
       autopilot: { expand: 0, collapse: 4000 },
       button: { title: 'Eliminar', onClick: onConfirm },
