@@ -28,6 +28,8 @@ const Catalog = () => {
   const [allPaintings, setAllPaintings]   = useState([]);
   const [isLoading, setIsLoading]         = useState(true);
   const [loadError, setLoadError]         = useState(null);
+  const [currentPage, setCurrentPage]     = useState(1);
+  const ITEMS_PER_PAGE = 12;
   const [selectedArtwork, setSelectedArtwork]     = useState(null);
 
   useEffect(() => {
@@ -73,24 +75,33 @@ const Catalog = () => {
     if (selectedCategory !== 'all') results = results.filter(p => p.category === selectedCategory);
     results.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     setFilteredArtworks(results);
+    setCurrentPage(1);
   }, [searchQuery, selectedCategory, allPaintings]);
 
   const clearFilters = () => { setSearchQuery(''); setSelectedCategory('all'); };
   const hasActiveFilters = searchQuery || selectedCategory !== 'all';
 
+  // ─── Paginación ───────────────────────────────────────────
+  const totalPages   = Math.ceil(filteredArtworks.length / ITEMS_PER_PAGE);
+  const pageArtworks = filteredArtworks.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
+  const goToPage = (p) => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
   // ─── Sidebar ──────────────────────────────────────────────
   const Sidebar = () => (
     <aside className="w-full lg:w-56 flex-shrink-0 space-y-6">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/90 mb-2">Búsqueda</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-600 dark:text-white/90 mb-2">Búsqueda</p>
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-white/30 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-600 dark:text-white/80 pointer-events-none" />
           <input
             placeholder="Obras, artistas, tags..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-8 py-2.5 text-sm rounded-xl border outline-none transition-colors
-              text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-white/25
+              text-slate-900 dark:text-white placeholder-slate-600 dark:placeholder-white/85
               bg-white dark:bg-[#1a1a1a] border-slate-200 dark:border-white/10
               focus:border-slate-300 dark:focus:border-white/20"
           />
@@ -103,7 +114,7 @@ const Catalog = () => {
       </div>
 
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 dark:text-white/90 mb-2">Categorías</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-600 dark:text-white/90 mb-2">Categorías</p>
         <div className="space-y-0.5">
           {[{ id: 'all', name: 'Todas', count: allPaintings.length, icon: null }, ...artCategories.map(c => ({ ...c, count: allPaintings.filter(p => p.category === c.id).length }))].map(cat => {
             const Icon = cat.icon ? iconMap[cat.icon] : null;
@@ -325,7 +336,7 @@ const Catalog = () => {
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-6 gap-4">
               <div className="flex items-center gap-3">
-                <p className="text-sm text-slate-500 dark:text-white/40">
+                <p className="text-sm text-slate-600 dark:text-white/80">
                   {isLoading
                     ? <span className="inline-block w-20 h-4 rounded animate-pulse bg-slate-200 dark:bg-white/10" />
                     : <><span className="font-semibold text-slate-800 dark:text-white">{filteredArtworks.length}</span> obras</>
@@ -375,11 +386,61 @@ const Catalog = () => {
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                {filteredArtworks.map(a => <GridCard key={a.id} artwork={a} />)}
+                {pageArtworks.map(a => <GridCard key={a.id} artwork={a} />)}
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredArtworks.map(a => <ListCard key={a.id} artwork={a} />)}
+                {pageArtworks.map(a => <ListCard key={a.id} artwork={a} />)}
+              </div>
+            )}
+
+            {/* ── Paginación ── */}
+            {!isLoading && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1.5 mt-10">
+                {/* Anterior */}
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-30
+                    text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 disabled:cursor-not-allowed"
+                >
+                  ← Anterior
+                </button>
+
+                {/* Páginas */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && arr[idx - 1] !== p - 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...'
+                      ? <span key={`e${i}`} className="px-2 text-slate-400 dark:text-white/30">…</span>
+                      : <button
+                          key={p}
+                          onClick={() => goToPage(p)}
+                          className="w-9 h-9 rounded-lg text-sm font-semibold transition-colors"
+                          style={currentPage === p
+                            ? { backgroundColor: color, color: 'white' }
+                            : {}}
+                          {...(currentPage !== p ? { className: 'w-9 h-9 rounded-lg text-sm font-semibold transition-colors text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5' } : {})}
+                        >
+                          {p}
+                        </button>
+                  )
+                }
+
+                {/* Siguiente */}
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-30
+                    text-slate-600 dark:text-white/60 hover:bg-slate-100 dark:hover:bg-white/5 disabled:cursor-not-allowed"
+                >
+                  Siguiente →
+                </button>
               </div>
             )}
           </div>

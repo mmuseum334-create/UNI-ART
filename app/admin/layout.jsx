@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Shield, Tag, Palette,
-  ChevronLeft, ChevronRight,
+  Frame, Landmark, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
 
 const navItems = [
   { label: 'Dashboard',  icon: LayoutDashboard, path: '/admin' },
+  { label: 'Pinturas',   icon: Frame,            path: '/admin/paintings' },
+  { label: 'Esculturas', icon: Landmark,         path: '/admin/sculptures' },
   { label: 'Usuarios',   icon: Users,            path: '/admin/users' },
   { label: 'Roles',      icon: Shield,           path: '/admin/roles' },
   { label: 'Categorías', icon: Tag,              path: '/admin/categories' },
@@ -62,7 +64,7 @@ export default function AdminLayout({ children }) {
                   text-sm font-medium transition-colors
                   ${active
                     ? 'text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-tertiary hover:text-slate-900 dark:hover:text-white'
+                    : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-tertiary hover:text-slate-900 dark:hover:text-white'
                   }
                   ${collapsed ? 'justify-center' : ''}
                 `}
