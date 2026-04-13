@@ -5,11 +5,13 @@ import { Landmark, Pencil, Trash2, X, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { sculptureService } from '@/services/sculpture/sculptureService';
+import { categoryService } from '@/services/categoryService';
 import { useColor } from '@/contexts/ColorContext';
+import { artCategories } from '@/data/mockData';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
-  EmptyRow, IconBtn, Field, FormInput, FormTextarea,
-  ErrorBanner, GhostBtn, PrimaryBtn,
+  EmptyRow, IconBtn, Field, FormInput, FormTextarea, FormSelect,
+  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 
 const STATUS_MAP = {
@@ -30,17 +32,26 @@ export default function AdminSculpturesPage() {
 function SculpturesContent() {
   const { color } = useColor();
 
-  const [sculptures, setSculptures] = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState('');
-  const [search,     setSearch]     = useState('');
-  const [modal,      setModal]      = useState(false);
-  const [sel,        setSel]        = useState(null);
-  const [formName,   setFormName]   = useState('');
-  const [formDesc,   setFormDesc]   = useState('');
-  const [saving,     setSaving]     = useState(false);
+  const [sculptures,  setSculptures]  = useState([]);
+  const [categories,  setCategories]  = useState([]);
+  const [loading,     setLoading]     = useState(true);
+  const [error,       setError]       = useState('');
+  const [search,      setSearch]      = useState('');
+  const [modal,       setModal]       = useState(false);
+  const [sel,         setSel]         = useState(null);
+  const [saving,      setSaving]      = useState(false);
 
-  useEffect(() => { load(); }, []);
+  // Form
+  const [fNombre,    setFNombre]    = useState('');
+  const [fArtista,   setFArtista]   = useState('');
+  const [fDesc,      setFDesc]      = useState('');
+  const [fCategoria, setFCategoria] = useState('');
+  const [fEtiqueta,  setFEtiqueta]  = useState('');
+
+  useEffect(() => {
+    load();
+    categoryService.getAll().then(r => { if (r.success) setCategories(r.data); });
+  }, []);
 
   const load = async () => {
     setLoading(true); setError('');
@@ -50,10 +61,21 @@ function SculpturesContent() {
     setLoading(false);
   };
 
+  const filtered = sculptures.filter(s =>
+    s.nombre_escultura?.toLowerCase().includes(search.toLowerCase()) ||
+    s.artista?.toLowerCase().includes(search.toLowerCase()) ||
+    s.categoria?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const { page, total, paged, goTo } = usePagination(filtered, 12);
+
   const openEdit = (s) => {
     setSel(s);
-    setFormName(s.nombre_escultura);
-    setFormDesc(s.descripcion ?? '');
+    setFNombre(s.nombre_escultura ?? '');
+    setFArtista(s.artista ?? '');
+    setFDesc(s.descripcion ?? '');
+    setFCategoria(s.categoria ?? '');
+    setFEtiqueta(s.etiqueta ?? '');
     setModal(true);
   };
   const closeModal = () => { setModal(false); setSaving(false); };
@@ -62,8 +84,11 @@ function SculpturesContent() {
     e.preventDefault();
     setSaving(true);
     const res = await sculptureService.update(sel.id, {
-      nombre_escultura: formName,
-      descripcion:      formDesc,
+      nombre_escultura: fNombre,
+      artista:          fArtista,
+      descripcion:      fDesc,
+      categoria:        fCategoria,
+      etiqueta:         fEtiqueta,
     });
     if (!res.success) { setError(res.error); setSaving(false); return; }
     closeModal(); load();
@@ -72,23 +97,17 @@ function SculpturesContent() {
   const handleDelete = async (s) => {
     if (!confirm(`¿Eliminar "${s.nombre_escultura}"?`)) return;
     const res = await sculptureService.delete(s.id);
-    if (!res.success) setError(res.error);
-    else load();
+    if (!res.success) setError(res.error); else load();
   };
 
-  const filtered = sculptures.filter(s =>
-    s.nombre_escultura?.toLowerCase().includes(search.toLowerCase()) ||
-    s.artista?.toLowerCase().includes(search.toLowerCase()) ||
-    s.categoria?.toLowerCase().includes(search.toLowerCase())
-  );
+  const allCats = [
+    ...artCategories.map(c => ({ id: c.id, name: c.name })),
+    ...categories.filter(c => !artCategories.find(a => a.name === c.name)).map(c => ({ id: c.name, name: c.name })),
+  ];
 
   return (
     <AdminPage>
-      <AdminHeader
-        icon={Landmark}
-        title="Esculturas"
-        subtitle={`${sculptures.length} esculturas en el sistema`}
-      />
+      <AdminHeader icon={Landmark} title="Esculturas" subtitle={`${sculptures.length} esculturas en el sistema`} />
 
       <div className="flex items-center gap-4 flex-wrap">
         <SearchInput value={search} onChange={setSearch} placeholder="Buscar por nombre, artista o categoría..." />
@@ -98,27 +117,18 @@ function SculpturesContent() {
       <ErrorBanner message={error} />
 
       <TableCard>
-        <Table
-          headers={['Escultura', 'Artista', 'Categoría', 'Estado 3D', 'Fecha', 'Acciones']}
-          loading={loading}
-          color={color}
-        >
-          {!loading && filtered.length === 0 && <EmptyRow cols={6} message="No hay esculturas registradas" />}
-          {filtered.map(s => {
+        <Table headers={['Escultura', 'Artista', 'Categoría', 'Estado 3D', 'Fecha', 'Acciones']} loading={loading} color={color}>
+          {!loading && paged.length === 0 && <EmptyRow cols={6} message="No hay esculturas" />}
+          {paged.map(s => {
             const status = STATUS_MAP[s.processing_status] ?? STATUS_MAP.pending;
             return (
               <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-dark-tertiary/30 transition-colors">
-                {/* Escultura */}
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
                     {s.fotos_originales?.[0] ? (
                       <div className="h-12 w-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-dark-tertiary">
-                        <img
-                          src={s.fotos_originales[0]}
-                          alt={s.nombre_escultura}
-                          className="h-full w-full object-cover"
-                          onError={e => { e.target.src = 'https://via.placeholder.com/80x60/1a1a1a/444?text=3D'; }}
-                        />
+                        <img src={s.fotos_originales[0]} alt={s.nombre_escultura} className="h-full w-full object-cover"
+                          onError={e => { e.target.src = 'https://via.placeholder.com/80x60/1a1a1a/444?text=3D'; }} />
                       </div>
                     ) : (
                       <div className="h-12 w-16 shrink-0 rounded-lg bg-slate-100 dark:bg-dark-tertiary flex items-center justify-center">
@@ -131,28 +141,21 @@ function SculpturesContent() {
                     </div>
                   </div>
                 </td>
-                {/* Artista */}
                 <td className="px-5 py-3 text-sm text-slate-600 dark:text-slate-300 whitespace-nowrap">{s.artista}</td>
-                {/* Categoría */}
                 <td className="px-5 py-3">
                   <span className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-slate-100 dark:bg-dark-tertiary text-slate-600 dark:text-slate-300">
                     {s.categoria || '—'}
                   </span>
                 </td>
-                {/* Estado */}
                 <td className="px-5 py-3">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${status.cls}`}>{status.label}</span>
                 </td>
-                {/* Fecha */}
                 <td className="px-5 py-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
                   {s.fecha ? new Date(s.fecha).toLocaleDateString('es-CO') : '—'}
                 </td>
-                {/* Acciones */}
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-1">
-                    <Link href={`/sculpture/${s.id}`} target="_blank">
-                      <IconBtn icon={ExternalLink} title="Ver escultura" />
-                    </Link>
+                    <Link href={`/sculpture/${s.id}`} target="_blank"><IconBtn icon={ExternalLink} title="Ver" /></Link>
                     <IconBtn icon={Pencil} onClick={() => openEdit(s)} title="Editar" />
                     <IconBtn icon={Trash2} onClick={() => handleDelete(s)} variant="danger" title="Eliminar" />
                   </div>
@@ -161,29 +164,57 @@ function SculpturesContent() {
             );
           })}
         </Table>
+
+        {!loading && (
+          <div className="px-5 pb-4">
+            <Pagination page={page} total={total} goTo={goTo} />
+          </div>
+        )}
       </TableCard>
 
-      {/* Modal editar */}
+      {/* Modal editar completo */}
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl">
+          <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 dark:border-dark-tertiary">
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Editar escultura</h2>
               <button onClick={closeModal} className="rounded-lg p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <form onSubmit={handleSave} className="px-6 py-5 space-y-4">
-              <Field label="Nombre *">
-                <FormInput value={formName} onChange={setFormName} placeholder="Nombre de la escultura" required />
-              </Field>
-              <Field label="Descripción">
-                <FormTextarea value={formDesc} onChange={setFormDesc} placeholder="Descripción de la escultura..." rows={3} />
-              </Field>
-              <div className="flex items-center justify-end gap-3 pt-2">
+
+            <form onSubmit={handleSave} className="flex flex-col overflow-hidden flex-1">
+              <div className="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Nombre *">
+                    <FormInput value={fNombre} onChange={setFNombre} placeholder="Nombre de la escultura" required />
+                  </Field>
+                  <Field label="Artista *">
+                    <FormInput value={fArtista} onChange={setFArtista} placeholder="Nombre del artista" required />
+                  </Field>
+                </div>
+
+                <Field label="Descripción">
+                  <FormTextarea value={fDesc} onChange={setFDesc} placeholder="Descripción de la escultura..." rows={3} />
+                </Field>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Field label="Categoría">
+                    <FormSelect value={fCategoria} onChange={setFCategoria}>
+                      <option value="">Sin categoría</option>
+                      {allCats.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </FormSelect>
+                  </Field>
+                  <Field label="Etiquetas">
+                    <FormInput value={fEtiqueta} onChange={setFEtiqueta} placeholder="ej. moderno, abstracto" />
+                  </Field>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t border-slate-100 dark:border-dark-tertiary flex items-center justify-end gap-3">
                 <GhostBtn onClick={closeModal}>Cancelar</GhostBtn>
                 <PrimaryBtn type="submit" disabled={saving}>
-                  {saving ? 'Guardando...' : 'Guardar'}
+                  {saving ? 'Guardando...' : 'Guardar cambios'}
                 </PrimaryBtn>
               </div>
             </form>

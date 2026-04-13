@@ -8,7 +8,7 @@ import { useColor } from '@/contexts/ColorContext';
 import {
   AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
   TableCard, Table, EmptyRow, IconBtn, Field, FormInput,
-  FormTextarea, ErrorBanner,
+  FormTextarea, ErrorBanner, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 
 const RESOURCES = [
@@ -115,6 +115,8 @@ function RolesContent() {
     r.description?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const { page, total, paged, goTo } = usePagination(filtered, 10);
+
   return (
     <AdminPage>
       <AdminHeader
@@ -132,8 +134,8 @@ function RolesContent() {
 
       <TableCard>
         <Table headers={['Rol', 'Descripción', 'Permisos', 'Creado', 'Acciones']} loading={loading} color={color}>
-          {!loading && filtered.length === 0 && <EmptyRow cols={5} message="No hay roles registrados" />}
-          {filtered.map(role => (
+          {!loading && paged.length === 0 && <EmptyRow cols={5} message="No hay roles registrados" />}
+          {paged.map(role => (
             <tr key={role.id} className="hover:bg-slate-50 dark:hover:bg-dark-tertiary/30 transition-colors">
               <td className="px-5 py-4">
                 <div className="flex items-center gap-2.5">
@@ -180,6 +182,11 @@ function RolesContent() {
             </tr>
           ))}
         </Table>
+        {!loading && (
+          <div className="px-5 pb-4">
+            <Pagination page={page} total={total} goTo={goTo} />
+          </div>
+        )}
       </TableCard>
 
       {/* ── Modal ── */}

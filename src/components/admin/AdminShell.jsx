@@ -1,7 +1,90 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { useState } from 'react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
+
+/* ── usePagination hook ── */
+export function usePagination(items, perPage = 15) {
+  const [page, setPage] = useState(1);
+  const total     = Math.ceil(items.length / perPage);
+  const paged     = items.slice((page - 1) * perPage, page * perPage);
+  const goTo      = (p) => setPage(Math.max(1, Math.min(p, total)));
+  const reset     = ()  => setPage(1);
+  return { page, total, paged, goTo, reset };
+}
+
+/* ── Pagination UI ── */
+export function Pagination({ page, total, goTo }) {
+  const { color } = useColor();
+  if (total <= 1) return null;
+
+  const pages = Array.from({ length: total }, (_, i) => i + 1)
+    .filter(p => p === 1 || p === total || Math.abs(p - page) <= 1);
+
+  const withEllipsis = pages.reduce((acc, p, i, arr) => {
+    if (i > 0 && arr[i - 1] !== p - 1) acc.push('…');
+    acc.push(p);
+    return acc;
+  }, []);
+
+  return (
+    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-dark-tertiary">
+      <span className="text-xs text-slate-400 dark:text-slate-500">
+        Página {page} de {total}
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => goTo(page - 1)}
+          disabled={page === 1}
+          className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+
+        {withEllipsis.map((p, i) =>
+          p === '…'
+            ? <span key={`e${i}`} className="w-8 text-center text-xs text-slate-400">…</span>
+            : <button
+                key={p}
+                onClick={() => goTo(p)}
+                className="h-8 w-8 rounded-lg text-sm font-semibold transition-colors"
+                style={page === p ? { backgroundColor: color, color: 'white' } : undefined}
+                {...(page !== p ? {
+                  className: 'h-8 w-8 rounded-lg text-sm font-semibold transition-colors text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-tertiary'
+                } : {})}
+              >
+                {p}
+              </button>
+        )}
+
+        <button
+          onClick={() => goTo(page + 1)}
+          disabled={page === total}
+          className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Select ── */
+export function FormSelect({ value, onChange, children }) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full appearance-none rounded-xl border border-slate-200 dark:border-dark-tertiary bg-slate-50 dark:bg-dark-tertiary px-3.5 py-2.5 pr-9 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-slate-300 dark:focus:ring-slate-600 transition"
+      >
+        {children}
+      </select>
+      <ChevronRight className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 rotate-90 text-slate-400" />
+    </div>
+  );
+}
 
 /* ── Page wrapper ── */
 export function AdminPage({ children }) {
