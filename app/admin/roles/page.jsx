@@ -8,8 +8,9 @@ import { useColor } from '@/contexts/ColorContext';
 import {
   AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
   TableCard, Table, EmptyRow, IconBtn, Field, FormInput,
-  FormTextarea, ErrorBanner, usePagination, Pagination,
+  FormTextarea, ErrorBanner, usePagination, Pagination, useConfirm,
 } from '@/components/admin/AdminShell';
+import { toast } from '@/lib/toast';
 
 const RESOURCES = [
   { key: 'paintings',  label: 'Pinturas',   desc: 'Catálogo de pinturas' },
@@ -44,6 +45,7 @@ export default function RolesAdminPage() {
 
 function RolesContent() {
   const { color } = useColor();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [roles,   setRoles]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -86,21 +88,24 @@ function RolesContent() {
 
     if (modal === 'create') {
       const res = await roleService.createRole({ name, description: desc });
-      if (!res.success) { setError(res.error); setSaving(false); return; }
+      if (!res.success) { toast.error(res.error || 'Error al crear rol'); setSaving(false); return; }
       if (perms.length) await roleService.assignPermissions(res.data.id, perms);
+      toast.success('Rol creado correctamente');
     } else {
       const res = await roleService.updateRole(sel.id, { name, description: desc });
-      if (!res.success) { setError(res.error); setSaving(false); return; }
+      if (!res.success) { toast.error(res.error || 'Error al actualizar rol'); setSaving(false); return; }
       await roleService.assignPermissions(sel.id, perms);
+      toast.success('Rol actualizado correctamente');
     }
     closeModal(); load();
   };
 
   const handleDelete = async (r) => {
-    if (!confirm(`¿Eliminar "${r.name}"?`)) return;
+    const ok = await confirm(`¿Eliminar el rol "${r.name}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
     const res = await roleService.deleteRole(r.id);
-    if (!res.success) setError(res.error);
-    else load();
+    if (!res.success) toast.error(res.error || 'Error al eliminar rol');
+    else { toast.success('Rol eliminado'); load(); }
   };
 
   const toggleAll = () => {
@@ -188,6 +193,8 @@ function RolesContent() {
           </div>
         )}
       </TableCard>
+
+      <ConfirmDialog />
 
       {/* ── Modal ── */}
       {modal && (

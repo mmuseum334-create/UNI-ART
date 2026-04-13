@@ -1,8 +1,57 @@
 'use client';
 
 import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
+
+/* ── useConfirm hook ── */
+export function useConfirm() {
+  const [state, setState] = useState({ open: false, msg: '', resolve: null });
+
+  const confirm = (msg) => new Promise(resolve => {
+    setState({ open: true, msg, resolve });
+  });
+
+  const handleResponse = (value) => {
+    state.resolve?.(value);
+    setState({ open: false, msg: '', resolve: null });
+  };
+
+  const Dialog = () => {
+    if (!state.open) return null;
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-dark-secondary shadow-2xl p-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-slate-900 dark:text-white">¿Confirmar acción?</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{state.msg}</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3">
+            <button
+              onClick={() => handleResponse(false)}
+              className="rounded-xl border border-slate-200 dark:border-dark-tertiary px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-dark-tertiary transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => handleResponse(true)}
+              className="rounded-xl px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors"
+            >
+              Eliminar
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return { confirm, ConfirmDialog: Dialog };
+}
 
 /* ── usePagination hook ── */
 export function usePagination(items, perPage = 15) {

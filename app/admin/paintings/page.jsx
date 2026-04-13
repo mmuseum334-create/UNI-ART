@@ -13,8 +13,9 @@ import { artCategories } from '@/data/mockData';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
   EmptyRow, IconBtn, Field, FormInput, FormTextarea, FormSelect,
-  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination,
+  ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination, useConfirm,
 } from '@/components/admin/AdminShell';
+import { toast } from '@/lib/toast';
 
 export default function AdminPaintingsPage() {
   return (
@@ -26,6 +27,7 @@ export default function AdminPaintingsPage() {
 
 function PaintingsContent() {
   const { color } = useColor();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [paintings,   setPaintings]   = useState([]);
   const [categories,  setCategories]  = useState([]);
@@ -87,18 +89,23 @@ function PaintingsContent() {
       categoria:           fCategoria,
       etiqueta:            fEtiqueta,
     });
-    if (!res.success) { setError(res.error); setSaving(false); return; }
+    setSaving(false);
+    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
+    toast.success('Pintura actualizada correctamente');
     closeModal(); load();
   };
 
   const handleDelete  = async (p) => {
-    if (!confirm(`¿Eliminar "${p.nombre_pintura}"?`)) return;
+    const ok = await confirm(`¿Eliminar la pintura "${p.nombre_pintura}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
     const res = await paintService.delete(p.id);
-    if (!res.success) setError(res.error); else load();
+    if (!res.success) toast.error(res.error || 'Error al eliminar');
+    else { toast.success('Pintura eliminada'); load(); }
   };
   const handleRestore = async (p) => {
     const res = await paintService.restore(p.id);
-    if (!res.success) setError(res.error); else load();
+    if (!res.success) toast.error(res.error || 'Error al restaurar');
+    else { toast.success('Pintura restaurada'); load(); }
   };
 
   const imgUrl = (p) => getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`;
@@ -238,6 +245,7 @@ function PaintingsContent() {
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </AdminPage>
   );
 }

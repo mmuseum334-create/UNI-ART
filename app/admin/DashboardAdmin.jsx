@@ -149,7 +149,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{item.action}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{item.user} · {item.time}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-200">{item.user} · {item.time}</p>
                 </div>
               </div>
             ))}

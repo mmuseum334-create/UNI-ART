@@ -11,6 +11,7 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { ColorProvider } from '@/contexts/ColorContext';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { Toaster } from 'sileo';
 
 // Configuración de la fuente Poppins
 const poppins = Poppins({
@@ -49,6 +50,7 @@ export default function RootLayout({ children }) {
                 </main>
                 <Footer />
               </div>
+              <Toaster position="bottom-right" />
             </ColorProvider>
           </AuthProvider>
         </ThemeProvider>

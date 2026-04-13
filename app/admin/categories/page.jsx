@@ -7,8 +7,9 @@ import { categoryService } from '@/services/categoryService';
 import { useColor } from '@/contexts/ColorContext';
 import {
   AdminPage, AdminHeader, PrimaryBtn, GhostBtn, SearchInput,
-  Field, FormInput, FormTextarea, ErrorBanner,
+  Field, FormInput, FormTextarea, ErrorBanner, useConfirm,
 } from '@/components/admin/AdminShell';
+import { toast } from '@/lib/toast';
 
 export default function CategoriesAdminPage() {
   return (
@@ -20,6 +21,7 @@ export default function CategoriesAdminPage() {
 
 function CategoriesContent() {
   const { color } = useColor();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,15 +54,18 @@ function CategoriesContent() {
     const res = modal === 'create'
       ? await categoryService.create({ name, description: desc })
       : await categoryService.update(sel.id, { name, description: desc });
-    if (!res.success) { setError(res.error); setSaving(false); return; }
+    setSaving(false);
+    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
+    toast.success(modal === 'create' ? 'Categoría creada' : 'Categoría actualizada');
     closeModal(); load();
   };
 
   const handleDelete = async (item) => {
-    if (!confirm(`¿Eliminar "${item.name}"?`)) return;
+    const ok = await confirm(`¿Eliminar la categoría "${item.name}"? Esta acción no se puede deshacer.`);
+    if (!ok) return;
     const res = await categoryService.delete(item.id);
-    if (!res.success) setError(res.error);
-    else load();
+    if (!res.success) toast.error(res.error || 'Error al eliminar');
+    else { toast.success('Categoría eliminada'); load(); }
   };
 
   const filtered = items.filter(c =>
@@ -136,6 +141,8 @@ function CategoriesContent() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog />
 
       {/* Modal */}
       {modal && (

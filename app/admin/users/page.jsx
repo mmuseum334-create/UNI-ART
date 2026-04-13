@@ -7,6 +7,7 @@ import { roleService } from '@/services/rbac/roleService';
 import { ROLES } from '@/services/rbac/permissionService';
 import { useColor } from '@/contexts/ColorContext';
 import { usePermissions } from '@/hooks/usePermissions';
+import { toast } from '@/lib/toast';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
   EmptyRow, IconBtn, Field, FormInput, FormSelect,
@@ -78,11 +79,11 @@ function UsersContent() {
   const handleSave = async (e) => {
     e.preventDefault();
     setSaving(true);
-    // Assign role if changed
     if (fRoleId && fRoleId !== String(sel.role?.id)) {
       const res = await roleService.assignRoleToUser(sel.id, Number(fRoleId));
-      if (!res.success) { setError(res.error); setSaving(false); return; }
+      if (!res.success) { toast.error(res.error || 'Error al actualizar rol'); setSaving(false); return; }
     }
+    toast.success('Usuario actualizado correctamente');
     closeModal(); load();
   };
 

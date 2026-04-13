@@ -21,6 +21,7 @@ import {
   Share2,
   Heart,
 } from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 const SculptureDetailPage = () => {
   const router = useRouter();
@@ -76,7 +77,7 @@ const SculptureDetailPage = () => {
     } else {
       // Fallback: copiar al portapapeles
       navigator.clipboard.writeText(window.location.href);
-      alert('Enlace copiado al portapapeles');
+      toast.success('Enlace copiado al portapapeles');
     }
   };
 

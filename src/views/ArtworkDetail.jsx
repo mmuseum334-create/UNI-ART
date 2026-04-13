@@ -15,6 +15,7 @@ import { UserColorBadge, UserColorButton } from '@/components/ui/UserColorElemen
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
+import { toast } from '@/lib/toast';
 import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import {
@@ -176,7 +177,7 @@ const ArtworkDetail = () => {
       }
     } else {
       navigator.clipboard.writeText(window.location.href);
-      alert('Enlace copiado al portapapeles');
+      toast.success('Enlace copiado al portapapeles');
     }
   };
 

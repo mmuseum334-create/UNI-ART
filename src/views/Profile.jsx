@@ -14,6 +14,8 @@ import { Badge } from '@/components/ui/Badge';
 import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { paintService } from '@/services/paint/paintService';
+import { toast } from '@/lib/toast';
+import { useConfirm } from '@/components/admin/AdminShell';
 import EditPaintingModal from '@/components/ui/EditPaintingModal';
 import {
   User,
@@ -33,6 +35,7 @@ import {
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || '',
@@ -164,16 +167,15 @@ const Profile = () => {
   };
 
   const handleDeletePainting = async (paintingId) => {
-    if (!window.confirm('¿Estás seguro de que deseas eliminar esta pintura?')) {
-      return;
-    }
+    const ok = await confirm('¿Estás seguro de que deseas eliminar esta pintura? Esta acción no se puede deshacer.');
+    if (!ok) return;
 
     const result = await paintService.delete(paintingId);
     if (result.success) {
-      // Actualizar la lista de pinturas
       setUserArtworks(prev => prev.filter(p => p.id !== paintingId));
+      toast.success('Pintura eliminada correctamente');
     } else {
-      alert('Error al eliminar la pintura: ' + result.error);
+      toast.error('Error al eliminar la pintura: ' + result.error);
     }
   };
 
@@ -616,6 +618,7 @@ const Profile = () => {
         onClose={handleCloseEditModal}
         onSave={handleSavePainting}
       />
+      <ConfirmDialog />
     </div>
   );
 };
