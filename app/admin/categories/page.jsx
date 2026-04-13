@@ -55,8 +55,11 @@ function CategoriesContent() {
       ? await categoryService.create({ name, description: desc })
       : await categoryService.update(sel.id, { name, description: desc });
     setSaving(false);
-    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
-    toast.success(modal === 'create' ? 'Categoría creada' : 'Categoría actualizada');
+    if (!res.success) { toast.error('Error al guardar', res.error); return; }
+    toast.success(
+      modal === 'create' ? 'Categoría creada' : 'Categoría actualizada',
+      modal === 'create' ? `"${name}" fue añadida al sistema.` : 'Los cambios se guardaron correctamente.'
+    );
     closeModal(); load();
   };
 
@@ -64,8 +67,8 @@ function CategoriesContent() {
     const ok = await confirm(`¿Eliminar la categoría "${item.name}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     const res = await categoryService.delete(item.id);
-    if (!res.success) toast.error(res.error || 'Error al eliminar');
-    else { toast.success('Categoría eliminada'); load(); }
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Categoría eliminada', `"${item.name}" fue eliminada del sistema.`); load(); }
   };
 
   const filtered = items.filter(c =>

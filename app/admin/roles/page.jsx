@@ -88,14 +88,14 @@ function RolesContent() {
 
     if (modal === 'create') {
       const res = await roleService.createRole({ name, description: desc });
-      if (!res.success) { toast.error(res.error || 'Error al crear rol'); setSaving(false); return; }
+      if (!res.success) { toast.error('Error al crear rol', res.error); setSaving(false); return; }
       if (perms.length) await roleService.assignPermissions(res.data.id, perms);
-      toast.success('Rol creado correctamente');
+      toast.success('Rol creado', `El rol "${name}" fue creado con sus permisos.`);
     } else {
       const res = await roleService.updateRole(sel.id, { name, description: desc });
-      if (!res.success) { toast.error(res.error || 'Error al actualizar rol'); setSaving(false); return; }
+      if (!res.success) { toast.error('Error al actualizar rol', res.error); setSaving(false); return; }
       await roleService.assignPermissions(sel.id, perms);
-      toast.success('Rol actualizado correctamente');
+      toast.success('Rol actualizado', 'Los cambios se guardaron correctamente.');
     }
     closeModal(); load();
   };
@@ -104,8 +104,8 @@ function RolesContent() {
     const ok = await confirm(`¿Eliminar el rol "${r.name}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     const res = await roleService.deleteRole(r.id);
-    if (!res.success) toast.error(res.error || 'Error al eliminar rol');
-    else { toast.success('Rol eliminado'); load(); }
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Rol eliminado', `El rol "${r.name}" fue eliminado.`); load(); }
   };
 
   const toggleAll = () => {

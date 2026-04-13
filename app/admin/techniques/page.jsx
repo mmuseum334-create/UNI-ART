@@ -55,8 +55,11 @@ function TechniquesContent() {
       ? await techniqueService.create({ name, description: desc })
       : await techniqueService.update(sel.id, { name, description: desc });
     setSaving(false);
-    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
-    toast.success(modal === 'create' ? 'Técnica creada' : 'Técnica actualizada');
+    if (!res.success) { toast.error('Error al guardar', res.error); return; }
+    toast.success(
+      modal === 'create' ? 'Técnica creada' : 'Técnica actualizada',
+      modal === 'create' ? `"${name}" fue añadida al sistema.` : 'Los cambios se guardaron correctamente.'
+    );
     closeModal(); load();
   };
 
@@ -64,8 +67,8 @@ function TechniquesContent() {
     const ok = await confirm(`¿Eliminar la técnica "${item.name}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     const res = await techniqueService.delete(item.id);
-    if (!res.success) toast.error(res.error || 'Error al eliminar');
-    else { toast.success('Técnica eliminada'); load(); }
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Técnica eliminada', `"${item.name}" fue eliminada del sistema.`); load(); }
   };
 
   const filtered = items.filter(t =>

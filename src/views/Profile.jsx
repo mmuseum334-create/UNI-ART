@@ -19,7 +19,6 @@ import { useConfirm } from '@/components/admin/AdminShell';
 import EditPaintingModal from '@/components/ui/EditPaintingModal';
 import {
   User,
-  Mail,
   Calendar,
   Edit,
   Heart,
@@ -140,7 +139,7 @@ const Profile = () => {
     setEditingPainting(null);
   };
 
-  const handleSavePainting = async (updatedPainting) => {
+  const handleSavePainting = async (_updatedPainting) => {
     // Recargar las pinturas del usuario después de guardar
     const result = await paintService.getMyPaintings();
     if (result.success) {
@@ -173,9 +172,9 @@ const Profile = () => {
     const result = await paintService.delete(paintingId);
     if (result.success) {
       setUserArtworks(prev => prev.filter(p => p.id !== paintingId));
-      toast.success('Pintura eliminada correctamente');
+      toast.success('Pintura eliminada', 'La obra fue eliminada de tu perfil.');
     } else {
-      toast.error('Error al eliminar la pintura: ' + result.error);
+      toast.error('Error al eliminar', result.error);
     }
   };
 

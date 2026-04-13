@@ -81,9 +81,9 @@ function UsersContent() {
     setSaving(true);
     if (fRoleId && fRoleId !== String(sel.role?.id)) {
       const res = await roleService.assignRoleToUser(sel.id, Number(fRoleId));
-      if (!res.success) { toast.error(res.error || 'Error al actualizar rol'); setSaving(false); return; }
+      if (!res.success) { toast.error('Error al actualizar rol', res.error); setSaving(false); return; }
     }
-    toast.success('Usuario actualizado correctamente');
+    toast.success('Usuario actualizado', 'Los cambios se guardaron correctamente.');
     closeModal(); load();
   };
 

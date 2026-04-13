@@ -93,8 +93,8 @@ function SculpturesContent() {
       etiqueta:         fEtiqueta,
     });
     setSaving(false);
-    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
-    toast.success('Escultura actualizada correctamente');
+    if (!res.success) { toast.error('Error al guardar', res.error); return; }
+    toast.success('Escultura actualizada', 'Los cambios se guardaron correctamente.');
     closeModal(); load();
   };
 
@@ -102,8 +102,8 @@ function SculpturesContent() {
     const ok = await confirm(`¿Eliminar la escultura "${s.nombre_escultura}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     const res = await sculptureService.delete(s.id);
-    if (!res.success) toast.error(res.error || 'Error al eliminar');
-    else { toast.success('Escultura eliminada'); load(); }
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Escultura eliminada', 'La escultura fue eliminada del sistema.'); load(); }
   };
 
   const allCats = [

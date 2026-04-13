@@ -90,8 +90,8 @@ function PaintingsContent() {
       etiqueta:            fEtiqueta,
     });
     setSaving(false);
-    if (!res.success) { toast.error(res.error || 'Error al guardar'); return; }
-    toast.success('Pintura actualizada correctamente');
+    if (!res.success) { toast.error('Error al guardar', res.error); return; }
+    toast.success('Pintura actualizada', 'Los cambios se guardaron correctamente.');
     closeModal(); load();
   };
 
@@ -99,13 +99,13 @@ function PaintingsContent() {
     const ok = await confirm(`¿Eliminar la pintura "${p.nombre_pintura}"? Esta acción no se puede deshacer.`);
     if (!ok) return;
     const res = await paintService.delete(p.id);
-    if (!res.success) toast.error(res.error || 'Error al eliminar');
-    else { toast.success('Pintura eliminada'); load(); }
+    if (!res.success) toast.error('Error al eliminar', res.error);
+    else { toast.success('Pintura eliminada', 'La obra fue eliminada del sistema.'); load(); }
   };
   const handleRestore = async (p) => {
     const res = await paintService.restore(p.id);
-    if (!res.success) toast.error(res.error || 'Error al restaurar');
-    else { toast.success('Pintura restaurada'); load(); }
+    if (!res.success) toast.error('Error al restaurar', res.error);
+    else { toast.success('Pintura restaurada', 'La obra vuelve a estar visible.'); load(); }
   };
 
   const imgUrl = (p) => getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`;
