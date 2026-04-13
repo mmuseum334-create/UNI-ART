@@ -15,7 +15,6 @@ import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { paintService } from '@/services/paint/paintService';
 import { toast } from '@/lib/toast';
-import { useConfirm } from '@/components/admin/AdminShell';
 import EditPaintingModal from '@/components/ui/EditPaintingModal';
 import {
   User,
@@ -34,7 +33,6 @@ import {
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
-  const { confirm, ConfirmDialog } = useConfirm();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || '',
@@ -165,17 +163,20 @@ const Profile = () => {
     }
   };
 
-  const handleDeletePainting = async (paintingId) => {
-    const ok = await confirm('¿Estás seguro de que deseas eliminar esta pintura? Esta acción no se puede deshacer.');
-    if (!ok) return;
-
-    const result = await paintService.delete(paintingId);
-    if (result.success) {
-      setUserArtworks(prev => prev.filter(p => p.id !== paintingId));
-      toast.success('Pintura eliminada', 'La obra fue eliminada de tu perfil.');
-    } else {
-      toast.error('Error al eliminar', result.error);
-    }
+  const handleDeletePainting = (paintingId) => {
+    toast.confirm(
+      '¿Eliminar esta pintura?',
+      'Esta acción no se puede deshacer.',
+      async () => {
+        const result = await paintService.delete(paintingId);
+        if (result.success) {
+          setUserArtworks(prev => prev.filter(p => p.id !== paintingId));
+          toast.success('Pintura eliminada', 'La obra fue eliminada de tu perfil.');
+        } else {
+          toast.error('Error al eliminar', result.error);
+        }
+      }
+    );
   };
 
   const stats = {
@@ -617,7 +618,6 @@ const Profile = () => {
         onClose={handleCloseEditModal}
         onSave={handleSavePainting}
       />
-      <ConfirmDialog />
     </div>
   );
 };
