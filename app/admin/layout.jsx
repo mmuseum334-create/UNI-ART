@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Shield, Tag, Palette,
-  Frame, Landmark, ChevronLeft, ChevronRight,
+  Frame, Landmark, ChevronLeft, ChevronRight, Image,
 } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
 
@@ -12,6 +12,7 @@ const navItems = [
   { label: 'Dashboard',  icon: LayoutDashboard, path: '/admin' },
   { label: 'Pinturas',   icon: Frame,            path: '/admin/paintings' },
   { label: 'Esculturas', icon: Landmark,         path: '/admin/sculptures' },
+  { label: 'Banners',    icon: Image,            path: '/admin/banner' },
   { label: 'Usuarios',   icon: Users,            path: '/admin/users' },
   { label: 'Roles',      icon: Shield,           path: '/admin/roles' },
   { label: 'Categorías', icon: Tag,              path: '/admin/categories' },
