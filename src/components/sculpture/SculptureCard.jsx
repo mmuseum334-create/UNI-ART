@@ -54,7 +54,7 @@ export const SculptureGridCard = ({ artwork, color, onQuickView }) => {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      <Link href={`/artwork/sculpture/${artwork.id}`} className="block">
+      <Link href={`/sculpture/${artwork.id}`} className="block">
         {/* Área visual */}
         <div className="relative aspect-[4/3] overflow-hidden bg-slate-900 dark:bg-[#0d0d0d]">
 
@@ -154,7 +154,7 @@ export const SculptureListCard = ({ artwork, color, onQuickView }) => {
 
   return (
     <div className="group relative flex gap-4 rounded-2xl border transition-all duration-300 overflow-hidden p-3 bg-white dark:bg-[#171717] border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/10 hover:shadow-lg">
-      <Link href={`/artwork/sculpture/${artwork.id}`} className="flex gap-4 flex-1 min-w-0">
+      <Link href={`/sculpture/${artwork.id}`} className="flex gap-4 flex-1 min-w-0">
         {/* Thumb 3D o imagen */}
         <div className="w-24 h-20 flex-shrink-0 rounded-xl overflow-hidden bg-slate-900 relative">
           {hasModel ? (
