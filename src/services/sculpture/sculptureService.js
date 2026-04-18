@@ -70,6 +70,37 @@ export const sculptureService = {
   },
 
   /**
+   * Regenerate 3D model for an existing sculpture
+   * @param {number|string} id - ID de la escultura
+   * @returns {Promise<Object>} Respuesta con la escultura actualizada
+   */
+  async regenerateModel(id) {
+    try {
+      const response = await fetch(`${API_URL}/sculpture/${id}/regenerate`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          success: false,
+          error: data.message || 'Error al regenerar el modelo 3D'
+        };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error en sculptureService.regenerateModel:', error);
+      return {
+        success: false,
+        error: 'Error de conexión con el servidor'
+      };
+    }
+  },
+
+  /**
    * Obtener todas las esculturas
    * @returns {Promise<Object>} Respuesta con lista de esculturas
    */

@@ -24,6 +24,8 @@ const SculptureProcessingPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [isRegenerating, setIsRegenerating] = useState(false);
+
   // Cargar datos de la escultura
   useEffect(() => {
     if (!sculptureId) return;
@@ -57,7 +59,7 @@ const SculptureProcessingPage = () => {
           setProcessingStatus(response.data);
 
           // Si se completó, redirigir a la página de detalles después de 3 segundos
-          if (response.data.status === 'completed' || response.data.estado_procesamiento === 'completado') {
+          if (!isRegenerating && (response.data.status === 'completed' || response.data.estado_procesamiento === 'completado')) {
             setTimeout(() => {
               router.push(`/sculpture/${sculptureId}`);
             }, 3000);
@@ -73,13 +75,13 @@ const SculptureProcessingPage = () => {
 
     // Polling cada 5 segundos si está procesando
     const interval = setInterval(() => {
-      if (!processingStatus || processingStatus?.status === 'uploading' || processingStatus?.status === 'processing') {
+      if (!processingStatus || processingStatus?.status === 'uploading' || processingStatus?.status === 'processing' || isRegenerating) {
         fetchStatus();
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [sculptureId, processingStatus?.status, router]);
+  }, [sculptureId, processingStatus?.status, router, isRegenerating]);
 
   // Redirigir si no está autenticado
   useEffect(() => {
@@ -87,6 +89,25 @@ const SculptureProcessingPage = () => {
       router.push('/auth');
     }
   }, [isAuthenticated, router]);
+
+  const handleRegenerate = async () => {
+    if (confirm('¿Estás seguro de que quieres volver a generar el modelo 3D? Esto sobreescribirá el modelo actual.')) {
+      setIsRegenerating(true);
+      try {
+        const res = await sculptureService.regenerateModel(sculptureId);
+        if (res.success) {
+          setProcessingStatus({ status: 'processing', progress: 0 });
+        } else {
+          alert('Error: ' + res.error);
+        }
+      } catch (err) {
+        console.error(err);
+        alert('Error al regenerar el modelo.');
+      } finally {
+        setIsRegenerating(false);
+      }
+    }
+  };
 
   if (!isAuthenticated || loading) {
     return (
@@ -220,7 +241,7 @@ const SculptureProcessingPage = () => {
 
               {/* Botones de acción */}
               {processingStatus?.status === 'completed' && (
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4 border-t border-slate-200 flex flex-wrap gap-4">
                   <Button
                     onClick={() => router.push(`/sculpture/${sculptureId}`)}
                     className="w-full sm:w-auto"
@@ -228,17 +249,32 @@ const SculptureProcessingPage = () => {
                     <Eye className="h-4 w-4 mr-2" />
                     Ver Modelo 3D
                   </Button>
+                  <Button
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    variant="outline"
+                    className="w-full sm:w-auto border-violet-500 text-violet-600 hover:bg-violet-50"
+                  >
+                    {isRegenerating ? 'Generando...' : 'Regenerar modelo con IA'}
+                  </Button>
                 </div>
               )}
 
               {processingStatus?.status === 'failed' && (
-                <div className="pt-4 border-t border-slate-200">
+                <div className="pt-4 border-t border-slate-200 flex flex-wrap gap-4">
                   <Button
                     onClick={() => router.push(`/sculpture/${sculptureId}/edit`)}
-                    variant="outline"
                     className="w-full sm:w-auto"
                   >
                     Reintentar con nuevas fotos
+                  </Button>
+                  <Button
+                    onClick={handleRegenerate}
+                    disabled={isRegenerating}
+                    variant="outline"
+                    className="w-full sm:w-auto border-violet-500 text-violet-600 hover:bg-violet-50"
+                  >
+                    {isRegenerating ? 'Generando...' : 'Reintentar generación con IA (Mismas fotos)'}
                   </Button>
                 </div>
               )}
