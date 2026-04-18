@@ -6,11 +6,13 @@ import { useSearchParams } from 'next/navigation';
 import { ArtworkHoverDialog } from '@/components/ui/ArtworkHoverDialog';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
+import { sculptureService } from '@/services/sculpture/sculptureService';
 import { getPublicImageUrl } from '@/lib/supabase';
 import { useColor } from '@/contexts/ColorContext';
 import { useAuth } from '@/contexts/AuthContext';  // ← detecta super_admin
 import { bannerService } from '@/services/banner/bannerService';
 import { BannerContent, getElStyle } from '@/app/admin/banner/page'; // re-usa componentes
+import { SculptureGridCard, SculptureListCard } from '@/components/sculpture/SculptureCard';
 import {
   Search, Grid3X3, List, Heart, Eye,
   SlidersHorizontal, BookOpen, Music, Video,
@@ -630,26 +632,65 @@ const Catalog = () => {
     });
   }, []);
 
-  // Paintings
+  // Paintings + Sculptures
   useEffect(() => {
     const load = async () => {
       setIsLoading(true); setLoadError(null);
       try {
-        const response = await paintService.getAll();
-        if (response.success) {
-          setAllPaintings(response.data.map(paint => ({
-            id: paint.id,
-            title: paint.nombre_pintura,
-            artist: paint.artista,
-            description: paint.descripcion_pintura,
-            category: paint.categoria,
-            imageUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
-            thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
-            tags: paint.etiqueta ? paint.etiqueta.split(', ') : [],
-            createdAt: paint.fecha, likes: paint.likes || 0, views: paint.views || 0,
-            uploadedBy: paint.publicado_por,
-          })));
-        } else { setLoadError(response.error || 'Error al cargar'); }
+        // Cargar pinturas y esculturas en paralelo
+        const [paintRes, sculptureRes] = await Promise.all([
+          paintService.getAll(),
+          sculptureService.getAll(),
+        ]);
+
+        const paintings = paintRes.success
+          ? paintRes.data.map(paint => ({
+              id:           `paint-${paint.id}`,
+              _rawId:       paint.id,
+              type:         'painting',
+              title:        paint.nombre_pintura,
+              artist:       paint.artista,
+              description:  paint.descripcion_pintura,
+              category:     paint.categoria,
+              imageUrl:     getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+              thumbnailUrl: getPublicImageUrl(paint.img_pintura) || `http://localhost:3002${paint.img_pintura}`,
+              tags:         paint.etiqueta ? paint.etiqueta.split(', ') : [],
+              createdAt:    paint.fecha,
+              likes:        paint.likes  || 0,
+              views:        paint.views  || 0,
+              uploadedBy:   paint.publicado_por,
+            }))
+          : [];
+
+        const sculptures = sculptureRes.success
+          ? sculptureRes.data.map(s => ({
+              id:            `sculpture-${s.id}`,
+              _rawId:        s.id,
+              type:          'sculpture',
+              title:         s.nombre_escultura,
+              artist:        s.artista,
+              description:   s.descripcion_escultura,
+              category:      'sculptures',   // siempre mapea al filtro 'sculptures'
+              tags:          s.etiqueta ? s.etiqueta.split(', ') : [],
+              createdAt:     s.fecha,
+              likes:         s.likes    || 0,
+              views:         s.views    || 0,
+              uploadedBy:    s.publicado_por,
+              // Campos específicos de escultura
+              imagenes:      s.imagenes || [],
+              modelo_3d_url: s.modelo_3d_url || null,
+              status:        s.estado_procesamiento === 'completado' ? 'completed'
+                           : s.estado_procesamiento === 'procesando' ? 'processing'
+                           : s.estado_procesamiento === 'fallido'   ? 'failed'
+                           : 'uploading',
+              progreso:      s.progreso || 0,
+              // Imagen de preview para la card (primera del array)
+              imageUrl:      s.imagenes?.[0] || null,
+              thumbnailUrl:  s.imagenes?.[0] || null,
+            }))
+          : [];
+
+        setAllPaintings([...paintings, ...sculptures]);
       } catch { setLoadError('Error de conexión'); }
       finally { setIsLoading(false); }
     };
@@ -696,7 +737,12 @@ const Catalog = () => {
         <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-600 dark:text-white/90 mb-2">Categorías</p>
         <div className="space-y-0.5">
           {[{ id: 'all', name: 'Todas', count: allPaintings.length, icon: null },
-            ...artCategories.map(c => ({ ...c, count: allPaintings.filter(p => p.category === c.id).length }))
+            ...artCategories.map(c => ({
+              ...c,
+              count: c.id === 'sculptures'
+                ? allPaintings.filter(p => p.type === 'sculpture').length
+                : allPaintings.filter(p => p.category === c.id).length,
+            }))
           ].map(cat => {
             const Icon = cat.icon ? iconMap[cat.icon] : null;
             const isActive = selectedCategory === cat.id;
@@ -889,9 +935,21 @@ const Catalog = () => {
                 <button onClick={clearFilters} className="text-sm underline text-slate-400 dark:text-white/30 hover:text-slate-600 dark:hover:text-white/50">Limpiar filtros</button>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">{pageArtworks.map(a => <GridCard key={a.id} artwork={a} />)}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {pageArtworks.map(a =>
+                  a.type === 'sculpture'
+                    ? <SculptureGridCard key={a.id} artwork={a} color={color} onQuickView={setSelectedArtwork} />
+                    : <GridCard key={a.id} artwork={a} />
+                )}
+              </div>
             ) : (
-              <div className="space-y-3">{pageArtworks.map(a => <ListCard key={a.id} artwork={a} />)}</div>
+              <div className="space-y-3">
+                {pageArtworks.map(a =>
+                  a.type === 'sculpture'
+                    ? <SculptureListCard key={a.id} artwork={a} color={color} onQuickView={setSelectedArtwork} />
+                    : <ListCard key={a.id} artwork={a} />
+                )}
+              </div>
             )}
 
             {/* Paginación */}
