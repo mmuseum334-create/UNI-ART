@@ -146,6 +146,13 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
 
   useEffect(() => { formRef.current = form; }, [form]);
 
+  // Sincronizar form cuando el banner cambia externamente
+  useEffect(() => {
+    if (sortedMedia.length > 0) {
+      setForm(formFromSlide(sortedMedia[bannerIdx]));
+    }
+  }, [banner]);
+
   const sf = (ch) => setForm(p => ({ ...p, ...ch }));
 
   // Medir ancho real del banner
@@ -237,7 +244,7 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
   const bannerH = form.banner_height ?? 600;
 
   return (
-    <div className="relative w-full" style={{ height: bannerH }}>
+    <div className="relative w-full" style={{ height: bannerH, minHeight: bannerH }}>
       {/* Banner real */}
       <div ref={bannerRef} className="absolute inset-0 overflow-hidden"
         onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
@@ -247,9 +254,9 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
         {/* Media */}
         {isSlider ? (
           sortedMedia.map((item, i) => (
-            <div key={item.url} className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100' : 'opacity-0'}`}>
+            <div key={`${item.url}-${i}`} className={`absolute inset-0 transition-opacity duration-700 ${i === bannerIdx ? 'opacity-100' : 'opacity-0'}`}>
               {item.type === 'video'
-                ? <video key={item.url} autoPlay loop muted playsInline className="w-full h-full object-cover"><source src={item.url} type="video/mp4" /></video>
+                ? <video autoPlay loop muted playsInline className="w-full h-full object-cover"><source src={item.url} type="video/mp4" /></video>
                 : <img src={item.url} alt="" className="w-full h-full object-cover" />}
             </div>
           ))
@@ -261,7 +268,7 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
           <img src={sortedMedia[0]?.url} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
 
-        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${form.overlay_opacity ?? 0.45})` }} />
+        <div className="absolute inset-0 z-10" style={{ background: `rgba(0,0,0,${form.overlay_opacity ?? 0.45})` }} />
 
         {/* Snap guides (solo en edit) */}
         {editMode && (
@@ -271,25 +278,27 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
           </div>
         )}
 
-        {/* Contenido del banner */}
-        <BannerContent
-          form={form} color={color}
-          draggable={editMode} activeEl={activeEl}
-          onStart={onStart} onResizeStart={onResizeStart}
-        />
+        {/* Contenido del banner — siempre visible, no solo en edit mode */}
+        <div className="absolute inset-0 z-20">
+          <BannerContent
+            form={form} color={color}
+            draggable={editMode} activeEl={activeEl}
+            onStart={onStart} onResizeStart={onResizeStart}
+          />
+        </div>
 
         {/* Slider controls */}
         {isSlider && !editMode && (
           <>
             <button onClick={() => setBannerIdx(i => (i - 1 + sortedMedia.length) % sortedMedia.length)}
-              className="absolute left-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-colors">
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
             <button onClick={() => setBannerIdx(i => (i + 1) % sortedMedia.length)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-colors">
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-black/40 hover:bg-black/70 border border-white/20 flex items-center justify-center text-white transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>
-            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-10 flex gap-2">
+            <div className="absolute bottom-5 left-1/2 -translate-x-1/2 z-30 flex gap-2">
               {sortedMedia.map((_, i) => (
                 <button key={i} onClick={() => setBannerIdx(i)}
                   className={`rounded-full transition-all duration-300 ${i === bannerIdx ? 'w-6 h-2 bg-white' : 'w-2 h-2 bg-white/40 hover:bg-white/70'}`} />
@@ -305,13 +314,12 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
           className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-black/70 hover:bg-black/90 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all hover:scale-105 shadow-xl"
           title="Editar banner">
           <Pencil className="h-3.5 w-3.5" />
-          Editar banner
         </button>
       )}
 
       {/* ── Panel lateral de edición ── */}
       {editMode && (
-        <div className="absolute top-0 right-0 bottom-0 z-40 w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden">
+        <div className="absolute top-0 right-0 bottom-0 z-40 w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
             <div>
@@ -547,7 +555,9 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
 const Catalog = () => {
   const { color } = useColor();
   const { user }  = useAuth();
-  const isSuperAdmin = user?.role === 'super_admin';
+
+  // El rol es un objeto: user.role.name === 'super_admin'
+  const isSuperAdmin = user?.role?.name === 'super_admin';
 
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery]           = useState(searchParams?.get('q') || '');
@@ -564,13 +574,59 @@ const Catalog = () => {
 
   // Banner
   const DEFAULT_BANNER = {
-    media: [{ type: 'video', url: '/sesion6.mp4', order: 0 }],
+    media: [{ type: 'video', url: '/sesion6.mp4', order: 0, title: '', subtitle: '', button_text: '', button_url: '' }],
   };
   const [banner, setBanner] = useState(DEFAULT_BANNER);
 
   useEffect(() => {
     bannerService.getByPage('catalog').then(res => {
-      if (res.success && res.data) setBanner(res.data);
+      if (res.success && res.data) {
+        // Asegurar que media existe y tiene la estructura correcta
+        const normalized = res.data;
+        if (!normalized.media) normalized.media = [];
+        // Asegurar que cada media item tiene los campos necesarios
+        normalized.media = normalized.media.map(m => ({
+          type: m.type || 'image',
+          url: m.url || '',
+          order: m.order ?? 0,
+          title: m.title || '',
+          subtitle: m.subtitle || '',
+          button_text: m.button_text || '',
+          button_url: m.button_url || '',
+          title_align: m.title_align || 'center',
+          subtitle_align: m.subtitle_align || 'center',
+          button_align: m.button_align || 'center',
+          title_x: m.title_x ?? 50,
+          title_y: m.title_y ?? 38,
+          subtitle_x: m.subtitle_x ?? 50,
+          subtitle_y: m.subtitle_y ?? 57,
+          button_x: m.button_x ?? 50,
+          button_y: m.button_y ?? 72,
+          stats: m.stats || [],
+          stats_x: m.stats_x ?? 50,
+          stats_y: m.stats_y ?? 85,
+          title_fs: m.title_fs ?? 60,
+          subtitle_fs: m.subtitle_fs ?? 18,
+          button_fs: m.button_fs ?? 16,
+          stats_value_fs: m.stats_value_fs ?? 28,
+          stats_label_fs: m.stats_label_fs ?? 13,
+          stats_card_w: m.stats_card_w ?? 120,
+          stats_card_h: m.stats_card_h ?? 80,
+          stats_gap: m.stats_gap ?? 16,
+          title_lh: m.title_lh ?? 1.1,
+          overlay_opacity: m.overlay_opacity ?? 0.45,
+          badge_visible: m.badge_visible ?? false,
+          badge_text: m.badge_text || '',
+          badge_x: m.badge_x ?? 50,
+          badge_y: m.badge_y ?? 18,
+          badge_fs: m.badge_fs ?? 14,
+          badge_style: m.badge_style || 'glass',
+          button_style: m.button_style || 'context',
+          stats_style: m.stats_style || 'glass',
+          banner_height: m.banner_height ?? 600,
+        }));
+        setBanner(normalized);
+      }
     });
   }, []);
 
@@ -770,7 +826,7 @@ const Catalog = () => {
         />
       ) : (
         /* Banner normal para usuarios no-admin */
-        <section className="relative overflow-hidden" style={{ minHeight: 600 }}>
+        <section className="relative overflow-hidden" style={{ minHeight: banner.media?.[0]?.banner_height ?? 600 }}>
           {banner.media && banner.media.length > 0 && (
             banner.media[0].type === 'video' ? (
               <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">

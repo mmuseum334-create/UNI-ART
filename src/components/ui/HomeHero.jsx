@@ -145,7 +145,9 @@ const MediaBackground = ({ item }) => {
 const HomeHero = () => {
   const { isAuthenticated, user } = useAuth();
   const { color } = useColor();
-  const isSuperAdmin = user?.role === 'super_admin';
+
+  // El rol es un objeto: user.role.name === 'super_admin'
+  const isSuperAdmin = user?.role?.name === 'super_admin';
 
   /* Banner data */
   const DEFAULT_BANNER = {
@@ -405,7 +407,6 @@ const HomeHero = () => {
           className="absolute bottom-4 right-4 z-30 flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-black/70 hover:bg-black/90 border border-white/20 text-white text-xs font-medium backdrop-blur-sm transition-all hover:scale-105 shadow-xl"
           title="Editar banner">
           <Pencil className="h-3.5 w-3.5" />
-          Editar banner
         </button>
       )}
 
