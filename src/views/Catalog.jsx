@@ -11,7 +11,7 @@ import { getPublicImageUrl } from '@/lib/supabase';
 import { useColor } from '@/contexts/ColorContext';
 import { useAuth } from '@/contexts/AuthContext';  // ← detecta super_admin
 import { bannerService } from '@/services/banner/bannerService';
-import { BannerContent, getElStyle } from '@/app/admin/banner/page'; // re-usa componentes
+import { BannerContent, getElStyle } from '@/components/ui/BannerContent';
 import { SculptureGridCard, SculptureListCard } from '@/components/sculpture/SculptureCard';
 import {
   Search, Grid3X3, List, Heart, Eye,

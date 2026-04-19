@@ -1,304 +1,647 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { bannerService } from '@/services/banner/bannerService';
+import { useColor } from '@/contexts/ColorContext';
 import {
-  Save, Upload, Trash2, GripVertical, Image as ImageIcon,
-  Video, Plus, Loader2, Check, ChevronLeft, ChevronRight,
+  Save, Upload, Trash2, Image as ImageIcon, Video,
+  Plus, Loader2, Check, ChevronLeft, ChevronRight,
+  AlignLeft, AlignCenter, AlignRight, GripVertical,
+  Sparkles, Type, Layout, Eye, EyeOff, Maximize2,
 } from 'lucide-react';
 
+import { BannerContent, getElStyle } from '@/components/ui/BannerContent';
+
+/* ─────────────────────────────────────────────
+   CONSTANTES
+───────────────────────────────────────────── */
 const PAGES = [
-  { id: 'home',    label: 'Inicio' },
-  { id: 'catalog', label: 'Catálogo' },
+  { id: 'home',    label: 'Inicio',   ratio: '16/6' },
+  { id: 'catalog', label: 'Catálogo', ratio: '16/5' },
+];
+const ALIGNS         = [{ val: 'left', Icon: AlignLeft }, { val: 'center', Icon: AlignCenter }, { val: 'right', Icon: AlignRight }];
+const SNAP_THRESHOLD = 4;
+const BANNER_REF_W   = 1440;
+
+const STYLE_OPTS = [
+  { val: 'glass',   label: 'Glass'  },
+  { val: 'solid',   label: 'Sólido' },
+  { val: 'context', label: 'Color'  },
 ];
 
-const MediaThumb = ({ item, index, total, onRemove, onMoveLeft, onMoveRight }) => {
-  const isVideo = item.type === 'video';
+const EMPTY_FORM = {
+  title: '', subtitle: '', button_text: '', button_url: '',
+  title_align: 'center', subtitle_align: 'center', button_align: 'center',
+  title_x: 50, title_y: 38, subtitle_x: 50, subtitle_y: 57,
+  button_x: 50, button_y: 72, stats_x: 50, stats_y: 85,
+  stats: [],
+  title_fs: 60, subtitle_fs: 18, button_fs: 16,
+  stats_value_fs: 28, stats_label_fs: 13,
+  stats_card_w: 120, stats_card_h: 80, stats_gap: 16,
+  title_lh: 1.1, overlay_opacity: 0.45,
+  badge_visible: false, badge_text: '', badge_x: 50, badge_y: 18, badge_fs: 14,
+  badge_style: 'glass', button_style: 'context', stats_style: 'glass',
+};
+
+/* ─────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────── */
+
+const formFromSlide = (slide) => ({
+  ...EMPTY_FORM,
+  title:           slide?.title           || '',
+  subtitle:        slide?.subtitle        || '',
+  button_text:     slide?.button_text     || '',
+  button_url:      slide?.button_url      || '',
+  title_align:     slide?.title_align     || 'center',
+  subtitle_align:  slide?.subtitle_align  || 'center',
+  button_align:    slide?.button_align    || 'center',
+  title_x:         slide?.title_x         ?? 50,
+  title_y:         slide?.title_y         ?? 38,
+  subtitle_x:      slide?.subtitle_x      ?? 50,
+  subtitle_y:      slide?.subtitle_y      ?? 57,
+  button_x:        slide?.button_x        ?? 50,
+  button_y:        slide?.button_y        ?? 72,
+  stats:           slide?.stats           ?? [],
+  stats_x:         slide?.stats_x         ?? 50,
+  stats_y:         slide?.stats_y         ?? 85,
+  title_fs:        slide?.title_fs        ?? 60,
+  subtitle_fs:     slide?.subtitle_fs     ?? 18,
+  button_fs:       slide?.button_fs       ?? 16,
+  stats_value_fs:  slide?.stats_value_fs  ?? 28,
+  stats_label_fs:  slide?.stats_label_fs  ?? 13,
+  stats_card_w:    slide?.stats_card_w    ?? 120,
+  stats_card_h:    slide?.stats_card_h    ?? 80,
+  stats_gap:       slide?.stats_gap       ?? 16,
+  title_lh:        slide?.title_lh        ?? 1.1,
+  overlay_opacity: slide?.overlay_opacity ?? 0.45,
+  badge_visible:   slide?.badge_visible   ?? false,
+  badge_text:      slide?.badge_text      || '',
+  badge_x:         slide?.badge_x         ?? 50,
+  badge_y:         slide?.badge_y         ?? 18,
+  badge_fs:        slide?.badge_fs        ?? 14,
+  badge_style:     slide?.badge_style     || 'glass',
+  button_style:    slide?.button_style    || 'context',
+  stats_style:     slide?.stats_style     || 'glass',
+});
+
+/* ─────────────────────────────────────────────
+   SMALL COMPONENTS
+───────────────────────────────────────────── */
+const AlignBtns = ({ value, onChange }) => (
+  <div className="flex gap-1">
+    {ALIGNS.map(({ val, Icon }) => (
+      <button key={val} type="button" onClick={() => onChange(val)}
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${value === val ? 'bg-blue-500 text-white' : 'bg-white/10 text-white/40 hover:bg-white/20'}`}>
+        <Icon className="h-3.5 w-3.5" />
+      </button>
+    ))}
+  </div>
+);
+
+const PxInput = ({ value, onChange, min = 8, max = 200 }) => (
+  <div className="flex items-center gap-1">
+    <input type="number" min={min} max={max} value={value ?? min}
+      onChange={e => onChange(Math.max(min, Math.min(max, +e.target.value)))}
+      className="w-14 bg-[#0d0d0d] border border-white/10 rounded-lg px-2 py-1 text-white text-xs text-center outline-none focus:border-violet-500/60 transition-colors" />
+    <span className="text-white/25 text-[10px]">px</span>
+  </div>
+);
+
+const Toggle = ({ value, onChange, label }) => (
+  <button type="button" onClick={() => onChange(!value)}
+    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${value ? 'bg-blue-500/15 text-blue-300 border-blue-500/25' : 'bg-white/5 text-white/30 border-white/8 hover:bg-white/8'}`}>
+    {value ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+    {label}
+  </button>
+);
+
+const StylePicker = ({ value, onChange, color }) => (
+  <div className="grid grid-cols-3 gap-1.5">
+    {STYLE_OPTS.map(o => {
+      const preview = o.val === 'glass'
+        ? { background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }
+        : o.val === 'context' ? { background: color }
+        : { background: 'white' };
+      return (
+        <button key={o.val} type="button" onClick={() => onChange(o.val)}
+          className={`py-2 rounded-lg text-[10px] font-medium transition-all border flex flex-col items-center gap-1 ${value === o.val ? 'border-violet-500 bg-violet-500/15 text-violet-300' : 'border-white/8 bg-white/3 text-white/35 hover:bg-white/8'}`}>
+          <div className="w-5 h-3 rounded" style={preview} />
+          {o.label}
+        </button>
+      );
+    })}
+  </div>
+);
+
+const Section = ({ icon: Icon, title, badge, defaultOpen = false, children }) => {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="relative group rounded-xl overflow-hidden border border-white/10 bg-[#1a1a1a]" style={{ aspectRatio: '16/9', minWidth: 180 }}>
-      {isVideo ? (
-        <video src={item.url} className="w-full h-full object-cover" muted />
-      ) : (
-        <img src={item.url} alt="" className="w-full h-full object-cover" />
-      )}
-      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
-        <div className="flex justify-end">
-          <button
-            onClick={() => onRemove(index)}
-            className="w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center"
-          >
-            <Trash2 className="h-3.5 w-3.5 text-white" />
-          </button>
+    <div className="border border-white/[0.06] rounded-xl overflow-hidden">
+      <button type="button" onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2.5 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left">
+        <Icon className="h-3.5 w-3.5 text-white/35 flex-shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-white/50 flex-1">{title}</span>
+        {badge && <span className="text-[10px] bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full border border-violet-500/20">{badge}</span>}
+        <ChevronRight className={`h-3.5 w-3.5 text-white/15 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+      </button>
+      {open && <div className="px-4 pb-4 pt-2 space-y-3 border-t border-white/[0.04]">{children}</div>}
+    </div>
+  );
+};
+
+
+
+/* ─────────────────────────────────────────────
+   SLIDE PREVIEW
+───────────────────────────────────────────── */
+const SlidePreview = ({ slide, form, onPositionChange, onSizeChange, pageRatio }) => {
+  const { color }    = useColor();
+  const wrapperRef   = useRef(null);
+  const draggingEl   = useRef(null);
+  const resizingEl   = useRef(null);
+  const resizeOrigin = useRef({ clientX: 0, clientY: 0, initFs: 0, initW: 0, initH: 0, axis: 'both' });
+  const formRef      = useRef(form);
+  const [activeEl, setActiveEl]     = useState(null);
+  const [snapGuides, setSnapGuides] = useState({ h: false, v: false });
+  const [resizeInfo, setResizeInfo] = useState(null);
+  const [wrapW, setWrapW]           = useState(700);
+
+  useEffect(() => { formRef.current = form; }, [form]);
+  useEffect(() => {
+    if (!wrapperRef.current) return;
+    const ro = new ResizeObserver(e => { const w = e[0]?.contentRect.width; if (w) setWrapW(w); });
+    ro.observe(wrapperRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const [rW, rH] = (() => {
+    const [a, b] = (pageRatio || '16/6').split('/').map(Number);
+    return [BANNER_REF_W, BANNER_REF_W * b / a];
+  })();
+  const scale   = wrapW / rW;
+  const scaledH = rH * scale;
+
+  const toReal = (cx, cy) => {
+    const rect = wrapperRef.current.getBoundingClientRect();
+    return {
+      x: Math.max(5, Math.min(95, ((cx - rect.left) / wrapW) * 100)),
+      y: Math.max(5, Math.min(95, ((cy - rect.top) / scaledH) * 100)),
+    };
+  };
+
+  const onStart = (el) => (e) => { e.preventDefault(); e.stopPropagation(); draggingEl.current = el; setActiveEl(el); setResizeInfo(null); };
+
+  const onResizeStart = (el, axis = 'both') => (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const cx = e.touches?.[0]?.clientX ?? e.clientX;
+    const cy = e.touches?.[0]?.clientY ?? e.clientY;
+    const f = formRef.current;
+    resizeOrigin.current = {
+      clientX: cx, clientY: cy, axis,
+      initFs: f[`${el}_fs`] ?? (el === 'title' ? 60 : el === 'subtitle' ? 18 : el === 'button' ? 16 : el === 'badge' ? 14 : 28),
+      initW: f.stats_card_w ?? 120,
+      initH: f.stats_card_h ?? 80,
+    };
+    resizingEl.current = el; setActiveEl(el);
+  };
+
+  const onMove = useCallback((e) => {
+    const cx = e.touches?.[0]?.clientX ?? e.clientX;
+    const cy = e.touches?.[0]?.clientY ?? e.clientY;
+    if (resizingEl.current) {
+      const dy = (cy - resizeOrigin.current.clientY) / scale;
+      const dx = (cx - resizeOrigin.current.clientX) / scale;
+      const el = resizingEl.current; const axis = resizeOrigin.current.axis;
+      if (el === 'stats') {
+        const ch = {};
+        if (axis === 'w' || axis === 'both') ch.stats_card_w = Math.max(60,  Math.round(resizeOrigin.current.initW + dx));
+        if (axis === 'h' || axis === 'both') ch.stats_card_h = Math.max(40,  Math.round(resizeOrigin.current.initH + dy));
+        onSizeChange(ch);
+        setResizeInfo({ el, w: ch.stats_card_w ?? resizeOrigin.current.initW, h: ch.stats_card_h ?? resizeOrigin.current.initH });
+      } else {
+        const newFs = Math.max(8, Math.min(200, Math.round(resizeOrigin.current.initFs + dy * 0.7)));
+        onSizeChange({ [`${el}_fs`]: newFs });
+        setResizeInfo({ el, fs: newFs });
+      }
+      return;
+    }
+    if (!draggingEl.current) return;
+    let { x, y } = toReal(cx, cy);
+    const sv = Math.abs(x - 50) < SNAP_THRESHOLD;
+    const sh = Math.abs(y - 50) < SNAP_THRESHOLD;
+    if (sv) x = 50; if (sh) y = 50;
+    setSnapGuides({ v: sv, h: sh });
+    onPositionChange(draggingEl.current, x, y);
+  }, [onPositionChange, onSizeChange, scale, scaledH, wrapW]);
+
+  const onEnd = () => { draggingEl.current = null; resizingEl.current = null; setActiveEl(null); setSnapGuides({ h: false, v: false }); setResizeInfo(null); };
+
+  return (
+    <div ref={wrapperRef} className="relative w-full select-none" style={{ height: scaledH }}
+      onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd} onTouchMove={onMove} onTouchEnd={onEnd}>
+      <div className="absolute top-0 left-0 overflow-hidden"
+        style={{ width: rW, height: rH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+        {/* Media */}
+        {slide.type === 'video'
+          ? <video src={slide.url} className="absolute inset-0 w-full h-full object-cover" muted />
+          : <img src={slide.url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+        <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${form.overlay_opacity ?? 0.45})` }} />
+
+        {/* Snap guides */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute left-0 right-0" style={{ top: '50%', borderTop: `2px ${snapGuides.h ? 'solid #3b82f6' : 'dashed rgba(255,255,255,0.12)'}` }} />
+          <div className="absolute top-0 bottom-0" style={{ left: '50%', borderLeft: `2px ${snapGuides.v ? 'solid #3b82f6' : 'dashed rgba(255,255,255,0.12)'}` }} />
+          {resizeInfo && (
+            <div className="absolute bottom-8 right-8 text-2xl font-mono bg-black/80 text-white px-5 py-2 rounded-xl pointer-events-none">
+              {resizeInfo.fs !== undefined ? `${resizeInfo.fs}px` : `${resizeInfo.w} × ${resizeInfo.h}px`}
+            </div>
+          )}
         </div>
-        <div className="flex items-center justify-between">
-          <div className="flex gap-1">
-            {isVideo
-              ? <Video className="h-4 w-4 text-white/70" />
-              : <ImageIcon className="h-4 w-4 text-white/70" />}
-            <span className="text-xs text-white/70">{isVideo ? 'Video' : 'Imagen'}</span>
+
+        <BannerContent form={form} color={color} draggable activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart} />
+
+        {!form.title && !form.subtitle && !form.button_text && !form.stats?.length && !form.badge_visible && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <p className="text-white/15 font-light tracking-widest" style={{ fontSize: 28 }}>Agrega contenido al slide</p>
           </div>
-          <div className="flex gap-1">
-            <button
-              onClick={() => onMoveLeft(index)}
-              disabled={index === 0}
-              className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center disabled:opacity-30"
-            >
-              <ChevronLeft className="h-3.5 w-3.5 text-white" />
-            </button>
-            <button
-              onClick={() => onMoveRight(index)}
-              disabled={index === total - 1}
-              className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center disabled:opacity-30"
-            >
-              <ChevronRight className="h-3.5 w-3.5 text-white" />
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-black/60 text-white text-xs flex items-center justify-center font-bold">
-        {index + 1}
+        )}
       </div>
     </div>
   );
 };
 
+/* ─────────────────────────────────────────────
+   THUMBNAIL
+───────────────────────────────────────────── */
+const MediaThumb = ({ item, index, total, selected, onSelect, onRemove, onMoveLeft, onMoveRight }) => (
+  <div onClick={() => onSelect(index)}
+    className={`relative group rounded-xl overflow-hidden border cursor-pointer transition-all flex-shrink-0 bg-[#151515] ${selected ? 'border-violet-500 ring-2 ring-violet-500/25' : 'border-white/8 hover:border-white/25'}`}
+    style={{ aspectRatio: '16/9', minWidth: 180 }}>
+    {item.type === 'video'
+      ? <video src={item.url} className="w-full h-full object-cover" muted />
+      : <img src={item.url} alt="" className="w-full h-full object-cover" />}
+    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+      <div className="flex justify-end">
+        <button onClick={e => { e.stopPropagation(); onRemove(index); }}
+          className="w-7 h-7 rounded-full bg-red-500 hover:bg-red-600 flex items-center justify-center">
+          <Trash2 className="h-3.5 w-3.5 text-white" />
+        </button>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-1 items-center">
+          {item.type === 'video' ? <Video className="h-4 w-4 text-white/70" /> : <ImageIcon className="h-4 w-4 text-white/70" />}
+          <span className="text-xs text-white/70">{item.type === 'video' ? 'Video' : 'Imagen'}</span>
+        </div>
+        <div className="flex gap-1">
+          {[[-1, onMoveLeft, index === 0], [1, onMoveRight, index === total - 1]].map(([dir, fn, dis]) => (
+            <button key={dir} onClick={e => { e.stopPropagation(); fn(index); }} disabled={dis}
+              className="w-6 h-6 rounded-full bg-white/20 hover:bg-white/40 flex items-center justify-center disabled:opacity-30">
+              {dir === -1 ? <ChevronLeft className="h-3.5 w-3.5 text-white" /> : <ChevronRight className="h-3.5 w-3.5 text-white" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div className="absolute top-2 left-2 w-5 h-5 rounded-full bg-black/70 text-white text-[10px] flex items-center justify-center font-bold">{index + 1}</div>
+    {item.title && (
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 px-2 pb-1.5 pt-3">
+        <p className="text-[10px] text-white/80 truncate">{item.title}</p>
+      </div>
+    )}
+  </div>
+);
+
+/* ─────────────────────────────────────────────
+   PÁGINA PRINCIPAL
+───────────────────────────────────────────── */
 export default function AdminBannerPage() {
-  const [activePage, setActivePage] = useState('home');
-  const [config, setConfig] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState(null);
+  const { color } = useColor();
+  const [activePage, setActivePage]     = useState('home');
+  const [config, setConfig]             = useState(null);
+  const [isLoading, setIsLoading]       = useState(true);
+  const [isUploading, setIsUploading]   = useState(false);
+  const [isSaving, setIsSaving]         = useState(false);
+  const [saved, setSaved]               = useState(false);
+  const [error, setError]               = useState(null);
+  const [selectedIdx, setSelectedIdx]   = useState(0);
+  const [form, setForm]                 = useState(EMPTY_FORM);
   const fileRef = useRef(null);
 
+  const sf = (changes) => setForm(p => ({ ...p, ...changes }));
+
   const load = async (page) => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true); setConfig(null); setError(null);
     const res = await bannerService.getByPage(page);
-    if (res.success) setConfig(res.data);
+    if (res.success) { setConfig(res.data); setSelectedIdx(0); setForm(formFromSlide(res.data.media?.[0])); }
     else setError(res.error);
     setIsLoading(false);
   };
-
   useEffect(() => { load(activePage); }, [activePage]);
 
-  const handlePageSwitch = (page) => {
-    setActivePage(page);
-    setSaved(false);
-  };
+  const sortedMedia  = config?.media ? [...config.media].sort((a, b) => a.order - b.order) : [];
+  const currentSlide = sortedMedia[selectedIdx];
+  const activeCfg    = PAGES.find(p => p.id === activePage);
 
-  const handleTextChange = (field, value) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    const res = await bannerService.update(activePage, {
-      title: config.title,
-      subtitle: config.subtitle,
-      button_text: config.button_text,
-      button_url: config.button_url,
-    });
-    if (res.success) {
-      setConfig(res.data);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2500);
-    } else {
-      setError(res.error);
-    }
-    setIsSaving(false);
-  };
+  const handleSelectSlide = (idx) => { setSelectedIdx(idx); setSaved(false); setForm(formFromSlide(sortedMedia[idx])); };
 
   const handleUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; if (!file) return;
     setIsUploading(true);
     const res = await bannerService.uploadMedia(activePage, file);
-    if (res.success) setConfig(res.data);
+    if (res.success) { setConfig(res.data); const ni = (res.data.media?.length ?? 1) - 1; setSelectedIdx(ni); setForm(formFromSlide(res.data.media?.[ni])); }
     else setError(res.error);
-    setIsUploading(false);
-    e.target.value = '';
+    setIsUploading(false); e.target.value = '';
   };
 
   const handleRemove = async (index) => {
     const res = await bannerService.removeMedia(activePage, index);
-    if (res.success) setConfig(res.data);
+    if (res.success) { setConfig(res.data); const ni = Math.max(0, index - 1); setSelectedIdx(ni); setForm(formFromSlide(res.data.media?.[ni])); }
     else setError(res.error);
   };
 
   const move = async (index, dir) => {
-    const media = [...config.media];
-    const newIndex = index + dir;
-    [media[index], media[newIndex]] = [media[newIndex], media[index]];
+    const media = [...config.media]; const ni = index + dir;
+    [media[index], media[ni]] = [media[ni], media[index]];
     const reordered = media.map((m, i) => ({ ...m, order: i }));
-    setConfig(prev => ({ ...prev, media: reordered }));
-    await bannerService.reorderMedia(activePage, reordered.map(m => ({ url: m.url, type: m.type })));
+    setConfig(p => ({ ...p, media: reordered })); setSelectedIdx(ni);
+    await bannerService.reorderMedia(activePage, reordered);
   };
 
+  const handleSave = async () => {
+    if (!config || sortedMedia.length === 0) return;
+    setIsSaving(true);
+    const media = config.media.map((m, i) => i === selectedIdx ? { ...m, ...form } : m);
+    const res = await bannerService.reorderMedia(activePage, media);
+    if (res.success) { setConfig(res.data); setSaved(true); setTimeout(() => setSaved(false), 2500); }
+    else setError(res.error);
+    setIsSaving(false);
+  };
+
+  const handlePositionChange = useCallback((el, x, y) => sf({ [`${el}_x`]: x, [`${el}_y`]: y }), []);
+  const handleSizeChange     = useCallback((ch) => setForm(p => ({ ...p, ...ch })), []);
+
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-white p-6 md:p-10">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-5">
 
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-1">Configurar Banners</h1>
-          <p className="text-white/50 text-sm">
-            Personaliza los textos y medios del banner en Inicio y Catálogo.
-            Si subes más de un video/imagen, se mostrarán como slider.
-          </p>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-8 border-b border-white/10 pb-0">
-          {PAGES.map(p => (
-            <button
-              key={p.id}
-              onClick={() => handlePageSwitch(p.id)}
-              className={`px-5 py-2.5 text-sm font-medium rounded-t-lg transition-colors -mb-px border border-transparent ${
-                activePage === p.id
-                  ? 'bg-[#1a1a1a] border-white/10 border-b-[#1a1a1a] text-white'
-                  : 'text-white/40 hover:text-white/70'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight">Configurar Banner</h1>
+            <p className="text-white/35 text-xs mt-0.5">
+              Arrastra · <span className="text-blue-400">azul</span> ancho · <span className="text-green-400">verde</span> alto · <span className="text-violet-400">violeta</span> ambos
+            </p>
+          </div>
+          <div className="flex gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/8">
+            {PAGES.map(p => (
+              <button key={p.id} onClick={() => { if (p.id !== activePage) { setActivePage(p.id); setSaved(false); } }}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activePage === p.id ? 'bg-white/10 text-white' : 'text-white/35 hover:text-white/60'}`}>
+                {p.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-white/30" />
-          </div>
+          <div className="flex items-center justify-center py-32"><Loader2 className="h-7 w-7 animate-spin text-white/15" /></div>
         ) : !config ? (
-          <div className="text-red-400 text-sm">{error || 'No se pudo cargar la configuración'}</div>
+          <div className="text-red-400 text-sm bg-red-950/25 border border-red-900/35 rounded-xl px-4 py-3">{error || 'No se pudo cargar'}</div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-4">
 
-            {/* Textos */}
-            <div className="bg-[#171717] rounded-2xl border border-white/5 p-6 space-y-5">
-              <h2 className="font-semibold text-white/90">Textos del Banner</h2>
-
-              <div>
-                <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Título</label>
-                <input
-                  value={config.title}
-                  onChange={e => handleTextChange('title', e.target.value)}
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                  placeholder="Título principal del banner"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Subtítulo</label>
-                <textarea
-                  value={config.subtitle}
-                  onChange={e => handleTextChange('subtitle', e.target.value)}
-                  rows={3}
-                  className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition-colors resize-none"
-                  placeholder="Descripción o subtítulo"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">Texto del botón</label>
-                  <input
-                    value={config.button_text}
-                    onChange={e => handleTextChange('button_text', e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                    placeholder="Ej: Explorar Catálogo"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/50 mb-1.5 uppercase tracking-wider">URL del botón</label>
-                  <input
-                    value={config.button_url}
-                    onChange={e => handleTextChange('button_url', e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white text-sm outline-none focus:border-white/30 transition-colors"
-                    placeholder="Ej: /catalog"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-                  style={{ background: saved ? '#22c55e' : '#3b82f6' }}
-                >
-                  {isSaving
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : saved
-                    ? <Check className="h-4 w-4" />
-                    : <Save className="h-4 w-4" />}
-                  {saved ? 'Guardado' : 'Guardar textos'}
-                </button>
-              </div>
-            </div>
-
-            {/* Media */}
-            <div className="bg-[#171717] rounded-2xl border border-white/5 p-6 space-y-5">
+            {/* ── Slides ── */}
+            <div className="bg-[#111] rounded-2xl border border-white/[0.05] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold text-white/90">Videos e Imágenes</h2>
-                  <p className="text-xs text-white/40 mt-0.5">
-                    {config.media?.length > 1
-                      ? `${config.media.length} medios — se mostrarán como slider`
-                      : 'Sube videos (.mp4) o imágenes (.jpg, .png, .webp)'}
-                  </p>
+                  <h2 className="font-semibold text-white/85 text-sm">Media</h2>
+                  <p className="text-[11px] text-white/25 mt-0.5">{sortedMedia.length > 1 ? `${sortedMedia.length} slides` : 'Imágenes o videos del banner'}</p>
                 </div>
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={isUploading}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/10 hover:bg-white/20 transition-colors disabled:opacity-50"
-                >
-                  {isUploading
-                    ? <Loader2 className="h-4 w-4 animate-spin" />
-                    : <Plus className="h-4 w-4" />}
-                  {isUploading ? 'Subiendo...' : 'Agregar medio'}
+                <button onClick={() => fileRef.current?.click()} disabled={isUploading}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-colors disabled:opacity-40">
+                  {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                  {isUploading ? 'Subiendo...' : 'Agregar'}
                 </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="video/*,image/*"
-                  className="hidden"
-                  onChange={handleUpload}
-                />
+                <input ref={fileRef} type="file" accept="video/*,image/*" className="hidden" onChange={handleUpload} />
               </div>
 
-              {config.media?.length === 0 ? (
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-white/10 rounded-xl p-10 flex flex-col items-center gap-3 text-white/30 hover:border-white/20 hover:text-white/50 transition-colors"
-                >
+              {sortedMedia.length === 0 ? (
+                <button onClick={() => fileRef.current?.click()}
+                  className="w-full border-2 border-dashed border-white/[0.07] rounded-xl p-10 flex flex-col items-center gap-3 text-white/15 hover:border-white/15 hover:text-white/30 transition-colors">
                   <Upload className="h-8 w-8" />
-                  <span className="text-sm">Haz clic para subir el primer video o imagen</span>
+                  <span className="text-sm">Sube el primer video o imagen</span>
                 </button>
               ) : (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {[...config.media]
-                    .sort((a, b) => a.order - b.order)
-                    .map((item, i) => (
-                      <div key={`${item.url}-${i}`} style={{ minWidth: 200, maxWidth: 220 }}>
-                        <MediaThumb
-                          item={item}
-                          index={i}
-                          total={config.media.length}
-                          onRemove={handleRemove}
-                          onMoveLeft={(idx) => move(idx, -1)}
-                          onMoveRight={(idx) => move(idx, 1)}
-                        />
-                      </div>
-                    ))}
+                <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
+                  {sortedMedia.map((item, i) => (
+                    <div key={`${item.url}-${i}`} style={{ minWidth: 190, maxWidth: 210 }}>
+                      <MediaThumb item={item} index={i} total={sortedMedia.length}
+                        selected={selectedIdx === i} onSelect={handleSelectSlide}
+                        onRemove={handleRemove} onMoveLeft={idx => move(idx, -1)} onMoveRight={idx => move(idx, 1)} />
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {error && (
-              <div className="bg-red-950/40 border border-red-900/50 text-red-400 text-sm px-4 py-3 rounded-xl">
-                {error}
+            {/* ── Editor ── */}
+            {sortedMedia.length > 0 && currentSlide && (
+              <div className="bg-[#111] rounded-2xl border border-white/[0.05] p-5 space-y-4">
+
+                {/* Editor header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="font-semibold text-white/85 text-sm">
+                      {sortedMedia.length > 1 ? `Slide ${selectedIdx + 1} / ${sortedMedia.length}` : 'Contenido del Banner'}
+                    </h2>
+                    <p className="text-[11px] text-white/25 mt-0.5">Arrastra los elementos directamente en el preview</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {sortedMedia.length > 1 && (
+                      <div className="flex gap-1">
+                        {[[-1, selectedIdx === 0], [1, selectedIdx === sortedMedia.length - 1]].map(([dir, dis]) => (
+                          <button key={dir} onClick={() => handleSelectSlide(selectedIdx + dir)} disabled={dis}
+                            className="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/8 flex items-center justify-center disabled:opacity-25 transition-colors">
+                            {dir === -1 ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <button onClick={handleSave} disabled={isSaving}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                      style={{ background: saved ? '#22c55e' : color }}>
+                      {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                      {saved ? 'Guardado' : 'Guardar'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Preview */}
+                <div className="rounded-xl overflow-hidden border border-white/[0.07]">
+                  <SlidePreview
+                    key={`${activePage}-${selectedIdx}`}
+                    slide={currentSlide} form={form}
+                    onPositionChange={handlePositionChange}
+                    onSizeChange={handleSizeChange}
+                    pageRatio={activeCfg?.ratio}
+                  />
+                </div>
+
+                {/* Overlay */}
+                <div className="flex items-center gap-3 bg-white/[0.025] rounded-xl px-4 py-2.5 border border-white/[0.05]">
+                  <span className="text-[10px] text-white/35 flex-shrink-0 uppercase tracking-wider">Oscuridad</span>
+                  <input type="range" min={0} max={0.9} step={0.05}
+                    value={form.overlay_opacity ?? 0.45}
+                    onChange={e => sf({ overlay_opacity: +e.target.value })}
+                    className="flex-1 accent-violet-500" />
+                  <span className="text-[10px] text-white/40 w-9 text-right">{Math.round((form.overlay_opacity ?? 0.45) * 100)}%</span>
+                </div>
+
+                {/* Secciones de contenido */}
+                <div className="space-y-2">
+
+                  {/* Badge */}
+                  <Section icon={Sparkles} title="Badge" badge={form.badge_visible ? 'ON' : undefined} defaultOpen={false}>
+                    <div className="flex items-center gap-2">
+                      <Toggle value={form.badge_visible} onChange={v => sf({ badge_visible: v })} label="Mostrar badge" />
+                      <div className="flex items-center gap-1 ml-auto">
+                        <span className="text-[10px] text-white/30">Tamaño</span>
+                        <PxInput value={form.badge_fs} onChange={v => sf({ badge_fs: v })} min={10} max={32} />
+                      </div>
+                    </div>
+                    {form.badge_visible && (
+                      <>
+                        <input value={form.badge_text} onChange={e => sf({ badge_text: e.target.value })}
+                          className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                          placeholder="Texto del badge (ej: Catálogo Completo)" />
+                        <div>
+                          <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo</p>
+                          <StylePicker value={form.badge_style} onChange={v => sf({ badge_style: v })} color={color} />
+                        </div>
+                      </>
+                    )}
+                  </Section>
+
+                  {/* Título */}
+                  <Section icon={Type} title="Título" defaultOpen>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <div className="flex items-center gap-2">
+                        <PxInput value={form.title_fs} onChange={v => sf({ title_fs: v })} min={16} max={200} />
+                        <AlignBtns value={form.title_align} onChange={v => sf({ title_align: v })} />
+                      </div>
+                    </div>
+                    <input value={form.title} onChange={e => sf({ title: e.target.value })}
+                      className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                      placeholder='Ej: Explora Nuestro/Universo Artístico   (/ = 2ª línea en color del contexto)' />
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-white/30 flex-shrink-0 uppercase tracking-wider">Interlineado</span>
+                      <input type="range" min={0.7} max={2} step={0.05} value={form.title_lh ?? 1.1}
+                        onChange={e => sf({ title_lh: +e.target.value })} className="flex-1 accent-violet-500" />
+                      <span className="text-[10px] text-white/40 w-8 text-right">{(form.title_lh ?? 1.1).toFixed(2)}</span>
+                    </div>
+                  </Section>
+
+                  {/* Subtítulo */}
+                  <Section icon={Type} title="Subtítulo">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <div className="flex items-center gap-2">
+                        <PxInput value={form.subtitle_fs} onChange={v => sf({ subtitle_fs: v })} min={10} max={60} />
+                        <AlignBtns value={form.subtitle_align} onChange={v => sf({ subtitle_align: v })} />
+                      </div>
+                    </div>
+                    <textarea value={form.subtitle} onChange={e => sf({ subtitle: e.target.value })} rows={2}
+                      className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors resize-none"
+                      placeholder="Descripción del slide (opcional)" />
+                  </Section>
+
+                  {/* Botón */}
+                  <Section icon={Layout} title="Botón">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <div className="flex items-center gap-2">
+                        <PxInput value={form.button_fs} onChange={v => sf({ button_fs: v })} min={10} max={40} />
+                        <AlignBtns value={form.button_align} onChange={v => sf({ button_align: v })} />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input value={form.button_text} onChange={e => sf({ button_text: e.target.value })}
+                        className="bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                        placeholder="Texto del botón" />
+                      <input value={form.button_url} onChange={e => sf({ button_url: e.target.value })}
+                        className="bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                        placeholder="URL ej: /catalog" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo del botón</p>
+                      <StylePicker value={form.button_style} onChange={v => sf({ button_style: v })} color={color} />
+                    </div>
+                  </Section>
+
+                  {/* Cards / Stats */}
+                  <Section icon={Maximize2} title="Cards · Estadísticas" badge={form.stats?.length > 0 ? `${form.stats.length} cards` : undefined}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Métricas o datos</span>
+                      <button type="button"
+                        onClick={() => sf({ stats: [...(form.stats || []), { value: '', label: '' }] })}
+                        className="flex items-center gap-1 text-xs border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors">
+                        <Plus className="h-3 w-3" /> Agregar card
+                      </button>
+                    </div>
+
+                    {(form.stats || []).length > 0 && (
+                      <>
+                        <div className="grid grid-cols-5 gap-2 bg-[#0d0d0d] rounded-xl p-3 border border-white/[0.05]">
+                          {[
+                            { key: 'stats_card_w',   label: 'Ancho',   min: 60,  max: 400 },
+                            { key: 'stats_card_h',   label: 'Alto',    min: 40,  max: 300 },
+                            { key: 'stats_gap',      label: 'Gap',     min: 0,   max: 80  },
+                            { key: 'stats_value_fs', label: 'Valor',   min: 12,  max: 80  },
+                            { key: 'stats_label_fs', label: 'Etiqueta',min: 8,   max: 40  },
+                          ].map(({ key, label, min, max }) => (
+                            <div key={key} className="space-y-1.5">
+                              <p className="text-[9px] text-white/25 uppercase tracking-wider">{label}</p>
+                              <PxInput value={form[key]} onChange={v => sf({ [key]: v })} min={min} max={max} />
+                            </div>
+                          ))}
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo de cards</p>
+                          <StylePicker value={form.stats_style} onChange={v => sf({ stats_style: v })} color={color} />
+                        </div>
+                        <div className="space-y-2">
+                          {(form.stats || []).map((stat, i) => (
+                            <div key={i} className="flex gap-2 items-center">
+                              <input value={stat.value}
+                                onChange={e => sf({ stats: form.stats.map((s, j) => j === i ? { ...s, value: e.target.value } : s) })}
+                                className="w-20 bg-[#0d0d0d] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                                placeholder="200+" />
+                              <input value={stat.label}
+                                onChange={e => sf({ stats: form.stats.map((s, j) => j === i ? { ...s, label: e.target.value } : s) })}
+                                className="flex-1 bg-[#0d0d0d] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                                placeholder="Obras" />
+                              <button type="button"
+                                onClick={() => sf({ stats: form.stats.filter((_, j) => j !== i) })}
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/15 transition-colors flex-shrink-0">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    {(form.stats || []).length === 0 && (
+                      <p className="text-xs text-white/15 italic text-center py-3">Sin cards en este slide</p>
+                    )}
+                  </Section>
+
+                </div>
+
+                {error && (
+                  <div className="bg-red-950/30 border border-red-900/40 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
+                )}
               </div>
             )}
           </div>

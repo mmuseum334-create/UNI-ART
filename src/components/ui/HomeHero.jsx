@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useColor } from '@/contexts/ColorContext';
 import { Button } from './Button';
 import { bannerService } from '@/services/banner/bannerService';
-import { BannerContent, getElStyle } from '@/app/admin/banner/page';
+import { BannerContent, getElStyle } from '@/components/ui/BannerContent';
 import {
   ArrowRight, ChevronLeft, ChevronRight,
   Pencil, Save, Loader2, Check, X, Plus, Trash2,
