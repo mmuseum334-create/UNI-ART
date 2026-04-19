@@ -50,12 +50,12 @@ const HomeSculptures = () => {
     <section className="relative w-full min-h-[100vh] py-20 flex items-center justify-center bg-white dark:bg-[#0f0f0f] overflow-hidden selection:bg-slate-200 dark:selection:bg-white/20 border-t border-slate-100 dark:border-white/5 transition-colors duration-300">
 
       {/* Background Glows & Effects */}
-      <div 
-        className="absolute top-[20%] left-[20%] w-[400px] h-[400px] rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-30" 
+      <div
+        className="absolute top-[20%] left-[20%] w-[400px] h-[400px] rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-30"
         style={{ backgroundColor: color || '#4f46e5' }}
       />
-      <div 
-        className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] rounded-full blur-[120px] dark:blur-[150px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-20" 
+      <div
+        className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] rounded-full blur-[120px] dark:blur-[150px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-20"
         style={{ backgroundColor: color || '#2563eb' }}
       />
 
@@ -98,8 +98,8 @@ const HomeSculptures = () => {
             {/* Minimalist Vertical Nav Controls */}
             <div className="absolute right-0 lg:-right-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-40">
               {sculptures.map((_, idx) => (
-                <button 
-                  key={idx} 
+                <button
+                  key={idx}
                   onClick={() => setCurrentIndex(idx)}
                   className={`w-1 transition-all duration-500 ease-out rounded-full ${idx === currentIndex ? 'h-12' : 'h-4 opacity-40 hover:opacity-80 bg-slate-400 dark:bg-white/50'}`}
                   style={idx === currentIndex ? { backgroundColor: color || '#4f46e5', boxShadow: `0 0 10px ${color || '#4f46e5'}66` } : {}}
