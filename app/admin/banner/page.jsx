@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { bannerService } from '@/services/banner/bannerService';
 import { useColor } from '@/contexts/ColorContext';
 import {
@@ -200,31 +201,31 @@ const DraggableEl = ({ x, y, onStart, onResizeStart, onResizeStartW, onResizeSta
 /* ─────────────────────────────────────────────
    BANNER CONTENT — shared between preview & real banner
 ───────────────────────────────────────────── */
+const Wrap = ({ el, x, y, children, rD, rW, rH, draggable, activeEl, onStart, onResizeStart }) => {
+  if (!draggable) return (
+    <div className="absolute z-20" style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)' }}>{children}</div>
+  );
+  return (
+    <DraggableEl x={x} y={y} active={activeEl === el}
+      onStart={onStart?.(el)}
+      onResizeStart={rD ? onResizeStart?.(el)        : undefined}
+      onResizeStartW={rW ? onResizeStart?.(el, 'w')  : undefined}
+      onResizeStartH={rH ? onResizeStart?.(el, 'h')  : undefined}>
+      {children}
+    </DraggableEl>
+  );
+};
+
 export const BannerContent = ({ form, color, draggable = false, activeEl = null, onStart, onResizeStart }) => {
   const badgeStyle  = getElStyle(form.badge_style  || 'glass',   color);
   const btnStyle    = getElStyle(form.button_style  || 'context', color);
   const statsStyle  = getElStyle(form.stats_style   || 'glass',   color);
 
-  const Wrap = ({ el, x, y, children, rD, rW, rH }) => {
-    if (!draggable) return (
-      <div className="absolute" style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%,-50%)' }}>{children}</div>
-    );
-    return (
-      <DraggableEl x={x} y={y} active={activeEl === el}
-        onStart={onStart?.(el)}
-        onResizeStart={rD ? onResizeStart?.(el)        : undefined}
-        onResizeStartW={rW ? onResizeStart?.(el, 'w')  : undefined}
-        onResizeStartH={rH ? onResizeStart?.(el, 'h')  : undefined}>
-        {children}
-      </DraggableEl>
-    );
-  };
-
   return (
     <>
       {/* Badge */}
       {form.badge_visible && form.badge_text && (
-        <Wrap el="badge" x={form.badge_x ?? 50} y={form.badge_y ?? 18} rD>
+        <Wrap el="badge" x={form.badge_x ?? 50} y={form.badge_y ?? 18} rD draggable={draggable} activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart}>
           <div className="inline-flex items-center gap-2 rounded-full whitespace-nowrap"
             style={{ ...badgeStyle, fontSize: form.badge_fs ?? 14, padding: `${Math.round((form.badge_fs ?? 14) * 0.4)}px ${Math.round((form.badge_fs ?? 14) * 1.1)}px` }}>
             <Sparkles style={{ width: (form.badge_fs ?? 14) * 0.85, height: (form.badge_fs ?? 14) * 0.85, flexShrink: 0 }} />
@@ -235,7 +236,7 @@ export const BannerContent = ({ form, color, draggable = false, activeEl = null,
 
       {/* Título */}
       {form.title && (
-        <Wrap el="title" x={form.title_x ?? 50} y={form.title_y ?? 38} rD>
+        <Wrap el="title" x={form.title_x ?? 50} y={form.title_y ?? 38} rD draggable={draggable} activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart}>
           <div className="font-bold text-white drop-shadow-2xl whitespace-nowrap"
             style={{ fontSize: form.title_fs ?? 60, textAlign: form.title_align || 'center', lineHeight: form.title_lh ?? 1.1 }}>
             {form.title.includes('/') ? (
@@ -250,7 +251,7 @@ export const BannerContent = ({ form, color, draggable = false, activeEl = null,
 
       {/* Subtítulo */}
       {form.subtitle && (
-        <Wrap el="subtitle" x={form.subtitle_x ?? 50} y={form.subtitle_y ?? 57} rD>
+        <Wrap el="subtitle" x={form.subtitle_x ?? 50} y={form.subtitle_y ?? 57} rD draggable={draggable} activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart}>
           <div className="text-white/85 leading-relaxed"
             style={{ fontSize: form.subtitle_fs ?? 18, textAlign: form.subtitle_align || 'center',}}>
             {form.subtitle}
@@ -260,19 +261,35 @@ export const BannerContent = ({ form, color, draggable = false, activeEl = null,
 
       {/* Botón */}
       {form.button_text && (
-        <Wrap el="button" x={form.button_x ?? 50} y={form.button_y ?? 72} rD>
+        <Wrap el="button" x={form.button_x ?? 50} y={form.button_y ?? 72} rD draggable={draggable} activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart}>
           <div style={{ textAlign: form.button_align || 'center' }}>
-            <span className="inline-block font-semibold rounded-xl whitespace-nowrap"
-              style={{ ...btnStyle, fontSize: form.button_fs ?? 16, padding: `${Math.round((form.button_fs ?? 16) * 0.55)}px ${Math.round((form.button_fs ?? 16) * 1.4)}px` }}>
-              {form.button_text}
-            </span>
+            {form.button_url ? (
+              <a href={form.button_url} className="inline-block font-semibold rounded-xl whitespace-nowrap cursor-pointer hover:scale-105 transition-transform pointer-events-auto"
+                draggable={false}
+                onClick={(e) => {
+                  if (draggable) {
+                    e.preventDefault(); // Prevenir navegación en modo de edición para no salir de la página
+                  } else {
+                    // Forzar la navegación saltándose cualquier router interno que pueda estar bloqueando
+                    window.location.href = form.button_url;
+                  }
+                }}
+                style={{ ...btnStyle, fontSize: form.button_fs ?? 16, padding: `${Math.round((form.button_fs ?? 16) * 0.55)}px ${Math.round((form.button_fs ?? 16) * 1.4)}px`, textDecoration: 'none' }}>
+                {form.button_text}
+              </a>
+            ) : (
+              <span className="inline-block font-semibold rounded-xl whitespace-nowrap cursor-pointer pointer-events-auto"
+                style={{ ...btnStyle, fontSize: form.button_fs ?? 16, padding: `${Math.round((form.button_fs ?? 16) * 0.55)}px ${Math.round((form.button_fs ?? 16) * 1.4)}px` }}>
+                {form.button_text}
+              </span>
+            )}
           </div>
         </Wrap>
       )}
 
       {/* Stats / Cards */}
       {form.stats?.length > 0 && (
-        <Wrap el="stats" x={form.stats_x ?? 50} y={form.stats_y ?? 85} rD rW rH>
+        <Wrap el="stats" x={form.stats_x ?? 50} y={form.stats_y ?? 85} rD rW rH draggable={draggable} activeEl={activeEl} onStart={onStart} onResizeStart={onResizeStart}>
           <div className="flex flex-nowrap" style={{ gap: form.stats_gap ?? 16 }}>
             {form.stats.map((s, i) => (
               <div key={i} className="rounded-xl text-center flex flex-col items-center justify-center flex-shrink-0"

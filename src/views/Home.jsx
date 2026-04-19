@@ -5,6 +5,7 @@ import ArtCollageSection from '../components/ui/TrendingArtists';
 import FeaturedArtworks from '../components/ui/FeaturedArtworks';
 import HomeHero from '../components/ui/HomeHero';
 import HomeStats from '../components/ui/HomeStats';
+import HomeSculptures from '../components/ui/HomeSculptures';
 import { artCategories } from '../data/mockData';
 import {
   BookOpen, Music, Video, Palette, Image, Box, Sparkles, FileText, Camera
@@ -20,6 +21,7 @@ const Home = () => {
       <FeaturedArtworks />
       <CategoryShowcase categories={artCategories} iconMap={iconMap} />
       <ArtCollageSection />
+      <HomeSculptures />
     </div>
   );
 };
