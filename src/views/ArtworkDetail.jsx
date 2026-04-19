@@ -50,7 +50,16 @@ const ArtworkDetail = () => {
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const { color } = useColor();
-  const id = params?.id;
+  
+  const rawParamId = params?.id;
+  let type = null;
+  let rawId = null;
+  if (rawParamId) {
+    const parts = String(rawParamId).split('-');
+    rawId = parseInt(parts[parts.length - 1], 10);
+    type = parts.slice(0, parts.length - 1).join('-');
+  }
+
   const [artwork, setArtwork] = useState(null);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
@@ -63,13 +72,18 @@ const ArtworkDetail = () => {
 
   useEffect(() => {
     const loadArtwork = async () => {
-      if (!id) return;
+      if (!rawId) return;
+
+      if (type === 'sculpture') {
+        router.replace(`/sculpture/${rawId}`);
+        return;
+      }
 
       setIsLoading(true);
       setLoadError(null);
 
       try {
-        const response = await paintService.getById(id);
+        const response = await paintService.getById(rawId);
 
         if (response.success) {
           const paint = response.data;
@@ -137,7 +151,7 @@ const ArtworkDetail = () => {
     };
 
     loadArtwork();
-  }, [id]);
+  }, [rawId, type, router]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
