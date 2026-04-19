@@ -15,45 +15,44 @@ const SculptureARViewer = ({ modelUrl, sculptureTitle = 'Escultura', posterUrl =
   const [isARSupported, setIsARSupported] = useState(false);
 
   useEffect(() => {
-    // Cargar el script de Model Viewer
+    // Cargar el paquete npm UNA SOLA VEZ con guard de singleton
     if (typeof window !== 'undefined') {
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = 'https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js';
-      document.head.appendChild(script);
-
-      script.onload = () => {
-        console.log('Model Viewer cargado');
-        checkARSupport();
-      };
-
-      return () => {
-        document.head.removeChild(script);
-      };
+      if (!customElements.get('model-viewer')) {
+        import('@google/model-viewer').catch((err) => {
+          console.error('Error cargando model-viewer:', err);
+          setError('No se pudo cargar el visor 3D');
+          setIsLoading(false);
+        });
+      }
     }
   }, []);
 
-  const checkARSupport = () => {
-    if (modelViewerRef.current) {
-      // Model Viewer automáticamente detecta soporte AR
-      const modelViewer = modelViewerRef.current;
+  useEffect(() => {
+    if (!modelViewerRef.current) return;
 
-      // Escuchar el evento de carga
-      modelViewer.addEventListener('load', () => {
-        setIsLoading(false);
-        // Verificar si AR está disponible
-        if (modelViewer.canActivateAR) {
-          setIsARSupported(true);
-        }
-      });
+    const modelViewer = modelViewerRef.current;
 
-      modelViewer.addEventListener('error', (event) => {
-        setError('Error al cargar el modelo 3D');
-        setIsLoading(false);
-        console.error('Error en Model Viewer:', event);
-      });
-    }
-  };
+    const handleLoad = () => {
+      setIsLoading(false);
+      if (modelViewer.canActivateAR) {
+        setIsARSupported(true);
+      }
+    };
+
+    const handleError = (event) => {
+      setError('Error al cargar el modelo 3D');
+      setIsLoading(false);
+      console.error('Error en Model Viewer:', event);
+    };
+
+    modelViewer.addEventListener('load', handleLoad);
+    modelViewer.addEventListener('error', handleError);
+
+    return () => {
+      modelViewer.removeEventListener('load', handleLoad);
+      modelViewer.removeEventListener('error', handleError);
+    };
+  }, []);
 
   const handleReset = () => {
     if (modelViewerRef.current) {
