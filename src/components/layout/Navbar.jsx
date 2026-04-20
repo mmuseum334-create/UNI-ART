@@ -38,7 +38,7 @@ const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const profileRef = useRef(null);
   const { user, logout, isAuthenticated } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, isSuperAdmin } = usePermissions();
   const { color } = useColor();
   const router = useRouter();
   const pathname = usePathname();
@@ -88,7 +88,7 @@ const Navbar = () => {
   const navLinks = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/catalog', icon: Images, label: 'Catálogo' },
-    { href: '/virtual-museum', icon: BookImage, label: 'Museo Virtual' },
+    ...(isSuperAdmin() ? [{ href: '/virtual-museum', icon: BookImage, label: 'Museo Virtual' }] : []),
     { href: '/ar', icon: ScanEye, label: 'Realidad Aumentada' },
   ];
 

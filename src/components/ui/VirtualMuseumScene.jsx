@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { sculptureService } from '@/services/sculpture/sculptureService';
 import { paintService } from '@/services/paint/paintService';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function VirtualMuseumScene() {
   const [mounted, setMounted] = useState(false);
@@ -11,10 +12,30 @@ export default function VirtualMuseumScene() {
   const [editMode, setEditMode] = useState(false);
   const [activePlacement, setActivePlacement] = useState(null);
 
+  const { isSuperAdmin } = usePermissions();
   const cameraRef = useRef(null);
 
   useEffect(() => {
-    import('aframe').then(() => setMounted(true));
+    import('aframe').then(() => {
+      // Registrar componente de límites para evitar salirse del museo (aproximación genérica)
+      if (window.AFRAME && !window.AFRAME.components['museum-bounds']) {
+        window.AFRAME.registerComponent('museum-bounds', {
+          tick: function () {
+            const pos = this.el.object3D.position;
+            // Limitar X y Z para no atravesar las paredes exteriores (Ajustar estos valores según el tamaño real del GLB)
+            const LIMIT_X = 18; 
+            const LIMIT_Z = 20;
+            if (pos.x > LIMIT_X) pos.x = LIMIT_X;
+            if (pos.x < -LIMIT_X) pos.x = -LIMIT_X;
+            if (pos.z > LIMIT_Z) pos.z = LIMIT_Z;
+            if (pos.z < -LIMIT_Z) pos.z = -LIMIT_Z;
+            // Evitar caer por el piso
+            if (pos.y < 0) pos.y = 0;
+          }
+        });
+      }
+      setMounted(true);
+    });
     
     const fetchArtworks = async () => {
       try {
@@ -156,16 +177,22 @@ export default function VirtualMuseumScene() {
     );
   }
 
-  // Helper para renderizar la placa
+  // Helper para renderizar la placa (Abajo de la obra, texto más pequeño)
   const renderPlaque = (p, isActive = false) => {
     const name = p.type === 'sculpture' ? p.artwork.nombre_escultura : p.artwork.nombre_pintura;
     const desc = p.type === 'sculpture' ? p.artwork.descripcion_escultura : p.artwork.descripcion_pintura;
+    
+    // Posición: Para pintura (Y: -1.2 debajo del centro), Para escultura (Y: 0 al nivel del piso, Z: 0.8 al frente)
+    const pos = p.type === 'paint' ? "0 -1.4 0.05" : "0 0 1.2";
+    // Rotación: Para pintura (recta contra pared), para escultura (inclinada hacia arriba en el piso)
+    const rot = p.type === 'paint' ? "0 0 0" : "-45 0 0";
+
     return (
-      <a-entity position={`1.2 ${p.type === 'paint' ? 0 : 1.2} 0`} rotation="0 -30 0">
-        <a-plane color={isActive ? "#4f46e5" : "#111"} width="1.2" height="0.8" position="0 0 0" opacity="0.9"></a-plane>
-        <a-text value={name} position="-0.5 0.25 0.01" width="2" color="#fff" wrap-count="20"></a-text>
-        <a-text value={`Por: ${p.artwork.artista}`} position="-0.5 0.05 0.01" width="1.5" color="#aaa" wrap-count="30"></a-text>
-        <a-text value={(desc || '').substring(0, 80) + '...'} position="-0.5 -0.15 0.01" width="1.2" color="#ccc" wrap-count="25" baseline="top"></a-text>
+      <a-entity position={pos} rotation={rot}>
+        <a-plane color={isActive ? "#4f46e5" : "#111"} width="1.0" height="0.6" position="0 0 0" opacity="0.9"></a-plane>
+        <a-text value={name} position="-0.4 0.15 0.01" width="1.5" color="#fff" wrap-count="22"></a-text>
+        <a-text value={`Por: ${p.artwork.artista}`} position="-0.4 0.02 0.01" width="1.2" color="#aaa" wrap-count="35"></a-text>
+        <a-text value={(desc || '').substring(0, 100) + '...'} position="-0.4 -0.15 0.01" width="0.9" color="#ccc" wrap-count="30" baseline="top"></a-text>
       </a-entity>
     );
   };
@@ -180,15 +207,18 @@ export default function VirtualMuseumScene() {
         Salir del Museo
       </button>
 
-      <button 
-        onClick={() => setEditMode(!editMode)}
-        className={`absolute top-6 right-6 z-[10000] px-5 py-2.5 rounded-full font-medium transition-all shadow-lg border flex items-center gap-2 text-sm ${
-          editMode ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white text-black border-transparent hover:bg-gray-100'
-        }`}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-        {editMode ? 'Cerrar Editor' : 'Modo Curador'}
-      </button>
+      {/* Solo los super administradores ven el botón Modo Curador */}
+      {isSuperAdmin() && (
+        <button 
+          onClick={() => setEditMode(!editMode)}
+          className={`absolute top-6 right-6 z-[10000] px-5 py-2.5 rounded-full font-medium transition-all shadow-lg border flex items-center gap-2 text-sm ${
+            editMode ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-white text-black border-transparent hover:bg-gray-100'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          {editMode ? 'Cerrar Editor' : 'Modo Curador'}
+        </button>
+      )}
 
       {editMode && !activePlacement && (
         <div className="absolute top-24 right-6 bottom-6 w-80 z-[10000] bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-5 flex flex-col shadow-2xl overflow-hidden">
@@ -378,7 +408,7 @@ export default function VirtualMuseumScene() {
         <a-light type="directional" color="#ffffff" intensity="1.5" position="-1 2 1"></a-light>
         <a-light type="directional" color="#ffffff" intensity="1.5" position="1 2 -1"></a-light>
 
-        <a-entity position="0 0 0" ref={cameraRef}>
+        <a-entity position="0 0 0" ref={cameraRef} museum-bounds>
           <a-camera 
             wasd-controls="acceleration: 20; fly: false;" 
             look-controls="pointerLockEnabled: false"
