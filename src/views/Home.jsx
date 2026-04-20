@@ -18,10 +18,9 @@ const Home = () => {
     <div className="min-h-screen">
       <HomeHero />
       <HomeStats />
-      <FeaturedArtworks />
+      <HomeSculptures />
       <CategoryShowcase categories={artCategories} iconMap={iconMap} />
       <ArtCollageSection />
-      <HomeSculptures />
     </div>
   );
 };

@@ -176,7 +176,7 @@ const TrendingArtists = () => {
 
           {/* Info de la carta activa */}
           <div
-            className="flex-1 min-w-0 ml-20 px-8 py-8 bg-white/80 dark:bg-[#171717] rounded-lg shadow-lg"
+            className="flex-1 min-w-0 ml-20 px-8 py-8 bg-white/80 dark:bg-[#171717] rounded-lg shadow-[0_0px_20px_rgba(0,0,0,0.1)] dark:shadow-[0_0px_20px_rgba(0,0,0,0.3)]"
             style={{
               opacity: animating ? 0 : 1,
               transform: animating ? 'translateY(10px)' : 'translateY(0)',

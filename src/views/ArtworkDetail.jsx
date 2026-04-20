@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { UserColorBadge, UserColorButton } from '@/components/ui/UserColorElements';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
+import FeaturedArtworks from '@/components/ui/FeaturedArtworks';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
 import { toast } from '@/lib/toast';
@@ -67,7 +68,6 @@ const ArtworkDetail = () => {
   const [showFullContent, setShowFullContent] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const [relatedArtworks, setRelatedArtworks] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
@@ -123,22 +123,7 @@ const ArtworkDetail = () => {
             }
           }
 
-          const relatedResponse = await paintService.getByCategory(paint.categoria);
-          if (relatedResponse.success) {
-            const related = relatedResponse.data
-              .filter(p => p.id !== paint.id)
-              .slice(0, 3)
-              .map(p => ({
-                id: p.id,
-                title: p.nombre_pintura,
-                artist: p.artista,
-                imageUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
-                thumbnailUrl: getPublicImageUrl(p.img_pintura) || `http://localhost:3002${p.img_pintura}`,
-                likes: p.likes || 0,
-                views: p.views || 0,
-              }));
-            setRelatedArtworks(related);
-          }
+
         } else {
           setLoadError(response.error || 'No se pudo cargar la pintura');
         }
@@ -347,20 +332,19 @@ const ArtworkDetail = () => {
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 bg-slate-50 dark:bg-dark-secondary">
+      <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <Button
-            variant="ghost"
+          <UserColorButton
             onClick={() => router.back()}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Volver
-          </Button>
+          </UserColorButton>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-6 bg-white dark:bg-[#0f0f0f] rounded-xl shadow-[0_0px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_0px_20px_rgba(0,0,0,0.2)]">
           <div className="lg:col-span-2">
             <div className="mb-6">
               <div className="relative aspect-video w-full overflow-hidden rounded-xl mb-4">
@@ -416,33 +400,6 @@ const ArtworkDetail = () => {
                     #{tag}
                   </Badge>
                 ))}
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-all duration-200 hover:opacity-90"
-                  style={{ background: color }}
-                >
-                  <Palette className="h-4 w-4" />
-                  Ver pintura
-                </button>
-                <Link href={`/profile/${artwork.artistId || artwork.uploadedBy}`}>
-                  <button
-                    className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-transparent border-2 transition-all duration-200 hover:text-white"
-                    style={{ borderColor: color, color: color }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = color;
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.color = color;
-                    }}
-                  >
-                    <User className="h-4 w-4" />
-                    Artista
-                  </button>
-                </Link>
               </div>
             </div>
 
@@ -549,48 +506,14 @@ const ArtworkDetail = () => {
                 </Link>
               </CardContent>
             </Card>
-
-            {relatedArtworks.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Obras Relacionadas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {relatedArtworks.map((related) => (
-                      <Link key={related.id} href={`/artwork/${related.id}`}>
-                        <div className="flex gap-3 p-2 rounded-lg hover:bg-slate-50 transition-colors">
-                          <img
-                            src={related.imageUrl || related.thumbnailUrl}
-                            alt={related.title}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm text-slate-900 truncate">
-                              {related.title}
-                            </h4>
-                            <p className="text-xs text-slate-600">{related.artist}</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <div className="flex items-center gap-1 text-xs text-slate-500">
-                                <Heart className="h-3 w-3" />
-                                <span>{related.likes}</span>
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-slate-500">
-                                <Eye className="h-3 w-3" />
-                                <span>{related.views}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
+      
+      <FeaturedArtworks 
+        title="Obras Relacionadas" 
+        description="Descubre otras obras que podrían interesarte de nuestra colección. Explora estilos similares y encuentra tu próxima pieza favorita."
+      />
     </div>
   );
 };

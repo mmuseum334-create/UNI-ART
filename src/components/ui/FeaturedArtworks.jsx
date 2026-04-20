@@ -14,7 +14,10 @@ import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
 import { ArrowRight, Palette, Heart, Eye } from 'lucide-react';
 
-const FeaturedArtworks = () => {
+const FeaturedArtworks = ({ 
+  title = "Obras Destacadas",
+  description = "Explora la colección completa de obras de arte creadas por nuestra talentosa comunidad de artistas. Cada pieza cuenta una historia única y refleja la pasión y creatividad de sus autores."
+}) => {
   const { color } = useColor();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
@@ -75,17 +78,16 @@ const FeaturedArtworks = () => {
   }, []);
 
   return (
-    <section className="py-12 pb-16 bg-slate-50 dark:bg-dark-secondary">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-12 pb-16 px-6 bg-slate-50 dark:bg-dark-secondary">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white pt-10 pb-8 rounded-2xl shadow-[0_0px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_0px_20px_rgba(0,0,0,0.2)] dark:bg-[#0f0f0f]">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-16">
           <div className="max-w-2xl">
             <h2 className="text-3xl md:text-4xl font-display font-bold text-slate-900 dark:text-white mb-3">
-              Obras Destacadas
+              {title}
             </h2>
             <p className="text-base text-slate-600 dark:text-white/70 leading-relaxed">
-              Explora la colección completa de obras de arte creadas por nuestra talentosa comunidad de artistas.
-              Cada pieza cuenta una historia única y refleja la pasión y creatividad de sus autores.
+              {description}
             </p>
           </div>
           <Link href="/catalog" className="hidden sm:block flex-shrink-0">
