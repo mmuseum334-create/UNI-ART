@@ -1,82 +1,50 @@
 'use client'
 
-/**
- * ARViewer - Augmented Reality viewer for artworks using WebXR
- * Uses Google's model-viewer for AR experiences
- * Docs: https://developers.google.com/ar/develop/webxr
- */
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
-import { X, Info } from 'lucide-react';
-import { getModelUrl } from '@/data/arModels';
+import { X, Info, Loader2, Box } from 'lucide-react';
+import { useColor } from '@/contexts/ColorContext';
 
 const ARViewer = ({ artwork, onExit }) => {
+  const { color } = useColor();
   const modelViewerRef = useRef(null);
   const [isModelViewerLoaded, setIsModelViewerLoaded] = useState(false);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Determinar URL del modelo basado en la obra
-  const modelUrl = artwork.modelUrl || getModelUrl(artwork.id) || 'https://modelviewer.dev/shared-assets/models/Astronaut.glb';
+  const modelUrl = artwork.modelUrl || '';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    // Singleton guard: solo importar si no está ya registrado
     if (customElements.get('model-viewer')) {
       setIsModelViewerLoaded(true);
       setIsLoading(false);
       return;
     }
-
     import('@google/model-viewer')
-      .then(() => {
-        setIsModelViewerLoaded(true);
-        setIsLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error cargando model-viewer:', err);
-        setError('No se pudo cargar el visor 3D');
-        setIsLoading(false);
-      });
+      .then(() => { setIsModelViewerLoaded(true); setIsLoading(false); })
+      .catch(() => { setError('No se pudo cargar el visor 3D'); setIsLoading(false); });
   }, []);
 
   useEffect(() => {
     if (!modelViewerRef.current || !isModelViewerLoaded) return;
-
-    const modelViewer = modelViewerRef.current;
-
-    const handleLoad = () => {
-      console.log('✅ Modelo 3D cargado');
-    };
-
-    const handleError = (event) => {
-      console.error('❌ Error cargando modelo:', event);
-      setError('Error al cargar el modelo 3D');
-    };
-
-    const handleARStatus = (event) => {
-      console.log('📱 Estado AR:', event.detail.status);
-    };
-
-    modelViewer.addEventListener('load', handleLoad);
-    modelViewer.addEventListener('error', handleError);
-    modelViewer.addEventListener('ar-status', handleARStatus);
-
-    return () => {
-      modelViewer.removeEventListener('load', handleLoad);
-      modelViewer.removeEventListener('error', handleError);
-      modelViewer.removeEventListener('ar-status', handleARStatus);
-    };
+    const mv = modelViewerRef.current;
+    const onError = () => setError('Error al cargar el modelo 3D');
+    mv.addEventListener('error', onError);
+    return () => mv.removeEventListener('error', onError);
   }, [isModelViewerLoaded]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-white mx-auto mb-4"></div>
-          <p className="text-xl font-semibold">Cargando visualizador AR...</p>
-          <p className="text-sm mt-2 text-gray-300">Preparando model-viewer de Google</p>
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-primary flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative w-16 h-16 mx-auto mb-4">
+            <Loader2 className="w-16 h-16 animate-spin text-gray-200 dark:text-gray-800" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Box className="w-7 h-7" style={{ color }} />
+            </div>
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Cargando visualizador AR...</p>
         </div>
       </div>
     );
@@ -84,15 +52,14 @@ const ARViewer = ({ artwork, onExit }) => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-red-900 to-pink-900 flex items-center justify-center p-4">
-        <div className="text-center text-white max-w-md">
-          <div className="text-6xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold mb-4">Error</h2>
-          <p className="mb-6">{error}</p>
-          <Button
-            onClick={onExit}
-            className="bg-white text-gray-900 hover:bg-gray-100"
-          >
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-primary flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-500" />
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Error al cargar</h2>
+          <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm">{error}</p>
+          <Button onClick={onExit} className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-90">
             Volver
           </Button>
         </div>
@@ -101,24 +68,22 @@ const ARViewer = ({ artwork, onExit }) => {
   }
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 overflow-hidden">
-      {/* Header con info */}
+    <div className="relative min-h-screen bg-gray-100 dark:bg-dark-primary overflow-hidden">
+
+      {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-20 p-4">
         <div className="flex justify-between items-start gap-3">
-          <div className="bg-black/80 backdrop-blur-md rounded-2xl p-4 text-white flex-1 max-w-md border border-white/10">
-            <h3 className="font-bold text-lg mb-2">{artwork.title}</h3>
-            <p className="text-sm text-gray-300 mb-1">por {artwork.artist}</p>
-            <p className="text-xs text-gray-400 line-clamp-2">{artwork.description}</p>
+          <div className="bg-white/90 dark:bg-dark-secondary/90 backdrop-blur-md rounded-2xl px-4 py-3 flex-1 max-w-md border border-gray-200 dark:border-dark-tertiary shadow-sm">
+            <h3 className="font-bold text-base text-gray-900 dark:text-white mb-0.5">{artwork.title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">por {artwork.artist}</p>
           </div>
 
-          <Button
+          <button
             onClick={onExit}
-            variant="outline"
-            size="sm"
-            className="bg-black/80 backdrop-blur-md border-white/20 text-white hover:bg-black/90 min-h-[44px] min-w-[44px] p-2"
+            className="w-11 h-11 rounded-xl bg-white/90 dark:bg-dark-secondary/90 backdrop-blur-md border border-gray-200 dark:border-dark-tertiary shadow-sm flex items-center justify-center text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-tertiary transition-colors"
           >
-            <X className="h-5 w-5" />
-          </Button>
+            <X className="w-5 h-5" />
+          </button>
         </div>
       </div>
 
@@ -132,54 +97,53 @@ const ARViewer = ({ artwork, onExit }) => {
         camera-controls
         auto-rotate
         shadow-intensity="1"
-        style={{
-          width: '100%',
-          height: '100vh',
-          background: 'transparent'
-        }}
         exposure="1"
         shadow-softness="0.5"
+        style={{ width: '100%', height: '100vh', background: 'transparent' }}
       >
-        {/* Botón AR personalizado */}
         <button
           slot="ar-button"
           style={{
             position: 'absolute',
-            bottom: '30px',
+            bottom: '28px',
             left: '50%',
             transform: 'translateX(-50%)',
-            padding: '16px 32px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            padding: '14px 28px',
+            backgroundColor: color,
             border: 'none',
             borderRadius: '50px',
             color: 'white',
-            fontSize: '18px',
-            fontWeight: 'bold',
+            fontSize: '16px',
+            fontWeight: '700',
             cursor: 'pointer',
             zIndex: 1000,
-            boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-            transition: 'transform 0.2s'
+            boxShadow: `0 6px 20px ${color}55`,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          📱 VER EN AR
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+          Ver en AR
         </button>
 
-        {/* Loading indicator */}
         <div className="progress-bar hide" slot="progress-bar">
           <div className="update-bar"></div>
         </div>
       </model-viewer>
 
       {/* Instrucciones */}
-      <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 text-center text-white z-10 px-4 max-w-md pointer-events-none">
-        <div className="bg-black/80 backdrop-blur-md rounded-2xl p-6 border border-white/10">
-          <Info className="h-8 w-8 mx-auto mb-4 text-blue-400" />
-          <h3 className="text-lg font-bold mb-2">Vista 3D con AR</h3>
-          <p className="text-sm text-gray-300 mb-3">
-            🔄 Arrastra para rotar • 🔍 Pellizca para zoom
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 text-center z-10 px-4 max-w-sm pointer-events-none">
+        <div className="bg-white/90 dark:bg-dark-secondary/90 backdrop-blur-md rounded-2xl px-5 py-4 border border-gray-200 dark:border-dark-tertiary shadow-sm">
+          <Info className="w-5 h-5 mx-auto mb-2" style={{ color }} />
+          <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">Vista 3D interactiva</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Arrastra para rotar · Pellizca para zoom
           </p>
-          <p className="text-xs text-gray-400">
-            Toca &quot;VER EN AR&quot; para colocar el modelo en tu espacio real
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            Toca "Ver en AR" para colocarlo en tu espacio real
           </p>
         </div>
       </div>
@@ -187,9 +151,8 @@ const ARViewer = ({ artwork, onExit }) => {
       <style jsx global>{`
         model-viewer {
           --poster-color: transparent;
-          --progress-bar-color: #667eea;
+          --progress-bar-color: ${color};
         }
-
         model-viewer::part(default-ar-button) {
           display: none;
         }

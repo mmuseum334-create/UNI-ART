@@ -164,49 +164,6 @@ const SculptureARViewer = ({ modelUrl, sculptureTitle = 'Escultura', posterUrl =
         )}
       </div>
 
-      {/* Instrucciones */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
-          <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-          <div className="space-y-2 text-sm text-blue-800">
-            <p className="font-semibold">Instrucciones:</p>
-            <ul className="space-y-1 list-disc list-inside">
-              <li><strong>Girar:</strong> Arrastra con el mouse o dedo</li>
-              <li><strong>Zoom:</strong> Usa la rueda del mouse o pellizca en móvil</li>
-              <li><strong>Mover:</strong> Click derecho + arrastra (PC) o dos dedos (móvil)</li>
-              <li>
-                <strong>AR:</strong> Haz click en &quot;Ver en AR&quot; desde un dispositivo móvil compatible
-                (iOS con ARKit o Android con ARCore)
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Compatibilidad AR */}
-      <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-        <h3 className="font-semibold text-slate-900 mb-2 text-sm">
-          Requisitos para Realidad Aumentada:
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-slate-600">
-          <div>
-            <p className="font-medium text-slate-700 mb-1">📱 iOS (iPhone/iPad)</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>iOS 12 o superior</li>
-              <li>iPhone 6S o posterior</li>
-              <li>Safari o Chrome</li>
-            </ul>
-          </div>
-          <div>
-            <p className="font-medium text-slate-700 mb-1">🤖 Android</p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>Android 7.0 o superior</li>
-              <li>Google Play Services for AR</li>
-              <li>Chrome 79 o superior</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

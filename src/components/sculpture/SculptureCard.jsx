@@ -58,17 +58,16 @@ export const SculptureGridCard = ({ artwork, color, onQuickView }) => {
         {/* Área visual */}
         <div className="relative aspect-[4/3] overflow-hidden bg-slate-900 dark:bg-[#0d0d0d]">
 
-          {/* Modelo 3D — se activa al hover si está disponible */}
-          {hasModel && hovered ? (
+          {hasModel ? (
+            /* Modelo 3D siempre montado — auto-rotate solo en hover */
             <SculptureModelViewer
               src={artwork.modelo_3d_url}
               poster={firstImage}
-              autoRotate
-              cameraControls
+              autoRotate={hovered}
+              cameraControls={false}
               style={{ position: 'absolute', inset: 0 }}
             />
           ) : firstImage ? (
-            /* Imagen de referencia cuando no hay hover o no hay modelo */
             <img
               src={firstImage}
               alt={artwork.title}
@@ -76,7 +75,6 @@ export const SculptureGridCard = ({ artwork, color, onQuickView }) => {
               onError={e => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x300/1a1a1a/444?text=Escultura'; }}
             />
           ) : (
-            /* Placeholder sin imagen */
             <div className="w-full h-full flex items-center justify-center bg-slate-800">
               <Box className="h-12 w-12 text-slate-600" />
             </div>
@@ -96,11 +94,11 @@ export const SculptureGridCard = ({ artwork, color, onQuickView }) => {
             </span>
           </div>
 
-          {/* Hover hint 3D */}
+          {/* Hover hint */}
           {hasModel && !hovered && (
             <div className="absolute inset-0 flex items-end justify-center pb-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
               <span className="text-[10px] bg-black/60 text-white px-2 py-1 rounded-full flex items-center gap-1">
-                <RotateCcw className="h-3 w-3" /> Hover para ver en 3D
+                <RotateCcw className="h-3 w-3" /> Hover para rotar en 3D
               </span>
             </div>
           )}

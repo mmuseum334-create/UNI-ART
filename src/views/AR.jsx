@@ -1,662 +1,452 @@
-/**
- * AR page - Augmented Reality experience for viewing 3D artworks
- * Uses WebXR API to display artworks in AR on compatible devices
- */
 'use client'
 
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import ARViewer from '@/components/ar/ARViewer';
-import { arModels } from '@/data/arModels';
+import { sculptureService } from '@/services/sculpture/sculptureService';
+import { useColor } from '@/contexts/ColorContext';
 import {
   Box,
   Play,
-  Square,
-  RotateCcw,
-  Maximize,
-  Info,
   Smartphone,
-  Chrome,
   AlertTriangle,
   Sparkles,
-  Eye,
-  Heart,
-  Palette,
-  Layers
+  Move3d,
+  ScanLine,
+  Loader2,
 } from 'lucide-react';
 
+/* ─── carga model-viewer una sola vez ─── */
+let modelViewerLoaded = false;
+const loadModelViewer = () => {
+  if (typeof window === 'undefined' || modelViewerLoaded) return Promise.resolve();
+  if (customElements.get('model-viewer')) { modelViewerLoaded = true; return Promise.resolve(); }
+  return import('@google/model-viewer').then(() => { modelViewerLoaded = true; });
+};
+
 const AR = () => {
+  const { color } = useColor();
   const [isARSupported, setIsARSupported] = useState(false);
   const [isARActive, setIsARActive] = useState(false);
   const [selectedArtwork, setSelectedArtwork] = useState(null);
+  const [featured, setFeatured] = useState(null);
+  const [artworks, setArtworks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [viewerReady, setViewerReady] = useState(false);
+  const [modelLoading, setModelLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const modelViewerRef = useRef(null);
 
+  /* ─── detectar soporte AR ─── */
   useEffect(() => {
-    // Verificar soporte para WebXR
-    const checkARSupport = async () => {
-      if ('xr' in navigator) {
-        try {
-          const isSupported = await navigator.xr.isSessionSupported('immersive-ar');
-          setIsARSupported(isSupported);
-        } catch (error) {
-          console.log('AR no soportado:', error);
-          setIsARSupported(false);
-        }
-      } else {
-        setIsARSupported(false);
-      }
-      setIsLoading(false);
-    };
-
-    checkARSupport();
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-ar')
+        .then(setIsARSupported)
+        .catch(() => setIsARSupported(false));
+    }
   }, []);
 
-  // Usar los modelos configurados en arModels.js
-  const arArtworks = arModels;
+  /* ─── cargar model-viewer ─── */
+  useEffect(() => {
+    loadModelViewer().then(() => setViewerReady(true));
+  }, []);
 
-  // Filtrar por categoría
-  const filteredArtworks = selectedCategory === 'all'
-    ? arArtworks
-    : arArtworks.filter(artwork => artwork.category === selectedCategory);
+  /* ─── cargar obras AR desde backend ─── */
+  useEffect(() => {
+    sculptureService.getAll().then((result) => {
+      if (result.success) {
+        const arReady = (result.data || []).filter(
+          (s) => s.estado_procesamiento === 'completado' && s.modelo_3d_url
+        );
+        setArtworks(arReady);
+        if (arReady.length > 0) setFeatured(arReady[0]);
+      } else {
+        setError(result.error);
+      }
+      setIsLoading(false);
+    });
+  }, []);
 
-  // Categorías disponibles
-  const categories = [
-    { id: 'all', name: 'Todas', icon: Box },
-    { id: 'paintings', name: 'Pinturas', count: arArtworks.filter(a => a.category === 'paintings').length },
-    { id: 'sculptures', name: 'Esculturas', count: arArtworks.filter(a => a.category === 'sculptures').length },
-    { id: 'other', name: 'Otros', count: arArtworks.filter(a => a.category === 'other').length }
-  ];
+  /* ─── resetear loading cuando cambia el modelo ─── */
+  useEffect(() => {
+    if (featured) setModelLoading(true);
+  }, [featured]);
 
-  const startARSession = (artwork) => {
-    setSelectedArtwork(artwork);
+  /* ─── resetear posición de los viewers de tarjetas no activas ─── */
+  useEffect(() => {
+    const viewers = document.querySelectorAll('[data-card-viewer]');
+    viewers.forEach((v) => {
+      if (v.dataset.cardViewer !== String(featured?.id)) {
+        v.resetTurntableRotation?.();
+        v.cameraOrbit = 'auto auto auto';
+      }
+    });
+  }, [featured]);
+
+  /* ─── eventos del model-viewer ─── */
+  useEffect(() => {
+    const mv = modelViewerRef.current;
+    if (!mv || !viewerReady) return;
+    const onLoad = () => setModelLoading(false);
+    const onError = () => setModelLoading(false);
+    mv.addEventListener('load', onLoad);
+    mv.addEventListener('error', onError);
+    return () => {
+      mv.removeEventListener('load', onLoad);
+      mv.removeEventListener('error', onError);
+    };
+  }, [viewerReady, featured]);
+
+  const normalize = (s) => ({
+    id: s.id,
+    title: s.nombre_escultura,
+    artist: s.artista,
+    description: s.descripcion_escultura,
+    modelUrl: s.modelo_3d_url,
+    thumbnail: Array.isArray(s.imagenes) && s.imagenes.length > 0 ? s.imagenes[0] : null,
+    category: s.categoria,
+    tags: s.etiqueta ? [s.etiqueta] : [],
+  });
+
+  const startAR = () => {
+    if (!featured) return;
+    setSelectedArtwork(normalize(featured));
     setIsARActive(true);
   };
 
-  const stopARSession = () => {
+  const stopAR = () => {
     setIsARActive(false);
     setSelectedArtwork(null);
   };
 
+  /* ── pantalla de carga inicial ── */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-nature-50 dark:from-dark-primary dark:via-dark-secondary dark:to-dark-primary flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-dark-primary flex items-center justify-center">
         <div className="text-center">
-          {/* Spinner mejorado */}
-          <div className="relative mb-8">
-            <div className="animate-spin rounded-full h-32 w-32 border-4 border-nature-200 dark:border-nature-800 mx-auto"></div>
-            <div className="animate-spin rounded-full h-32 w-32 border-t-4 border-nature-600 dark:border-nature-400 mx-auto absolute top-0 left-1/2 transform -translate-x-1/2"></div>
-            <Box className="h-12 w-12 text-nature-600 dark:text-nature-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse" />
+          <div className="relative w-16 h-16 mx-auto mb-5">
+            <Loader2 className="w-16 h-16 animate-spin text-gray-300 dark:text-gray-700" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Box className="w-7 h-7" style={{ color }} />
+            </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">
-            Inicializando AR
-          </h3>
-          <p className="text-lg text-gray-600 dark:text-gray-300">Verificando compatibilidad del dispositivo...</p>
+          <p className="text-gray-400 dark:text-gray-500 text-xs tracking-widest uppercase">Preparando experiencia AR</p>
         </div>
       </div>
     );
   }
 
+  /* ── visor AR pantalla completa ── */
   if (isARActive && selectedArtwork) {
-    return (
-      <div className="min-h-screen">
-        <ARViewer
-          artwork={selectedArtwork}
-          onExit={stopARSession}
-        />
-      </div>
-    );
+    return <ARViewer artwork={selectedArtwork} onExit={stopAR} />;
   }
+
+  const norm = featured ? normalize(featured) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-nature-50 dark:from-dark-primary dark:via-dark-secondary dark:to-dark-primary relative overflow-hidden">
-      {/* Fondo con patrón de grid futurista */}
-      <div className="absolute inset-0 pointer-events-none">
-        {/* Grid de fondo */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-10 dark:opacity-20"></div>
+    <div className="min-h-screen bg-white dark:bg-dark-primary flex flex-col">
 
-        {/* Elementos decorativos AR */}
-        <div className="absolute inset-0 overflow-hidden">
-          {/* Burbujas animadas grandes */}
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-museum-300 dark:bg-museum-600 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-nature-300 dark:bg-nature-600 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-museum-400 dark:bg-museum-600 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+      {/* ══ HERO HEADER ══ */}
+      <header className="bg-gray-50 dark:bg-dark-secondary border-b border-gray-200 dark:border-dark-tertiary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div className="max-w-xl">
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3 bg-gray-200 dark:bg-dark-tertiary text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-dark-tertiary">
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: color }} />
+                Realidad Aumentada · WebXR
+                <ScanLine className="w-3.5 h-3.5" />
+              </div>
 
-          {/* Marcos/Cuadros flotantes decorativos */}
-          <div className="absolute top-20 left-10 w-32 h-40 border-4 border-museum-400/30 dark:border-museum-500/30 rounded-lg rotate-12 animate-float"></div>
-          <div className="absolute top-40 right-20 w-40 h-32 border-4 border-nature-400/30 dark:border-nature-500/30 rounded-lg -rotate-6 animate-float animation-delay-2000"></div>
-          <div className="absolute bottom-32 left-1/4 w-28 h-36 border-4 border-museum-300/30 dark:border-museum-600/30 rounded-lg rotate-6 animate-float animation-delay-4000"></div>
-          <div className="absolute bottom-40 right-1/4 w-36 h-28 border-4 border-nature-300/30 dark:border-nature-600/30 rounded-lg -rotate-12 animate-float animation-delay-1000"></div>
-
-          {/* Iconos 3D flotantes */}
-          <div className="absolute top-1/4 right-1/3 opacity-20 dark:opacity-10 animate-float-slow">
-            <Box className="h-16 w-16 text-museum-500 dark:text-museum-400" />
-          </div>
-          <div className="absolute bottom-1/3 left-1/4 opacity-20 dark:opacity-10 animate-float-slow animation-delay-2000">
-            <Layers className="h-12 w-12 text-nature-500 dark:text-nature-400" />
-          </div>
-          <div className="absolute top-1/3 left-1/2 opacity-15 dark:opacity-10 animate-float-slow animation-delay-3000">
-            <Sparkles className="h-14 w-14 text-museum-400 dark:text-museum-500" />
-          </div>
-
-          {/* Puntos de conexión AR */}
-          <svg className="absolute inset-0 w-full h-full opacity-30 dark:opacity-20" style={{ pointerEvents: 'none' }}>
-            <defs>
-              <linearGradient id="line-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="rgb(34, 197, 94)" stopOpacity="0.3" />
-                <stop offset="100%" stopColor="rgb(14, 165, 233)" stopOpacity="0.3" />
-              </linearGradient>
-            </defs>
-            {/* Líneas conectoras simulando AR tracking */}
-            <line x1="10%" y1="20%" x2="30%" y2="40%" stroke="url(#line-gradient)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" />
-            <line x1="70%" y1="30%" x2="85%" y2="50%" stroke="url(#line-gradient)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" style={{ animationDelay: '1s' }} />
-            <line x1="20%" y1="70%" x2="40%" y2="85%" stroke="url(#line-gradient)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" style={{ animationDelay: '2s' }} />
-            <line x1="60%" y1="60%" x2="80%" y2="75%" stroke="url(#line-gradient)" strokeWidth="2" strokeDasharray="5,5" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
-
-            {/* Puntos de tracking AR */}
-            <circle cx="10%" cy="20%" r="4" fill="rgb(34, 197, 94)" opacity="0.6" className="animate-ping" />
-            <circle cx="30%" cy="40%" r="4" fill="rgb(14, 165, 233)" opacity="0.6" className="animate-ping" style={{ animationDelay: '0.5s' }} />
-            <circle cx="70%" cy="30%" r="4" fill="rgb(34, 197, 94)" opacity="0.6" className="animate-ping" style={{ animationDelay: '1s' }} />
-            <circle cx="85%" cy="50%" r="4" fill="rgb(14, 165, 233)" opacity="0.6" className="animate-ping" style={{ animationDelay: '1.5s' }} />
-            <circle cx="20%" cy="70%" r="4" fill="rgb(34, 197, 94)" opacity="0.6" className="animate-ping" style={{ animationDelay: '2s' }} />
-            <circle cx="60%" cy="60%" r="4" fill="rgb(14, 165, 233)" opacity="0.6" className="animate-ping" style={{ animationDelay: '2.5s' }} />
-          </svg>
-
-          {/* Partículas pequeñas */}
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-nature-400 rounded-full animate-ping opacity-40"></div>
-          <div className="absolute top-2/3 right-1/3 w-2 h-2 bg-museum-400 rounded-full animate-ping opacity-40" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute bottom-1/4 left-1/2 w-2 h-2 bg-nature-500 rounded-full animate-ping opacity-40" style={{ animationDelay: '2s' }}></div>
-          <div className="absolute top-1/2 right-1/4 w-2 h-2 bg-museum-500 rounded-full animate-ping opacity-40" style={{ animationDelay: '1.5s' }}></div>
-        </div>
-      </div>
-
-      {/* Hero Header con diseño mejorado */}
-      <section className="relative">
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-12">
-          <div className="text-center mb-12">
-            {/* Badge animado */}
-            <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-full shadow-lg mb-6 border border-nature-200 dark:border-nature-700">
-              <Sparkles className="h-5 w-5 text-nature-600 dark:text-nature-400 animate-pulse" />
-              <span className="text-sm font-semibold bg-gradient-to-r from-museum-600 to-nature-600 dark:from-museum-400 dark:to-nature-400 bg-clip-text text-transparent">
-                Realidad Aumentada WebXR
-              </span>
-              <Box className="h-5 w-5 text-museum-600 dark:text-museum-400 animate-spin-slow" />
+              <h1 className="text-3xl md:text-4xl font-extrabold leading-tight mb-2 text-gray-900 dark:text-white">
+                Esculturas en{' '}
+                <span style={{ color }}>tu mundo real</span>
+              </h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed max-w-md">
+                Explora modelos 3D en el navegador. En tu móvil, colócalos en tu espacio real con Realidad Aumentada.
+              </p>
             </div>
 
-            {/* Título principal con gradiente mejorado */}
-            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
-              <span className="block bg-gradient-to-r from-museum-600 via-nature-600 to-museum-700 dark:from-museum-400 dark:via-nature-400 dark:to-museum-300 bg-clip-text text-transparent">
-                Experimenta el Arte
-              </span>
-              <span className="block bg-gradient-to-r from-nature-600 via-museum-600 to-nature-700 dark:from-nature-400 dark:via-museum-400 dark:to-nature-300 bg-clip-text text-transparent">
-                en Tu Realidad
-              </span>
-            </h1>
-
-            {/* Descripción mejorada */}
-            <p className="text-lg md:text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
-              Transforma tu espacio con arte tridimensional. Visualiza esculturas, pinturas y obras digitales
-              como si estuvieran frente a ti. <span className="font-semibold text-nature-600 dark:text-nature-400">La magia de la tecnología WebXR</span> al alcance de tu mano.
-            </p>
-
-            {/* Stats rápidos */}
-            <div className="flex flex-wrap justify-center gap-6 mb-8">
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-nature-100 dark:border-nature-800">
-                <Layers className="h-5 w-5 text-nature-600 dark:text-nature-400" />
-                <span className="font-semibold text-gray-700 dark:text-gray-300">{arModels.length} Obras en 3D</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-museum-100 dark:border-museum-800">
-                <Palette className="h-5 w-5 text-museum-600 dark:text-museum-400" />
-                <span className="font-semibold text-gray-700 dark:text-gray-300">Vista 360°</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-nature-100 dark:border-nature-800">
-                <Eye className="h-5 w-5 text-nature-600 dark:text-nature-400" />
-                <span className="font-semibold text-gray-700 dark:text-gray-300">Experiencia Inmersiva</span>
-              </div>
-            </div>
-
-            {!isARSupported && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 mb-8 max-w-2xl mx-auto">
-                <div className="flex items-center justify-center mb-4">
-                  <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400 mr-2" />
-                  <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200">
-                    AR No Disponible
-                  </h3>
-                </div>
-                <p className="text-amber-700 dark:text-amber-300 mb-4">
-                  La Realidad Aumentada no está disponible. Para usarla necesitas:
-                </p>
-                <div className="grid grid-cols-1 gap-3 text-sm mb-4">
-                  <div className="flex items-start text-amber-700 dark:text-amber-300">
-                    <Smartphone className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span><strong>Dispositivo Android</strong> con ARCore instalado</span>
-                  </div>
-                  <div className="flex items-start text-amber-700 dark:text-amber-300">
-                    <Chrome className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span><strong>Navegador Chrome</strong> para Android actualizado</span>
-                  </div>
-                  <div className="flex items-start text-amber-700 dark:text-amber-300">
-                    <Info className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span><strong>Conexión HTTPS</strong> (usa ngrok o despliega en producción)</span>
+            {/* Stats */}
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: 'Obras en 3D', value: artworks.length, icon: Box },
+                { label: 'Vista 360°', value: '∞', icon: Move3d },
+                { label: 'AR en móvil', value: isARSupported ? 'Listo' : 'Móvil req.', icon: Smartphone },
+              ].map(({ label, value, icon: Icon }) => (
+                <div key={label} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white dark:bg-dark-tertiary border border-gray-200 dark:border-dark-tertiary">
+                  <Icon className="w-4 h-4 text-gray-400" />
+                  <div>
+                    <p className="font-bold text-gray-900 dark:text-white leading-none text-sm">{value}</p>
+                    <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">{label}</p>
                   </div>
                 </div>
-                <p className="text-xs text-amber-600 dark:text-amber-400 italic">
-                  💡 Si estás en desarrollo local, usa ngrok o accede vía HTTPS para que funcione la cámara
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Filtros modernos con pills */}
-          <div className="mb-12">
-            <div className="flex flex-col items-center gap-4">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-                Explora por Categoría
-              </h2>
-              <div className="flex flex-wrap gap-3 justify-center">
-                {categories.map((category) => {
-                  const isActive = selectedCategory === category.id;
-                  return (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`
-                        group relative px-6 py-3 rounded-2xl font-semibold transition-all duration-300 transform hover:scale-105
-                        ${isActive
-                          ? 'bg-gradient-to-r from-nature-600 to-museum-600 text-white shadow-lg shadow-nature-500/50'
-                          : 'bg-white/80 dark:bg-gray-800/80 text-gray-700 dark:text-gray-300 hover:bg-white dark:hover:bg-gray-800 border-2 border-nature-200 dark:border-nature-700'
-                        }
-                      `}
-                    >
-                      <span className="flex items-center gap-2">
-                        {category.name}
-                        {category.count !== undefined && (
-                          <span className={`
-                            px-2 py-0.5 rounded-full text-xs font-bold
-                            ${isActive ? 'bg-white/30' : 'bg-nature-100 dark:bg-nature-900 text-nature-700 dark:text-nature-300'}
-                          `}>
-                            {category.count}
-                          </span>
-                        )}
-                      </span>
-                      {isActive && (
-                        <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-nature-600 to-museum-600 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Contador con animación */}
-              <div className="text-center mt-4 px-6 py-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-full border border-nature-100 dark:border-nature-800">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  <Sparkles className="inline h-4 w-4 mr-2 text-nature-600 dark:text-nature-400" />
-                  Mostrando <span className="text-nature-600 dark:text-nature-400 text-lg font-bold">{filteredArtworks.length}</span> {filteredArtworks.length === 1 ? 'obra' : 'obras'} en AR
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Artworks Grid - Diseño Premium */}
-          {filteredArtworks.length === 0 ? (
-            /* Estado vacío con diseño atractivo */
-            <div className="text-center py-20">
-              <div className="max-w-md mx-auto">
-                <div className="w-32 h-32 bg-gradient-to-br from-nature-100 to-museum-100 dark:from-nature-900/30 dark:to-museum-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Box className="h-16 w-16 text-nature-400 dark:text-nature-500" />
-                </div>
-                <h3 className="text-2xl font-bold text-gray-800 dark:text-white mb-3">
-                  No hay obras en esta categoría
-                </h3>
-                <p className="text-gray-600 dark:text-gray-300 mb-6">
-                  Prueba seleccionando otra categoría para ver más contenido en AR
-                </p>
-                <button
-                  onClick={() => setSelectedCategory('all')}
-                  className="px-6 py-3 bg-gradient-to-r from-nature-600 to-museum-600 text-white rounded-xl font-semibold hover:shadow-lg transform hover:scale-105 transition-all duration-300"
-                >
-                  Ver Todas las Obras
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredArtworks.map((artwork, index) => (
-              <div
-                key={artwork.id}
-                className="group relative bg-white dark:bg-gray-800 rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                {/* Imagen con overlay gradiente */}
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={artwork.thumbnail}
-                    alt={artwork.title}
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-
-                  {/* Gradiente overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
-
-                  {/* Badge de categoría flotante */}
-                  <div className="absolute top-4 right-4 z-10">
-                    <div className="px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 shadow-lg flex items-center gap-2 bg-gradient-to-r from-nature-500/90 to-museum-500/90 text-white text-sm font-semibold">
-                      {artwork.category === 'paintings' ? (
-                        <>
-                          <Palette className="h-4 w-4" />
-                          <span>Pintura</span>
-                        </>
-                      ) : artwork.category === 'sculptures' ? (
-                        <>
-                          <Box className="h-4 w-4" />
-                          <span>Escultura</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-4 w-4" />
-                          <span>Digital</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Icono AR flotante */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center">
-                      <Box className="h-5 w-5 text-white animate-pulse" />
-                    </div>
-                  </div>
-
-                  {/* Overlay de hover con info */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-nature-600/95 via-museum-600/80 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center p-6">
-                    <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex flex-col items-center">
-                      <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-lg border-2 border-white/40 flex items-center justify-center mb-4 animate-bounce-slow">
-                        <Play className="h-10 w-10 text-white" style={{ marginLeft: '3px' }} />
-                      </div>
-                      <p className="text-white font-bold text-lg text-center mb-2">Vista AR Disponible</p>
-                      <p className="text-white/90 text-sm text-center">Toca para experimentar en 3D</p>
-                    </div>
-                  </div>
-
-                  {/* Título en la imagen */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
-                    <h3 className="text-white font-bold text-xl mb-1 drop-shadow-lg">{artwork.title}</h3>
-                    <p className="text-white/90 text-sm drop-shadow-md flex items-center gap-2">
-                      <Palette className="h-4 w-4" />
-                      {artwork.artist}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Contenido de la tarjeta */}
-                <div className="p-6">
-                  {/* Descripción */}
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-4 line-clamp-2">
-                    {artwork.description}
-                  </p>
-
-                  {/* Tags con diseño mejorado */}
-                  {artwork.tags && artwork.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-5">
-                      {artwork.tags.slice(0, 3).map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-nature-100 to-museum-100 dark:from-nature-900/50 dark:to-museum-900/50 text-nature-700 dark:text-nature-300 border border-nature-200 dark:border-nature-700"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                      {artwork.tags.length > 3 && (
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                          +{artwork.tags.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Botones de acción */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => startARSession(artwork)}
-                      disabled={!isARSupported}
-                      className={`
-                        flex-1 py-3 px-4 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2
-                        ${isARSupported
-                          ? 'bg-gradient-to-r from-nature-600 to-museum-600 hover:from-nature-700 hover:to-museum-700 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-                          : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                        }
-                      `}
-                    >
-                      <Play className="h-5 w-5" />
-                      <span>{isARSupported ? 'Iniciar AR' : 'No Disponible'}</span>
-                    </button>
-
-                    <button className="w-12 h-12 rounded-xl border-2 border-nature-200 dark:border-nature-700 hover:border-nature-400 dark:hover:border-nature-500 hover:bg-nature-50 dark:hover:bg-nature-900/30 transition-all duration-300 flex items-center justify-center group/btn">
-                      <Info className="h-5 w-5 text-nature-600 dark:text-nature-400 group-hover/btn:scale-110 transition-transform" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Borde decorativo con gradiente */}
-                <div className="absolute inset-0 rounded-3xl border-2 border-transparent group-hover:border-nature-400 dark:group-hover:border-nature-600 transition-all duration-300 pointer-events-none"></div>
-              </div>
               ))}
             </div>
-          )}
+          </div>
+        </div>
+      </header>
 
-          {/* Instructions - Diseño mejorado */}
-          <div className="mt-20 mb-12">
-            <div className="max-w-5xl mx-auto">
-              {/* Título de sección */}
-              <div className="text-center mb-12">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-800 dark:text-white mb-4">
-                  ¿Cómo Funciona?
-                </h2>
-                <p className="text-gray-600 dark:text-gray-300 text-lg">
-                  Experimenta el arte en 3 simples pasos
+      {/* ══ ALERTA AR ══ */}
+      {!isARSupported && (
+        <div className="bg-amber-50 dark:bg-dark-tertiary border-b border-amber-200 dark:border-dark-tertiary">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500 flex-shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-gray-400">
+              <span className="font-semibold text-amber-800 dark:text-gray-300">Estás en escritorio</span> — puedes explorar los modelos 3D aquí.
+              Para la experiencia en Realidad Aumentada, abre esta página desde un Android con Chrome.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* ══ ERROR / VACÍO ══ */}
+      {error && (
+        <div className="flex-1 flex items-center justify-center py-24">
+          <p className="text-gray-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      {!error && artworks.length === 0 && (
+        <div className="flex-1 flex flex-col items-center justify-center py-24 px-4">
+          <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-dark-tertiary flex items-center justify-center mb-5">
+            <Box className="w-9 h-9 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-2">Sin obras listas para AR</h3>
+          <p className="text-gray-400 text-sm text-center max-w-xs">
+            Las esculturas aparecen aquí cuando su modelo 3D ha sido generado por Meshy AI.
+          </p>
+        </div>
+      )}
+
+      {/* ══ VISOR PRINCIPAL ══ */}
+      {!error && artworks.length > 0 && norm && (
+        <main className="flex-1 flex flex-col">
+
+          {/* ── Fila superior: visor 3D + info ── */}
+          <div className="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-tertiary" style={{ height: '340px' }}>
+
+            {/* Visor 3D */}
+            <div className="relative flex-1 bg-gray-100 dark:bg-dark-secondary overflow-hidden">
+              {viewerReady && (
+                <model-viewer
+                  ref={modelViewerRef}
+                  key={norm.id}
+                  src={norm.modelUrl}
+                  alt={norm.title}
+                  camera-controls
+                  auto-rotate
+                  auto-rotate-delay="500"
+                  rotation-per-second="20deg"
+                  shadow-intensity="1.2"
+                  shadow-softness="0.5"
+                  exposure="1.1"
+                  ar
+                  ar-modes="webxr scene-viewer quick-look"
+                  ar-scale="auto"
+                  style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
+                >
+                  <button
+                    slot="ar-button"
+                    style={{
+                      position: 'absolute',
+                      bottom: '16px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      padding: '10px 22px',
+                      backgroundColor: color,
+                      border: 'none',
+                      borderRadius: '50px',
+                      color: 'white',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: `0 6px 20px ${color}55`,
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    </svg>
+                    Ver en AR
+                  </button>
+                </model-viewer>
+              )}
+
+              {/* Spinner */}
+              {(modelLoading || !viewerReady) && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-dark-secondary z-10">
+                  <div className="relative w-12 h-12 mb-3">
+                    <Loader2 className="w-12 h-12 animate-spin text-gray-300 dark:text-gray-700" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Box className="w-5 h-5" style={{ color }} />
+                    </div>
+                  </div>
+                  <p className="text-gray-400 dark:text-gray-600 text-xs tracking-widest">CARGANDO MODELO 3D</p>
+                </div>
+              )}
+
+              {/* Hints */}
+              {!modelLoading && viewerReady && (
+                <div className="absolute bottom-3 left-3 flex items-center gap-2 pointer-events-none">
+                  <div className="flex items-center gap-1 bg-white/80 dark:bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-gray-600 dark:text-white/70 text-xs border border-gray-200/50 dark:border-transparent">
+                    <Move3d className="w-3 h-3" />
+                    Arrastra · Zoom
+                  </div>
+                </div>
+              )}
+
+              {/* Badge AR */}
+              {isARSupported && !modelLoading && (
+                <div className="absolute top-3 left-3">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white text-xs font-semibold"
+                    style={{ backgroundColor: `${color}dd` }}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                    AR disponible
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info de la obra seleccionada */}
+            <div className="lg:w-72 xl:w-80 flex flex-col justify-between p-5 bg-white dark:bg-dark-secondary border-l border-gray-200 dark:border-dark-tertiary overflow-hidden">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold tracking-widest uppercase mb-1.5 text-gray-400 dark:text-gray-500">
+                  Explorando ahora
                 </p>
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-0.5 truncate">
+                  {norm.title}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{norm.artist}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3">
+                  {norm.description}
+                </p>
+                {norm.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {norm.tags.slice(0, 3).map((tag, i) => (
+                      <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-tertiary text-gray-500 dark:text-gray-400">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Steps con diseño moderno */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Step 1 */}
-                <div className="relative group">
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-nature-100 dark:border-nature-800">
-                    {/* Número del paso */}
-                    <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-nature-600 to-museum-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      1
-                    </div>
-
-                    {/* Icono */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-nature-100 to-museum-100 dark:from-nature-900/50 dark:to-museum-900/50 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                      <Smartphone className="h-8 w-8 text-nature-600 dark:text-nature-400" />
-                    </div>
-
-                    {/* Contenido */}
-                    <h3 className="font-bold text-xl mb-3 text-gray-800 dark:text-white text-center">
-                      Prepara tu Dispositivo
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 text-center leading-relaxed">
-                      Usa un dispositivo Android con ARCore y Chrome actualizado para la mejor experiencia.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 2 */}
-                <div className="relative group">
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-nature-100 dark:border-nature-800">
-                    {/* Número del paso */}
-                    <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-nature-600 to-museum-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      2
-                    </div>
-
-                    {/* Icono */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-nature-100 to-museum-100 dark:from-nature-900/50 dark:to-museum-900/50 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                      <Play className="h-8 w-8 text-nature-600 dark:text-nature-400" />
-                    </div>
-
-                    {/* Contenido */}
-                    <h3 className="font-bold text-xl mb-3 text-gray-800 dark:text-white text-center">
-                      Inicia la Experiencia
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 text-center leading-relaxed">
-                      Selecciona tu obra favorita y toca el botón &quot;Iniciar AR&quot; para comenzar la magia.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Step 3 */}
-                <div className="relative group">
-                  <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border-2 border-nature-100 dark:border-nature-800">
-                    {/* Número del paso */}
-                    <div className="absolute -top-4 -left-4 w-12 h-12 bg-gradient-to-br from-nature-600 to-museum-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow-lg">
-                      3
-                    </div>
-
-                    {/* Icono */}
-                    <div className="w-16 h-16 bg-gradient-to-br from-nature-100 to-museum-100 dark:from-nature-900/50 dark:to-museum-900/50 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                      <Box className="h-8 w-8 text-nature-600 dark:text-nature-400" />
-                    </div>
-
-                    {/* Contenido */}
-                    <h3 className="font-bold text-xl mb-3 text-gray-800 dark:text-white text-center">
-                      Explora e Interactúa
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300 text-center leading-relaxed">
-                      Mueve tu dispositivo para ver la obra desde todos los ángulos. ¡Rota, acércate, explora!
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* CTA final */}
-              <div className="mt-12 text-center">
-                <div className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-nature-600 to-museum-600 text-white rounded-full font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300">
-                  <Sparkles className="h-5 w-5" />
-                  <span>¡Comienza tu Experiencia AR Ahora!</span>
-                  <Play className="h-5 w-5" />
-                </div>
+              <div className="mt-4">
+                <button
+                  onClick={startAR}
+                  disabled={!isARSupported}
+                  className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98]"
+                  style={{ backgroundColor: color }}
+                >
+                  <Smartphone className="w-4 h-4" />
+                  {isARSupported ? 'Colocar en tu espacio (AR)' : 'AR requiere móvil'}
+                </button>
+                {!isARSupported && (
+                  <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-1.5">
+                    El modelo 3D de arriba es interactivo en PC
+                  </p>
+                )}
               </div>
             </div>
           </div>
+
+          {/* ── Obras disponibles (grid abajo) ── */}
+          <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-widest">
+                Obras disponibles en AR
+                <span className="ml-2 font-normal text-gray-400 normal-case tracking-normal">({artworks.length})</span>
+              </h3>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {artworks.map((sculpture) => {
+                const n = normalize(sculpture);
+                const isActive = featured?.id === sculpture.id;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => setFeatured(sculpture)}
+                    className="group text-left rounded-xl overflow-hidden border-2 transition-all duration-200 focus:outline-none bg-white dark:bg-dark-secondary hover:shadow-md"
+                    style={{
+                      borderColor: isActive ? color : 'transparent',
+                      boxShadow: isActive ? `0 0 0 1px ${color}` : undefined,
+                    }}
+                  >
+                    {/* Preview 3D */}
+                    <div className="aspect-square bg-gray-100 dark:bg-dark-tertiary overflow-hidden relative">
+                      {viewerReady ? (
+                        <model-viewer
+                          key={n.id}
+                          data-card-viewer={n.id}
+                          src={n.modelUrl}
+                          alt={n.title}
+                          poster={n.thumbnail || undefined}
+                          auto-rotate={isActive ? '' : undefined}
+                          auto-rotate-delay={isActive ? '0' : undefined}
+                          rotation-per-second={isActive ? '25deg' : undefined}
+                          interaction-prompt="none"
+                          loading="lazy"
+                          shadow-intensity="0.8"
+                          exposure="1"
+                          style={{ width: '100%', height: '100%', backgroundColor: 'transparent', pointerEvents: 'none' }}
+                        />
+                      ) : n.thumbnail ? (
+                        <img src={n.thumbnail} alt={n.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Box className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                        </div>
+                      )}
+
+                      {/* Overlay hover: indica que es clickeable */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none rounded-t-xl" />
+                    </div>
+
+                    <div className="p-2.5">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-white truncate">{n.title}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{n.artist}</p>
+                    </div>
+                    {isActive && (
+                      <div className="h-0.5 w-full" style={{ backgroundColor: color }} />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </main>
+      )}
+
+      {/* ══ CÓMO FUNCIONA ══ */}
+      <footer className="border-t border-gray-200 dark:border-dark-tertiary bg-gray-50 dark:bg-dark-secondary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest text-center mb-8">
+            ¿Cómo funciona la experiencia AR?
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+            {[
+              { n: '01', title: 'Explora en 3D', desc: 'En cualquier dispositivo puedes rotar y hacer zoom al modelo 3D desde el navegador.' },
+              { n: '02', title: 'Abre en móvil', desc: 'En Android con ARCore activo, aparece el botón "Ver en AR" sobre el modelo.' },
+              { n: '03', title: 'Colócalo en tu espacio', desc: 'Apunta tu cámara al suelo y la escultura aparecerá en tu entorno real a escala.' },
+            ].map(({ n, title, desc }) => (
+              <div key={n} className="flex gap-4 items-start">
+                <div className="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: color }}>
+                  {n}
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">{title}</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </section>
+      </footer>
 
-      {/* Estilos CSS personalizados */}
-      <style jsx global>{`
-        @keyframes blob {
-          0% {
-            transform: translate(0px, 0px) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-          100% {
-            transform: translate(0px, 0px) scale(1);
-          }
-        }
-
-        @keyframes spin-slow {
-          from {
-            transform: rotate(0deg);
-          }
-          to {
-            transform: rotate(360deg);
-          }
-        }
-
-        @keyframes bounce-slow {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) translateX(0px) rotate(var(--rotate-start, 0deg));
-          }
-          50% {
-            transform: translateY(-20px) translateX(10px) rotate(var(--rotate-end, 0deg));
-          }
-        }
-
-        @keyframes float-slow {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-30px);
-          }
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .animate-float-slow {
-          animation: float-slow 8s ease-in-out infinite;
-        }
-
-        .animation-delay-1000 {
-          animation-delay: 1s;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-3000 {
-          animation-delay: 3s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        .animate-spin-slow {
-          animation: spin-slow 3s linear infinite;
-        }
-
-        .animate-bounce-slow {
-          animation: bounce-slow 2s ease-in-out infinite;
-        }
-
-        /* Patrón de grid futurista */
-        .bg-grid-pattern {
-          background-image:
-            linear-gradient(rgba(34, 197, 94, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14, 165, 233, 0.1) 1px, transparent 1px);
-          background-size: 50px 50px;
-          background-position: center center;
-        }
-
-        /* Mejora para line-clamp en navegadores antiguos */
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-
-        /* Smooth scroll behavior */
-        html {
-          scroll-behavior: smooth;
-        }
-      `}</style>
     </div>
   );
 };
