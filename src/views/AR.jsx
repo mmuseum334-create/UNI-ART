@@ -223,7 +223,7 @@ const AR = () => {
         <main className="flex-1 flex flex-col">
 
           {/* ── Fila superior: visor 3D + info ── */}
-          <div className="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-tertiary" style={{ height: '340px' }}>
+          <div className="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-tertiary" style={{ height: '540px' }}>
 
             {/* Visor 3D */}
             <div className="relative flex-1 bg-gray-100 dark:bg-dark-secondary overflow-hidden">
