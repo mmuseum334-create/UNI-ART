@@ -101,9 +101,9 @@ const SculptureDetailPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-slate-600 mb-4">{error || 'Escultura no encontrada'}</p>
-            <Button onClick={() => router.push('/sculptures')} variant="outline">
+            <Button onClick={() => router.push('/catalog')} variant="outline">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver a Esculturas
+              Volver al Catálogo
             </Button>
           </CardContent>
         </Card>
@@ -121,11 +121,11 @@ const SculptureDetailPage = () => {
         <div className="mb-6">
           <Button
             variant="ghost"
-            onClick={() => router.push('/sculptures')}
+            onClick={() => router.push('/catalog')}
             className="flex items-center gap-2 dark:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Volver a Galería
+            Volver al Catálogo
           </Button>
         </div>
 
