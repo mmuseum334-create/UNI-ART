@@ -47,17 +47,21 @@ const HomeSculptures = () => {
   const currentSculpture = sculptures[currentIndex];
 
   return (
-    <section className="relative w-full min-h-[100vh] py-20 flex items-center justify-center bg-white dark:bg-[#0f0f0f] overflow-hidden selection:bg-slate-200 dark:selection:bg-white/20 transition-colors duration-300">
+    <section className="relative w-full h-full py-20 flex items-center justify-center bg-white dark:bg-[#0f0f0f] overflow-hidden selection:bg-slate-200 dark:selection:bg-white/20 transition-colors duration-300">
 
       {/* Background Glows & Effects */}
       <div
-        className="absolute top-[20%] left-[20%] w-[400px] h-[400px] rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-30"
+        className="absolute top-[20%] left-[20%] w-[300px] h-[300px] rounded-full blur-[100px] dark:blur-[120px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-30"
         style={{ backgroundColor: color || '#4f46e5' }}
       />
       <div
-        className="absolute bottom-[10%] right-[10%] w-[500px] h-[500px] rounded-full blur-[120px] dark:blur-[150px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-20"
+        className="absolute bottom-[10%] right-[10%] w-[400px] h-[400px] rounded-full blur-[120px] dark:blur-[150px] pointer-events-none mix-blend-multiply dark:mix-blend-screen opacity-20 dark:opacity-20"
         style={{ backgroundColor: color || '#2563eb' }}
       />
+
+      {/* Gradient Fades for smooth transitions */}
+      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white dark:from-[#0f0f0f] to-transparent z-10 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-white dark:from-[#0f0f0f] to-transparent z-10 pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-[1400px] mx-auto px-6 lg:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">

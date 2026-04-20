@@ -88,6 +88,7 @@ const Navbar = () => {
   const navLinks = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/catalog', icon: Images, label: 'Catálogo' },
+    { href: '/virtual-museum', icon: BookImage, label: 'Museo Virtual' },
     { href: '/ar', icon: ScanEye, label: 'Realidad Aumentada' },
   ];
 
