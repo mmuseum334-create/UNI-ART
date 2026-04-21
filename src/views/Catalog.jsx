@@ -576,7 +576,7 @@ const Catalog = () => {
 
   // Banner
   const DEFAULT_BANNER = {
-    media: [{ type: 'video', url: '/sesion6.mp4', order: 0, title: '', subtitle: '', button_text: '', button_url: '' }],
+    media: [{ type: 'video', url: '/sesion2.mp4', order: 0, title: '', subtitle: '', button_text: '', button_url: '' }],
   };
   const [banner, setBanner] = useState(DEFAULT_BANNER);
 

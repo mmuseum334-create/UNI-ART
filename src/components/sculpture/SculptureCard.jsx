@@ -56,7 +56,7 @@ export const SculptureGridCard = ({ artwork, color, onQuickView }) => {
     >
       <Link href={`/sculpture/${artwork._rawId || artwork.id}`} className="block">
         {/* Área visual */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-slate-900 dark:bg-[#0d0d0d]">
+        <div className="relative aspect-[4/3] overflow-hidden bg-slate-200 dark:bg-[#0d0d0d]">
 
           {hasModel ? (
             /* Modelo 3D siempre montado — auto-rotate solo en hover */
