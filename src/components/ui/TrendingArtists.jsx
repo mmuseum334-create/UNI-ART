@@ -98,13 +98,13 @@ const TrendingArtists = () => {
             </span>
             <button
               onClick={() => go('prev')}
-              className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-300 dark:border-white/50 text-slate-600 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+              className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-300 dark:border-white/50 text-slate-600 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/5 transition-all bg-white dark:bg-[#171717] shadow-md"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button
               onClick={() => go('next')}
-              className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-300 dark:border-white/50 text-slate-600 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/5 transition-all"
+              className="w-10 h-10 flex items-center justify-center rounded-full border border-slate-300 dark:border-white/50 text-slate-600 dark:text-white/90 hover:bg-slate-100 dark:hover:bg-white/5 transition-all bg-white dark:bg-[#171717] shadow-md"
             >
               <ChevronRight className="h-4 w-4" />
             </button>

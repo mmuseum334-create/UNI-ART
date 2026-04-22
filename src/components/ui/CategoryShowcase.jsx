@@ -37,7 +37,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
             'relative w-80 cursor-pointer overflow-hidden rounded-xl border p-5',
             'min-h-[140px]',
             // light styles
-            'border-gray-950/[.1] bg-gray-950/[.01] hover:bg-gray-950/[.05]',
+            'border-gray-950/[.1] bg-[#f9f9f9] hover:bg-gray-950/[.05]',
             // dark styles
             'dark:border-gray-50/[.1] dark:bg-gray-50/[.10] dark:hover:bg-gray-50/[.15]',
             'transition-all duration-200'
