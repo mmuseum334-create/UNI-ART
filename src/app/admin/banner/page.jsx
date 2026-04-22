@@ -47,7 +47,6 @@ const EMPTY_FORM = {
 /* ─────────────────────────────────────────────
    HELPERS
 ───────────────────────────────────────────── */
-
 const formFromSlide = (slide) => ({
   ...EMPTY_FORM,
   title:           slide?.title           || '',
@@ -93,7 +92,11 @@ const AlignBtns = ({ value, onChange }) => (
   <div className="flex gap-1">
     {ALIGNS.map(({ val, Icon }) => (
       <button key={val} type="button" onClick={() => onChange(val)}
-        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors ${value === val ? 'bg-blue-500 text-white' : 'bg-white/10 text-white/40 hover:bg-white/20'}`}>
+        className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors
+          ${value === val
+            ? 'bg-blue-500 text-white'
+            : 'bg-black/10 dark:bg-white/10 text-black/40 dark:text-white/40 hover:bg-black/15 dark:hover:bg-white/20'
+          }`}>
         <Icon className="h-3.5 w-3.5" />
       </button>
     ))}
@@ -104,14 +107,18 @@ const PxInput = ({ value, onChange, min = 8, max = 200 }) => (
   <div className="flex items-center gap-1">
     <input type="number" min={min} max={max} value={value ?? min}
       onChange={e => onChange(Math.max(min, Math.min(max, +e.target.value)))}
-      className="w-14 bg-[#0d0d0d] border border-white/10 rounded-lg px-2 py-1 text-white text-xs text-center outline-none focus:border-violet-500/60 transition-colors" />
-    <span className="text-white/25 text-[10px]">px</span>
+      className="w-14 bg-black/5 dark:bg-[#0e0e0e] border border-black/10 dark:border-white/10 rounded-lg px-2 py-1 text-black dark:text-white text-xs text-center outline-none focus:border-violet-500/60 transition-colors" />
+    <span className="text-black/25 dark:text-white/25 text-[10px]">px</span>
   </div>
 );
 
 const Toggle = ({ value, onChange, label }) => (
   <button type="button" onClick={() => onChange(!value)}
-    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${value ? 'bg-blue-500/15 text-blue-300 border-blue-500/25' : 'bg-white/5 text-white/30 border-white/8 hover:bg-white/8'}`}>
+    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border
+      ${value
+        ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300 border-blue-500/25'
+        : 'bg-black/5 dark:bg-white/5 text-black/40 dark:text-white/30 border-black/10 dark:border-white/8 hover:bg-black/10 dark:hover:bg-white/8'
+      }`}>
     {value ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
     {label}
   </button>
@@ -121,12 +128,16 @@ const StylePicker = ({ value, onChange, color }) => (
   <div className="grid grid-cols-3 gap-1.5">
     {STYLE_OPTS.map(o => {
       const preview = o.val === 'glass'
-        ? { background: 'rgba(255,255,255,0.2)', border: '1px solid rgba(255,255,255,0.3)' }
+        ? { background: 'rgba(120,120,120,0.2)', border: '1px solid rgba(120,120,120,0.3)' }
         : o.val === 'context' ? { background: color }
-        : { background: 'white' };
+        : { background: 'white', border: '1px solid rgba(0,0,0,0.1)' };
       return (
         <button key={o.val} type="button" onClick={() => onChange(o.val)}
-          className={`py-2 rounded-lg text-[10px] font-medium transition-all border flex flex-col items-center gap-1 ${value === o.val ? 'border-violet-500 bg-violet-500/15 text-violet-300' : 'border-white/8 bg-white/3 text-white/35 hover:bg-white/8'}`}>
+          className={`py-2 rounded-lg text-[10px] font-medium transition-all border flex flex-col items-center gap-1
+            ${value === o.val
+              ? 'border-violet-500 bg-violet-500/15 text-violet-600 dark:text-violet-300'
+              : 'border-black/10 dark:border-white/8 bg-black/3 dark:bg-white/3 text-black/40 dark:text-white/35 hover:bg-black/8 dark:hover:bg-white/8'
+            }`}>
           <div className="w-5 h-3 rounded" style={preview} />
           {o.label}
         </button>
@@ -138,20 +149,18 @@ const StylePicker = ({ value, onChange, color }) => (
 const Section = ({ icon: Icon, title, badge, defaultOpen = false, children }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border border-white/[0.06] rounded-xl overflow-hidden">
+    <div className="border border-black/[0.08] dark:border-white/[0.06] rounded-xl overflow-hidden bg-white dark:bg-[#1a1a1a]">
       <button type="button" onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-2.5 px-4 py-3 bg-white/[0.02] hover:bg-white/[0.05] transition-colors text-left">
-        <Icon className="h-3.5 w-3.5 text-white/35 flex-shrink-0" />
-        <span className="text-xs font-semibold uppercase tracking-widest text-white/50 flex-1">{title}</span>
-        {badge && <span className="text-[10px] bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full border border-violet-500/20">{badge}</span>}
-        <ChevronRight className={`h-3.5 w-3.5 text-white/15 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
+        className="w-full flex items-center gap-2.5 px-4 py-3 bg-black/[0.03] dark:bg-white/[0.03] hover:bg-black/[0.06] dark:hover:bg-white/[0.06] transition-colors text-left">
+        <Icon className="h-3.5 w-3.5 text-black/35 dark:text-white/35 flex-shrink-0" />
+        <span className="text-xs font-semibold uppercase tracking-widest text-black/50 dark:text-white/50 flex-1">{title}</span>
+        {badge && <span className="text-[10px] bg-violet-500/20 text-violet-600 dark:text-violet-300 px-1.5 py-0.5 rounded-full border border-violet-500/20">{badge}</span>}
+        <ChevronRight className={`h-3.5 w-3.5 text-black/20 dark:text-white/15 transition-transform duration-200 ${open ? 'rotate-90' : ''}`} />
       </button>
-      {open && <div className="px-4 pb-4 pt-2 space-y-3 border-t border-white/[0.04]">{children}</div>}
+      {open && <div className="px-4 pb-4 pt-2 space-y-3 border-t border-black/[0.05] dark:border-white/[0.04]">{children}</div>}
     </div>
   );
 };
-
-
 
 /* ─────────────────────────────────────────────
    SLIDE PREVIEW
@@ -243,13 +252,11 @@ const SlidePreview = ({ slide, form, onPositionChange, onSizeChange, pageRatio }
       onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd} onTouchMove={onMove} onTouchEnd={onEnd}>
       <div className="absolute top-0 left-0 overflow-hidden"
         style={{ width: rW, height: rH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-        {/* Media */}
         {slide.type === 'video'
           ? <video src={slide.url} className="absolute inset-0 w-full h-full object-cover" muted />
           : <img src={slide.url} alt="" className="absolute inset-0 w-full h-full object-cover" />}
         <div className="absolute inset-0" style={{ background: `rgba(0,0,0,${form.overlay_opacity ?? 0.45})` }} />
 
-        {/* Snap guides */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute left-0 right-0" style={{ top: '50%', borderTop: `2px ${snapGuides.h ? 'solid #3b82f6' : 'dashed rgba(255,255,255,0.12)'}` }} />
           <div className="absolute top-0 bottom-0" style={{ left: '50%', borderLeft: `2px ${snapGuides.v ? 'solid #3b82f6' : 'dashed rgba(255,255,255,0.12)'}` }} />
@@ -277,7 +284,11 @@ const SlidePreview = ({ slide, form, onPositionChange, onSizeChange, pageRatio }
 ───────────────────────────────────────────── */
 const MediaThumb = ({ item, index, total, selected, onSelect, onRemove, onMoveLeft, onMoveRight }) => (
   <div onClick={() => onSelect(index)}
-    className={`relative group rounded-xl overflow-hidden border cursor-pointer transition-all flex-shrink-0 bg-[#151515] ${selected ? 'border-violet-500 ring-2 ring-violet-500/25' : 'border-white/8 hover:border-white/25'}`}
+    className={`relative group rounded-xl overflow-hidden border cursor-pointer transition-all flex-shrink-0 bg-black/[0.06] dark:bg-[#141414]
+      ${selected
+        ? 'border-violet-500 ring-2 ring-violet-500/25'
+        : 'border-black/10 dark:border-white/8 hover:border-black/20 dark:hover:border-white/25'
+      }`}
     style={{ aspectRatio: '16/9', minWidth: 180 }}>
     {item.type === 'video'
       ? <video src={item.url} className="w-full h-full object-cover" muted />
@@ -382,44 +393,65 @@ export default function AdminBannerPage() {
   const handlePositionChange = useCallback((el, x, y) => sf({ [`${el}_x`]: x, [`${el}_y`]: y }), []);
   const handleSizeChange     = useCallback((ch) => setForm(p => ({ ...p, ...ch })), []);
 
+  /* ── Clase reutilizable para inputs de texto ── */
+  const inputCls = 'bg-black/5 dark:bg-[#0d0d0d] border border-black/10 dark:border-white/10 rounded-xl px-4 py-2.5 text-black dark:text-white text-sm outline-none focus:border-black/25 dark:focus:border-white/25 transition-colors placeholder:text-black/25 dark:placeholder:text-white/20';
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-white/80 dark:bg-[#0d0d0d] text-black dark:text-white">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-5">
 
         {/* Header */}
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold tracking-tight">Configurar Banner</h1>
-            <p className="text-white/35 text-xs mt-0.5">
-              Arrastra · <span className="text-blue-400">azul</span> ancho · <span className="text-green-400">verde</span> alto · <span className="text-violet-400">violeta</span> ambos
+            <h1 className="text-xl font-bold tracking-tight text-black dark:text-white">Configurar Banner</h1>
+            <p className="font-semibold text-black/55 dark:text-white/35 text-xs mt-0.5">
+              Arrastra · <span className="text-blue-500 dark:text-blue-400">azul</span> ancho · <span className="text-green-500 dark:text-green-400">verde</span> alto · <span className="text-violet-500 dark:text-violet-400">violeta</span> ambos
             </p>
           </div>
-          <div className="flex gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/8">
-            {PAGES.map(p => (
-              <button key={p.id} onClick={() => { if (p.id !== activePage) { setActivePage(p.id); setSaved(false); } }}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${activePage === p.id ? 'bg-white/10 text-white' : 'text-white/35 hover:text-white/60'}`}>
-                {p.label}
-              </button>
-            ))}
+
+          {/* Page switcher */}
+          <div className="shadow-sm flex gap-3 bg-white dark:bg-white/[0.05] p-2 rounded-xl border border-black/[0.08] dark:border-white/[0.08]">
+            {PAGES.map(p => {
+              const isActive = activePage === p.id;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => { if (!isActive) { setActivePage(p.id); setSaved(false); } }}
+                  className={`shadow-md px-4 py-1.5 rounded-lg text-sm font-medium transition-all
+                    ${isActive ? 'text-white' : 'text-black/40 dark:text-white/35 hover:text-white'}`}
+                  style={isActive ? { background: saved ? '#22c55e' : color } : undefined}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = color; }}
+                  onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = ''; }}
+                >
+                  {p.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-32"><Loader2 className="h-7 w-7 animate-spin text-white/15" /></div>
+          <div className="flex items-center justify-center py-32">
+            <Loader2 className="h-7 w-7 animate-spin text-black/15 dark:text-white/15" />
+          </div>
         ) : !config ? (
-          <div className="text-red-400 text-sm bg-red-950/25 border border-red-900/35 rounded-xl px-4 py-3">{error || 'No se pudo cargar'}</div>
+          <div className="text-red-500 dark:text-red-400 text-sm bg-red-50 dark:bg-red-950/25 border border-red-200 dark:border-red-900/35 rounded-xl px-4 py-3">
+            {error || 'No se pudo cargar'}
+          </div>
         ) : (
           <div className="space-y-4">
 
             {/* ── Slides ── */}
-            <div className="bg-[#111] rounded-2xl border border-white/[0.05] p-5 space-y-4">
+            <div className="shadow-md bg-white/80 dark:bg-[#171717] rounded-2xl border border-black/[0.07] dark:border-white/[0.05] p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold text-white/85 text-sm">Media</h2>
-                  <p className="text-[11px] text-white/25 mt-0.5">{sortedMedia.length > 1 ? `${sortedMedia.length} slides` : 'Imágenes o videos del banner'}</p>
+                  <h2 className="font-semibold text-black/80 dark:text-white/85 text-sm">Media</h2>
+                  <p className="font-semibold text-[13px] text-black/40 dark:text-white/25 mt-0.5">
+                    {sortedMedia.length > 1 ? `${sortedMedia.length} slides` : 'Imágenes o videos del banner'}
+                  </p>
                 </div>
                 <button onClick={() => fileRef.current?.click()} disabled={isUploading}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] transition-colors disabled:opacity-40">
+                  className="shadow-md flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.04] hover:bg-black/[0.08] dark:hover:bg-white/[0.08] text-black/60 dark:text-white/60 transition-colors disabled:opacity-40">
                   {isUploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
                   {isUploading ? 'Subiendo...' : 'Agregar'}
                 </button>
@@ -428,7 +460,7 @@ export default function AdminBannerPage() {
 
               {sortedMedia.length === 0 ? (
                 <button onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-white/[0.07] rounded-xl p-10 flex flex-col items-center gap-3 text-white/15 hover:border-white/15 hover:text-white/30 transition-colors">
+                  className="w-full border-2 border-dashed border-black/[0.08] dark:border-white/[0.07] rounded-xl p-10 flex flex-col items-center gap-3 text-black/20 dark:text-white/15 hover:border-black/15 dark:hover:border-white/15 hover:text-black/35 dark:hover:text-white/30 transition-colors">
                   <Upload className="h-8 w-8" />
                   <span className="text-sm">Sube el primer video o imagen</span>
                 </button>
@@ -447,29 +479,29 @@ export default function AdminBannerPage() {
 
             {/* ── Editor ── */}
             {sortedMedia.length > 0 && currentSlide && (
-              <div className="bg-[#111] rounded-2xl border border-white/[0.05] p-5 space-y-4">
+              <div className="shadow-md bg-white/80 dark:bg-[#171717] rounded-2xl border border-black/[0.07] dark:border-white/[0.05] p-5 space-y-4">
 
                 {/* Editor header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="font-semibold text-white/85 text-sm">
+                    <h2 className="font-semibold text-black/85 dark:text-white/85 text-sm">
                       {sortedMedia.length > 1 ? `Slide ${selectedIdx + 1} / ${sortedMedia.length}` : 'Contenido del Banner'}
                     </h2>
-                    <p className="text-[11px] text-white/25 mt-0.5">Arrastra los elementos directamente en el preview</p>
+                    <p className="text-[11px] text-black/30 dark:text-white/25 mt-0.5">Arrastra los elementos directamente en el preview</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {sortedMedia.length > 1 && (
                       <div className="flex gap-1">
                         {[[-1, selectedIdx === 0], [1, selectedIdx === sortedMedia.length - 1]].map(([dir, dis]) => (
                           <button key={dir} onClick={() => handleSelectSlide(selectedIdx + dir)} disabled={dis}
-                            className="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/10 border border-white/8 flex items-center justify-center disabled:opacity-25 transition-colors">
+                            className="w-7 h-7 rounded-lg bg-black/[0.05] dark:bg-white/[0.05] hover:bg-black/10 dark:hover:bg-white/10 border border-black/10 dark:border-white/8 flex items-center justify-center disabled:opacity-25 transition-colors text-black/50 dark:text-white/70">
                             {dir === -1 ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           </button>
                         ))}
                       </div>
                     )}
                     <button onClick={handleSave} disabled={isSaving}
-                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-40"
                       style={{ background: saved ? '#22c55e' : color }}>
                       {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
                       {saved ? 'Guardado' : 'Guardar'}
@@ -478,7 +510,7 @@ export default function AdminBannerPage() {
                 </div>
 
                 {/* Preview */}
-                <div className="rounded-xl overflow-hidden border border-white/[0.07]">
+                <div className="rounded-xl overflow-hidden border border-black/[0.08] dark:border-white/[0.07]">
                   <SlidePreview
                     key={`${activePage}-${selectedIdx}`}
                     slide={currentSlide} form={form}
@@ -489,16 +521,16 @@ export default function AdminBannerPage() {
                 </div>
 
                 {/* Overlay */}
-                <div className="flex items-center gap-3 bg-white/[0.025] rounded-xl px-4 py-2.5 border border-white/[0.05]">
-                  <span className="text-[10px] text-white/35 flex-shrink-0 uppercase tracking-wider">Oscuridad</span>
+                <div className="flex items-center gap-3 bg-black/[0.03] dark:bg-white/[0.025] rounded-xl px-4 py-2.5 border border-black/[0.06] dark:border-white/[0.05]">
+                  <span className="text-[10px] text-black/40 dark:text-white/35 flex-shrink-0 uppercase tracking-wider">Oscuridad</span>
                   <input type="range" min={0} max={0.9} step={0.05}
                     value={form.overlay_opacity ?? 0.45}
                     onChange={e => sf({ overlay_opacity: +e.target.value })}
                     className="flex-1 accent-violet-500" />
-                  <span className="text-[10px] text-white/40 w-9 text-right">{Math.round((form.overlay_opacity ?? 0.45) * 100)}%</span>
+                  <span className="text-[10px] text-black/40 dark:text-white/40 w-9 text-right">{Math.round((form.overlay_opacity ?? 0.45) * 100)}%</span>
                 </div>
 
-                {/* Secciones de contenido */}
+                {/* Secciones */}
                 <div className="space-y-2">
 
                   {/* Badge */}
@@ -506,17 +538,17 @@ export default function AdminBannerPage() {
                     <div className="flex items-center gap-2">
                       <Toggle value={form.badge_visible} onChange={v => sf({ badge_visible: v })} label="Mostrar badge" />
                       <div className="flex items-center gap-1 ml-auto">
-                        <span className="text-[10px] text-white/30">Tamaño</span>
+                        <span className="text-[10px] text-black/30 dark:text-white/30">Tamaño</span>
                         <PxInput value={form.badge_fs} onChange={v => sf({ badge_fs: v })} min={10} max={32} />
                       </div>
                     </div>
                     {form.badge_visible && (
                       <>
                         <input value={form.badge_text} onChange={e => sf({ badge_text: e.target.value })}
-                          className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                          className={`w-full ${inputCls}`}
                           placeholder="Texto del badge (ej: Catálogo Completo)" />
                         <div>
-                          <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo</p>
+                          <p className="text-[10px] text-black/30 dark:text-white/30 mb-1.5 uppercase tracking-wider">Estilo</p>
                           <StylePicker value={form.badge_style} onChange={v => sf({ badge_style: v })} color={color} />
                         </div>
                       </>
@@ -526,41 +558,41 @@ export default function AdminBannerPage() {
                   {/* Título */}
                   <Section icon={Type} title="Título" defaultOpen>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <span className="text-[10px] text-black/30 dark:text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
                       <div className="flex items-center gap-2">
                         <PxInput value={form.title_fs} onChange={v => sf({ title_fs: v })} min={16} max={200} />
                         <AlignBtns value={form.title_align} onChange={v => sf({ title_align: v })} />
                       </div>
                     </div>
                     <input value={form.title} onChange={e => sf({ title: e.target.value })}
-                      className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
+                      className={`w-full ${inputCls}`}
                       placeholder='Ej: Explora Nuestro/Universo Artístico   (/ = 2ª línea en color del contexto)' />
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-white/30 flex-shrink-0 uppercase tracking-wider">Interlineado</span>
+                      <span className="text-[10px] text-black/30 dark:text-white/30 flex-shrink-0 uppercase tracking-wider">Interlineado</span>
                       <input type="range" min={0.7} max={2} step={0.05} value={form.title_lh ?? 1.1}
                         onChange={e => sf({ title_lh: +e.target.value })} className="flex-1 accent-violet-500" />
-                      <span className="text-[10px] text-white/40 w-8 text-right">{(form.title_lh ?? 1.1).toFixed(2)}</span>
+                      <span className="text-[10px] text-black/40 dark:text-white/40 w-8 text-right">{(form.title_lh ?? 1.1).toFixed(2)}</span>
                     </div>
                   </Section>
 
                   {/* Subtítulo */}
                   <Section icon={Type} title="Subtítulo">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <span className="text-[10px] text-black/30 dark:text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
                       <div className="flex items-center gap-2">
                         <PxInput value={form.subtitle_fs} onChange={v => sf({ subtitle_fs: v })} min={10} max={60} />
                         <AlignBtns value={form.subtitle_align} onChange={v => sf({ subtitle_align: v })} />
                       </div>
                     </div>
                     <textarea value={form.subtitle} onChange={e => sf({ subtitle: e.target.value })} rows={2}
-                      className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors resize-none"
+                      className={`w-full resize-none ${inputCls}`}
                       placeholder="Descripción del slide (opcional)" />
                   </Section>
 
                   {/* Botón */}
                   <Section icon={Layout} title="Botón">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
+                      <span className="text-[10px] text-black/30 dark:text-white/30 uppercase tracking-wider">Tamaño · Alineación</span>
                       <div className="flex items-center gap-2">
                         <PxInput value={form.button_fs} onChange={v => sf({ button_fs: v })} min={10} max={40} />
                         <AlignBtns value={form.button_align} onChange={v => sf({ button_align: v })} />
@@ -568,14 +600,12 @@ export default function AdminBannerPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <input value={form.button_text} onChange={e => sf({ button_text: e.target.value })}
-                        className="bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
-                        placeholder="Texto del botón" />
+                        className={inputCls} placeholder="Texto del botón" />
                       <input value={form.button_url} onChange={e => sf({ button_url: e.target.value })}
-                        className="bg-[#0d0d0d] border border-white/10 rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-white/25 transition-colors"
-                        placeholder="URL ej: /catalog" />
+                        className={inputCls} placeholder="URL ej: /catalog" />
                     </div>
                     <div>
-                      <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo del botón</p>
+                      <p className="text-[10px] text-black/30 dark:text-white/30 mb-1.5 uppercase tracking-wider">Estilo del botón</p>
                       <StylePicker value={form.button_style} onChange={v => sf({ button_style: v })} color={color} />
                     </div>
                   </Section>
@@ -583,32 +613,32 @@ export default function AdminBannerPage() {
                   {/* Cards / Stats */}
                   <Section icon={Maximize2} title="Cards · Estadísticas" badge={form.stats?.length > 0 ? `${form.stats.length} cards` : undefined}>
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-white/30 uppercase tracking-wider">Métricas o datos</span>
+                      <span className="text-[10px] text-black/30 dark:text-white/30 uppercase tracking-wider">Métricas o datos</span>
                       <button type="button"
                         onClick={() => sf({ stats: [...(form.stats || []), { value: '', label: '' }] })}
-                        className="flex items-center gap-1 text-xs border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-2.5 py-1.5 rounded-lg transition-colors">
+                        className="flex items-center gap-1 text-xs border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.04] hover:bg-black/[0.08] dark:hover:bg-white/[0.08] text-black/60 dark:text-white/60 px-2.5 py-1.5 rounded-lg transition-colors">
                         <Plus className="h-3 w-3" /> Agregar card
                       </button>
                     </div>
 
                     {(form.stats || []).length > 0 && (
                       <>
-                        <div className="grid grid-cols-5 gap-2 bg-[#0d0d0d] rounded-xl p-3 border border-white/[0.05]">
+                        <div className="grid grid-cols-5 gap-2 bg-black/[0.04] dark:bg-[#0d0d0d] rounded-xl p-3 border border-black/[0.07] dark:border-white/[0.05]">
                           {[
-                            { key: 'stats_card_w',   label: 'Ancho',   min: 60,  max: 400 },
-                            { key: 'stats_card_h',   label: 'Alto',    min: 40,  max: 300 },
-                            { key: 'stats_gap',      label: 'Gap',     min: 0,   max: 80  },
-                            { key: 'stats_value_fs', label: 'Valor',   min: 12,  max: 80  },
-                            { key: 'stats_label_fs', label: 'Etiqueta',min: 8,   max: 40  },
+                            { key: 'stats_card_w',   label: 'Ancho',    min: 60,  max: 400 },
+                            { key: 'stats_card_h',   label: 'Alto',     min: 40,  max: 300 },
+                            { key: 'stats_gap',      label: 'Gap',      min: 0,   max: 80  },
+                            { key: 'stats_value_fs', label: 'Valor',    min: 12,  max: 80  },
+                            { key: 'stats_label_fs', label: 'Etiqueta', min: 8,   max: 40  },
                           ].map(({ key, label, min, max }) => (
                             <div key={key} className="space-y-1.5">
-                              <p className="text-[9px] text-white/25 uppercase tracking-wider">{label}</p>
+                              <p className="text-[9px] text-black/25 dark:text-white/25 uppercase tracking-wider">{label}</p>
                               <PxInput value={form[key]} onChange={v => sf({ [key]: v })} min={min} max={max} />
                             </div>
                           ))}
                         </div>
                         <div>
-                          <p className="text-[10px] text-white/30 mb-1.5 uppercase tracking-wider">Estilo de cards</p>
+                          <p className="text-[10px] text-black/30 dark:text-white/30 mb-1.5 uppercase tracking-wider">Estilo de cards</p>
                           <StylePicker value={form.stats_style} onChange={v => sf({ stats_style: v })} color={color} />
                         </div>
                         <div className="space-y-2">
@@ -616,15 +646,13 @@ export default function AdminBannerPage() {
                             <div key={i} className="flex gap-2 items-center">
                               <input value={stat.value}
                                 onChange={e => sf({ stats: form.stats.map((s, j) => j === i ? { ...s, value: e.target.value } : s) })}
-                                className="w-20 bg-[#0d0d0d] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-white/25 transition-colors"
-                                placeholder="200+" />
+                                className={`w-20 ${inputCls}`} placeholder="200+" />
                               <input value={stat.label}
                                 onChange={e => sf({ stats: form.stats.map((s, j) => j === i ? { ...s, label: e.target.value } : s) })}
-                                className="flex-1 bg-[#0d0d0d] border border-white/10 rounded-xl px-3 py-2 text-white text-sm outline-none focus:border-white/25 transition-colors"
-                                placeholder="Obras" />
+                                className={`flex-1 ${inputCls}`} placeholder="Obras" />
                               <button type="button"
                                 onClick={() => sf({ stats: form.stats.filter((_, j) => j !== i) })}
-                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/15 transition-colors flex-shrink-0">
+                                className="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-500 dark:text-red-400 border border-red-500/15 transition-colors flex-shrink-0">
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
                             </div>
@@ -633,14 +661,14 @@ export default function AdminBannerPage() {
                       </>
                     )}
                     {(form.stats || []).length === 0 && (
-                      <p className="text-xs text-white/15 italic text-center py-3">Sin cards en este slide</p>
+                      <p className="text-xs text-black/20 dark:text-white/15 italic text-center py-3">Sin cards en este slide</p>
                     )}
                   </Section>
 
                 </div>
 
                 {error && (
-                  <div className="bg-red-950/30 border border-red-900/40 text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
+                  <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/40 text-red-500 dark:text-red-400 text-sm px-4 py-3 rounded-xl">{error}</div>
                 )}
               </div>
             )}
