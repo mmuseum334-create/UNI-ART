@@ -14,11 +14,16 @@ import Footer from '@/components/layout/Footer';
 import ThemedToaster from '@/components/layout/ThemedToaster';
 
 // Configuración de la fuente Poppins
+// display:'optional' evita que Next.js genere <link rel="preload"> para cada
+// variante de peso, eliminando los warnings "preloaded but not used".
+// La fuente se aplica si ya está en caché; si no, el browser usa el fallback
+// sin bloquear el render (comportamiento óptimo para producción).
 const poppins = Poppins({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-poppins',
-  display: 'swap',
+  display: 'optional',
+  preload: false,
 });
 
 // Metadata para SEO
