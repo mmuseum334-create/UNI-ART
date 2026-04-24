@@ -47,7 +47,7 @@ const HomeSculptures = () => {
   const currentSculpture = sculptures[currentIndex];
 
   return (
-    <section className="relative w-full h-full py-20 flex items-center justify-center bg-white dark:bg-[#0f0f0f] overflow-hidden selection:bg-slate-200 dark:selection:bg-white/20 transition-colors duration-300">
+    <section className="relative w-full h-full flex items-center justify-center bg-white dark:bg-[#0f0f0f] overflow-hidden selection:bg-slate-200 dark:selection:bg-white/20 transition-colors duration-300">
 
       {/* Background Glows & Effects */}
       <div
