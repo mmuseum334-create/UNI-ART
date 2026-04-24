@@ -110,8 +110,7 @@ const Navbar = () => {
       style={{ paddingTop: '5px' }}
     >
       <nav
-        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-lg shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300"
-        style={{ width: 'calc(100% - 48px)', maxWidth: '69%' }}
+        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-lg shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300 w-[96%] sm:w-[95%] md:w-[95%] lg:w-[70%] xl:w-[85%] 2xl:w-[70%]"
       >
       {/* Barra de progreso de scroll */}
       <div
@@ -125,19 +124,19 @@ const Navbar = () => {
           {/* Logo */}
           <Link
             href="/"
-            className="flex items-center space-x-2 group"
+            className="flex items-center space-x-2 group shrink-0"
           >
             <div className="relative overflow-hidden rounded-lg">
               <img
                 src="/logoverdee.png"
                 alt="Logo Unipaz"
-                className="h-[65px] w-20 object-contain transition-transform duration-300 group-hover:scale-105"
+                className="h-[45px] w-14 sm:h-[65px] sm:w-20 object-contain transition-transform duration-300 group-hover:scale-105"
               />
             </div>
           </Link>
 
-          {/* Nav Links - Desktop */}
-          <div className="hidden md:flex items-center space-x-1 gap-2">
+          {/* Nav Links */}
+          <div className="flex items-center space-x-1 sm:space-x-2 gap-1">
             {navLinks.map((link) => {
               const IconComponent = link.icon;
               const active = isActive(link.href);
@@ -145,18 +144,19 @@ const Navbar = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`shadow-md relative flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                  title={link.label}
+                  className={`relative flex items-center justify-center space-x-0 md:space-x-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group md:shadow-md ${
                     active
                       ? 'text-slate-900 dark:text-white bg-[#f5f5f5] dark:bg-dark-tertiary/70'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-dark-tertiary/60'
                   }`}
                 >
                   <IconComponent
-                    className="h-4 w-4 transition-transform duration-200 group-hover:scale-110"
+                    className="h-[18px] w-[18px] md:h-4 md:w-4 transition-transform duration-200 group-hover:scale-110"
                   />
-                  <span>{link.label}</span>
+                  <span className="hidden md:block whitespace-nowrap">{link.label}</span>
                   {active && (
-                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full" style={{ backgroundColor: color }} />
+                    <span className="absolute bottom-0 left-2 right-2 md:left-3 md:right-3 h-0.5 rounded-full" style={{ backgroundColor: color }} />
                   )}
                 </Link>
               );
@@ -164,7 +164,7 @@ const Navbar = () => {
           </div>
 
           {/* Actions - Desktop */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-1.5 lg:space-x-3 shrink-0">
             <AnimatedThemeToggler />
             {isAuthenticated && <ColorPicker />}
 
@@ -173,7 +173,7 @@ const Navbar = () => {
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   style={isProfileOpen ? { borderColor: '#22c55e', boxShadow: '0 0 0 3px rgba(34,197,94,0.15)' } : {}}
-                  className={`flex items-center space-x-2 px-3 py-1.5 rounded-xl border transition-all duration-200 ${
+                  className={`flex items-center space-x-1.5 lg:space-x-2 px-2 lg:px-3 py-1.5 rounded-xl border transition-all duration-200 ${
                     isProfileOpen
                       ? 'border-transparent bg-slate-50 dark:bg-dark-tertiary/50'
                       : 'border-transparent hover:border-slate-200 dark:hover:border-dark-tertiary hover:bg-slate-50 dark:hover:bg-dark-tertiary/40'
@@ -187,7 +187,7 @@ const Navbar = () => {
                     />
                     <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 bg-green-500 rounded-full border-2 border-white dark:border-dark-primary" />
                   </div>
-                  <span className="text-slate-700 dark:text-slate-200 text-sm font-medium max-w-[100px] truncate">
+                  <span className="hidden xl:block text-slate-700 dark:text-slate-200 text-sm font-medium max-w-[100px] truncate">
                     {user.name}
                   </span>
                   <ChevronDown
@@ -302,29 +302,6 @@ const Navbar = () => {
           }`}
         >
           <div className="py-3 border-t border-slate-100 dark:border-dark-tertiary/50 space-y-1">
-            {navLinks.map((link) => {
-              const IconComponent = link.icon;
-              const active = isActive(link.href);
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                    active
-                      ? 'text-slate-900 dark:text-white bg-slate-100 dark:bg-dark-tertiary/70'
-                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-tertiary/60'
-                  }`}
-                >
-                  <IconComponent className="h-4 w-4 flex-shrink-0" />
-                  <span>{link.label}</span>
-                  {active && (
-                    <span className="ml-auto h-1.5 w-1.5 rounded-full bg-slate-500 dark:bg-slate-400" />
-                  )}
-                </Link>
-              );
-            })}
-
             {isAuthenticated ? (
               <>
                 <div className="pt-2 pb-1 px-4">
