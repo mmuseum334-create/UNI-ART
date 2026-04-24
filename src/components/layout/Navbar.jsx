@@ -103,21 +103,24 @@ const Navbar = () => {
   };
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 bg-white dark:bg-dark-primary border-b border-slate-200 dark:border-dark-tertiary transition-all duration-300 ${
+    <div
+      className={`fixed top-0 left-0 right-0 z-50 flex justify-center transition-all duration-300 pointer-events-none ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
-      } ${
-        isScrolled ? 'shadow-md' : ''
       }`}
+      style={{ paddingTop: '5px' }}
     >
+      <nav
+        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-lg shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300"
+        style={{ width: 'calc(100% - 48px)', maxWidth: '69%' }}
+      >
       {/* Barra de progreso de scroll */}
       <div
-        className="absolute bottom-0 left-0 h-0.5 transition-all duration-100"
+        className="absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-100"
         style={{ width: `${scrollProgress}%`, backgroundColor: color }}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+      <div className="px-4 sm:px-5">
+        <div className="flex justify-between items-center h-14">
 
           {/* Logo */}
           <Link
@@ -142,7 +145,7 @@ const Navbar = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
+                  className={`shadow-md relative flex items-center space-x-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group ${
                     active
                       ? 'text-slate-900 dark:text-white bg-[#f5f5f5] dark:bg-dark-tertiary/70'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-dark-tertiary/60'
@@ -398,7 +401,8 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-    </nav>
+      </nav>
+    </div>
   );
 };
 

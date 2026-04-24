@@ -37,7 +37,7 @@ const Footer = () => {
   ];
 
   return (
-    <footer className="relative overflow-hidden bg-white dark:bg-[#0f0f0f] border-t border-border">
+    <footer className="mx-4 rounded-t-2xl relative overflow-hidden bg-white dark:bg-[#0f0f0f] border-t border-border">
       <div
         className="absolute top-0 right-0 w-96 h-96 rounded-full blur-3xl opacity-10 -translate-y-1/2 translate-x-1/2"
         style={{ backgroundColor: color }}

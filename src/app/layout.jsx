@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
             <ColorProvider>
               <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
                 <Navbar />
-                <main className="pt-16">
+                <main className="">
                   {children}
                 </main>
                 <Footer />

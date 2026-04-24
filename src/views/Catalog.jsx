@@ -43,7 +43,7 @@ const EMPTY_FORM = {
   title_lh: 1.1, overlay_opacity: 0.45,
   badge_visible: false, badge_text: '', badge_x: 50, badge_y: 18, badge_fs: 14,
   badge_style: 'glass', button_style: 'context', stats_style: 'glass',
-  banner_height: 600,
+  banner_height: 670,
 };
 
 const formFromSlide = (slide) => ({
@@ -82,7 +82,7 @@ const formFromSlide = (slide) => ({
   badge_style:     slide?.badge_style     || 'glass',
   button_style:    slide?.button_style    || 'context',
   stats_style:     slide?.stats_style     || 'glass',
-  banner_height:   slide?.banner_height   ?? 600,
+  banner_height:   slide?.banner_height   ?? 670,
 });
 
 /* ─── mini UI para el panel lateral ─── */
@@ -182,7 +182,7 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
     const rect = bannerRef.current.getBoundingClientRect();
     return {
       x: Math.max(5, Math.min(95, ((cx - rect.left) / bannerW) * 100)),
-      y: Math.max(5, Math.min(95, ((cy - rect.top) / (form.banner_height ?? 600)) * 100)),
+      y: Math.max(5, Math.min(95, ((cy - rect.top) / (form.banner_height ?? 670)) * 100)),
     };
   };
 
@@ -243,7 +243,7 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
     setIsSaving(false);
   };
 
-  const bannerH = form.banner_height ?? 600;
+  const bannerH = form.banner_height ?? 670;
 
   return (
     <div className="relative w-full" style={{ height: bannerH, minHeight: bannerH }}>
@@ -321,7 +321,7 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
 
       {/* ── Panel lateral de edición ── */}
       {editMode && (
-        <div className="absolute top-0 right-0 bottom-0 z-40 w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
+        <div className="absolute top-0 right-0 bottom-0 z-[60] w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden" onMouseDown={(e) => e.stopPropagation()} onTouchStart={(e) => e.stopPropagation()}>
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
             <div>
@@ -492,11 +492,11 @@ const InlineBannerEditor = ({ banner, activePage, color, onSaved }) => {
                   <div>
                     <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold mb-2">Altura del banner</p>
                     <div className="flex items-center gap-2">
-                      <input type="range" min={300} max={900} step={10}
-                        value={form.banner_height ?? 600}
+                      <input type="range" min={670} max={900} step={10}
+                        value={form.banner_height ?? 670}
                         onChange={e => sf({ banner_height: +e.target.value })}
                         className="flex-1 accent-violet-500" />
-                      <PxInput value={form.banner_height ?? 600} onChange={v => sf({ banner_height: v })} min={300} max={900} />
+                      <PxInput value={form.banner_height ?? 670} onChange={v => sf({ banner_height: v })} min={670} max={900} />
                     </div>
                   </div>
 
@@ -625,7 +625,7 @@ const Catalog = () => {
           badge_style: m.badge_style || 'glass',
           button_style: m.button_style || 'context',
           stats_style: m.stats_style || 'glass',
-          banner_height: m.banner_height ?? 600,
+          banner_height: m.banner_height ?? 670,
         }));
         setBanner(normalized);
       }
@@ -872,7 +872,7 @@ const Catalog = () => {
         />
       ) : (
         /* Banner normal para usuarios no-admin */
-        <section className="relative overflow-hidden" style={{ minHeight: banner.media?.[0]?.banner_height ?? 600 }}>
+        <section className="relative overflow-hidden" style={{ minHeight: banner.media?.[0]?.banner_height ?? 670 }}>
           {banner.media && banner.media.length > 0 && (
             banner.media[0].type === 'video' ? (
               <video autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover">

@@ -14,7 +14,7 @@ import Catalog from '@/views/Catalog';
  */
 export default function CatalogPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>Cargando catálogo...</p></div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><p>Cargando catálogo... </p></div>}>
       <Catalog />
     </Suspense>
   );

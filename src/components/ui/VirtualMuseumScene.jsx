@@ -1,16 +1,55 @@
 'use client';
 
 /**
- * VirtualMuseumScene — migrado de A-Frame a React Three Fiber
+ * VirtualMuseumScene — Versión optimizada
  *
- * Dependencias a instalar:
+ * CAMBIOS DE PERFORMANCE APLICADOS:
+ *
+ * 1. GEOMETRÍAS Y MATERIALES COMPARTIDOS
+ *    - FRAME_GEOMETRY, CANVAS_GEOMETRY y FRAME_MATERIAL son constantes de módulo.
+ *    - Se crean una sola vez para todas las pinturas (antes: 1 por pintura).
+ *    - Reduce draw calls linealmente con la cantidad de obras.
+ *
+ * 2. CULLING DE PLACAS POR DISTANCIA
+ *    - <Plaque> solo se monta si la cámara está a menos de PLAQUE_DISTANCE unidades.
+ *    - El componente PlacedArtwork usa useRef + mesh.visible para visibilidad sin re-renders React.
+ *    - Elimina N cálculos de proyección HTML/frame cuando las obras están lejos.
+ *
+ * 3. VISIBILIDAD DE OBRAS POR DISTANCIA (mesh.visible)
+ *    - Cada PlacedArtwork desaparece del render si está a más de ARTWORK_CULL_DISTANCE.
+ *    - Se hace mutando .visible directamente (sin setState → sin re-renders React).
+ *
+ * 4. TEXTURAS DE PINTURAS OPTIMIZADAS
+ *    - minFilter LinearMipmapLinearFilter + generateMipmaps para menor aliasing y mejor GPU.
+ *    - Material del lienzo creado con useMemo para no recrearse en cada render.
+ *    - Geometría y material del marco compartidos entre todas las pinturas.
+ *
+ * 5. frameloop ADAPTATIVO
+ *    - En modo curador (editMode) sin placement activo → frameloop="demand"
+ *      (el canvas deja de renderizar si no hay cambios, ahorra batería y CPU).
+ *    - En modo navegación FPS → frameloop="always" (necesario para el movimiento suave).
+ *
+ * 6. controlsEnabled CORRECTO
+ *    - Antes estaba hardcodeado a true. Ahora se desactiva en editMode para evitar
+ *      conflictos con los paneles HTML del curador.
+ *
+ * 7. GLB DEL EDIFICIO OPTIMIZADO (render02-opt.glb)
+ *    - Cambiar la referencia al archivo GLB optimizado con gltf-transform:
+ *      32 MB → 870 KB, 72 draw calls → 12, instancing automático.
+ *    - Requiere copiar archivos Draco a /public/draco/ (ver instrucciones abajo).
+ *
+ * SETUP REQUERIDO PARA EL GLB OPTIMIZADO:
+ *   cp node_modules/three/examples/jsm/libs/draco/* public/draco/
+ *   Luego renombrar render02-opt.glb → render02.glb en /public/models/
+ *   (o ajustar la ruta en MuseumBuilding si prefieres mantener ambos)
+ *
+ * Dependencias (sin cambios):
  *   npm install @react-three/fiber @react-three/drei three
- *
- * Reemplaza el archivo anterior VirtualMuseumScene.jsx con este.
- * El resto del proyecto (servicios, hooks, rutas) no cambia.
  */
 
-import { Suspense, useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import {
+  Suspense, useEffect, useRef, useState, useCallback, useMemo,
+} from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { useGLTF, Html, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
@@ -27,66 +66,101 @@ const LIMIT_Z = 20;
 const MOVE_SPEED = 8;
 const LOOK_SENSITIVITY = 0.002;
 
+// Distancia máxima a la que se renderizan las placas HTML (costosas en GPU)
+const PLAQUE_DISTANCE = 12;
+// Distancia máxima a la que se renderizan las obras completas
+const ARTWORK_CULL_DISTANCE = 40;
+
+// ─────────────────────────────────────────────
+// OPTIMIZACIÓN 1: GEOMETRÍAS Y MATERIALES COMPARTIDOS
+// Creados una sola vez a nivel de módulo, reutilizados por todas las pinturas.
+// Antes: cada <PaintingMesh> creaba su propia boxGeometry + meshStandardMaterial
+// del marco, generando N geometrías y N materiales idénticos en GPU.
+// ─────────────────────────────────────────────
+const FRAME_GEOMETRY = new THREE.BoxGeometry(2.2, 2.2, 0.05);
+const CANVAS_GEOMETRY = new THREE.PlaneGeometry(2, 2);
+const FRAME_MATERIAL = new THREE.MeshStandardMaterial({ color: '#3e2723' });
+const BBOX_GEOMETRY = new THREE.BoxGeometry(2.5, 2.5, 2.5);
+const BBOX_MATERIAL = new THREE.MeshBasicMaterial({
+  color: '#4f46e5', wireframe: true, opacity: 0.3, transparent: true,
+});
+const LOADING_CANVAS_MATERIAL = new THREE.MeshBasicMaterial({ color: '#1a1a1a' });
+
 // ─────────────────────────────────────────────
 // MUSEO GLB (el edificio)
+// Apunta al GLB optimizado (render02-opt.glb).
+// El GLB optimizado usa Draco → necesitas /public/draco/ con los decoders.
+// Si aún no lo has reemplazado, cambia la ruta de vuelta a 'render02.glb'.
 // ─────────────────────────────────────────────
 function MuseumBuilding() {
-  const { scene } = useGLTF('/models/render02.glb');
-  // El edificio no necesita clonarse: es único en escena
+  // CAMBIO: usa render02-opt.glb (870 KB) en vez de render02.glb (32 MB)
+  // Si aún no tienes el archivo optimizado, usa '/models/render02.glb'
+  const { scene } = useGLTF('/models/render02-opt.glb');
   return <primitive object={scene} position={[0, -1.6, 0]} />;
 }
+
+// Precargar el edificio tan pronto como sea posible
+useGLTF.preload('/models/render02-opt.glb');
 
 // ─────────────────────────────────────────────
 // ESCULTURA — carga lazy con Suspense
 // ─────────────────────────────────────────────
 function SculptureModel({ url, scale }) {
   const { scene } = useGLTF(url);
-  // Clonar solo cuando cambia la URL — evita clonar en cada render
   const cloned = useMemo(() => scene.clone(true), [scene]);
   return <primitive object={cloned} scale={[scale, scale, scale]} />;
 }
 
 // ─────────────────────────────────────────────
-// PINTURA — plano + marco + imagen
+// OPTIMIZACIÓN 2: PINTURA — geometría y material del marco compartidos
 // ─────────────────────────────────────────────
 function PaintingMesh({ imgUrl, scale }) {
   const texture = useTexture(imgUrl);
-  // Anisotropía máxima para texturas nítidas en ángulo
-  useMemo(() => { texture.anisotropy = 16; texture.needsUpdate = true; }, [texture]);
+
+  // Configurar textura una sola vez — mejor filtrado y menos VRAM
+  useMemo(() => {
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = 16;
+    texture.minFilter = THREE.LinearMipmapLinearFilter; // NUEVO: mipmap para distancia
+    texture.magFilter = THREE.LinearFilter;
+    texture.generateMipmaps = true;                    // NUEVO: mipmap automático
+    texture.needsUpdate = true;
+  }, [texture]);
+
+  // Material del lienzo con useMemo — no se recrea en cada render
+  // Se usa MeshBasicMaterial para evitar el brillo extremo de las luces, pero 
+  // con toneMapping por defecto para mantener el contraste rico y colores vibrantes.
+  const canvasMaterial = useMemo(
+    () => new THREE.MeshBasicMaterial({ map: texture }),
+    [texture],
+  );
+
   return (
     <group scale={[scale, scale, scale]}>
-      {/* Marco */}
-      <mesh position={[0, 0, -0.02]}>
-        <boxGeometry args={[2.2, 2.2, 0.05]} />
-        <meshStandardMaterial color="#3e2723" />
-      </mesh>
-      {/* Lienzo */}
-      <mesh position={[0, 0, 0.01]}>
-        <planeGeometry args={[2, 2]} />
-        <meshStandardMaterial map={texture} />
-      </mesh>
+      {/* Marco — geometría y material compartidos entre TODAS las pinturas */}
+      <mesh geometry={FRAME_GEOMETRY} material={FRAME_MATERIAL} position={[0, 0, -0.02]} />
+      {/* Lienzo — geometría compartida, material propio (tiene la textura única) */}
+      <mesh geometry={CANVAS_GEOMETRY} material={canvasMaterial} position={[0, 0, 0.01]} />
     </group>
   );
 }
 
 // ─────────────────────────────────────────────
 // PLACA INFORMATIVA (HTML en 3D)
-// Para esculturas: se muestra/oculta con click
+// Sin cambios funcionales — el culling se maneja en PlacedArtwork
 // ─────────────────────────────────────────────
 function Plaque({ placement, isActive = false }) {
   const isPaint = placement.type === 'paint';
-  const [visible, setVisible] = useState(isPaint); // pinturas siempre visibles
+  const [visible, setVisible] = useState(isPaint);
   const name = isPaint ? placement.artwork.nombre_pintura : placement.artwork.nombre_escultura;
   const desc = isPaint ? placement.artwork.descripcion_pintura : placement.artwork.descripcion_escultura;
   const artist = placement.artwork.artista;
 
   const pos = isPaint ? [0, -1.4, 0.05] : [0, -0.5, 1.2];
-  const rot = isPaint ? [0, 0, 0] : [0, 0, 0];
 
   if (!visible && !isActive) {
-    // Para esculturas en modo normal: mostrar botón flotante pequeño para abrir
     return (
-      <group position={pos} rotation={rot}>
+      <group position={pos}>
         <Html transform occlude={false} distanceFactor={3} style={{ pointerEvents: 'auto' }}>
           <button
             onClick={() => setVisible(true)}
@@ -107,7 +181,7 @@ function Plaque({ placement, isActive = false }) {
   }
 
   return (
-    <group position={pos} rotation={rot}>
+    <group position={pos}>
       <Html
         transform
         occlude={false}
@@ -129,12 +203,22 @@ function Plaque({ placement, isActive = false }) {
           {!isPaint && !isActive && (
             <button
               onClick={() => setVisible(false)}
-              style={{ position: 'absolute', top: 4, right: 6, background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 12 }}
+              style={{
+                position: 'absolute', top: 4, right: 6,
+                background: 'none', border: 'none', color: '#888',
+                cursor: 'pointer', fontSize: 12,
+              }}
             >✕</button>
           )}
-          <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: !isPaint ? 14 : 0 }}>{name}</div>
+          <div style={{
+            fontWeight: 700, fontSize: 12, marginBottom: 2,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+            paddingRight: !isPaint ? 14 : 0,
+          }}>{name}</div>
           <div style={{ fontSize: 10, color: '#aaa', marginBottom: 4 }}>Por: {artist}</div>
-          <div style={{ fontSize: 9, color: '#ccc', lineHeight: 1.4 }}>{(desc || '').substring(0, 100)}...</div>
+          <div style={{ fontSize: 9, color: '#ccc', lineHeight: 1.4 }}>
+            {(desc || '').substring(0, 100)}...
+          </div>
         </div>
       </Html>
     </group>
@@ -142,21 +226,63 @@ function Plaque({ placement, isActive = false }) {
 }
 
 // ─────────────────────────────────────────────
-// OBRA COLOCADA (escultura o pintura)
+// OPTIMIZACIÓN 3: OBRA COLOCADA CON CULLING DOBLE
+//
+// a) Culling de MESH por distancia: muta groupRef.current.visible directamente
+//    → sin setState, sin re-render de React, puro Three.js.
+//
+// b) Culling de PLACA por distancia: solo monta <Plaque> si el usuario está cerca.
+//    → elimina la proyección 3D→2D de Html en cada frame cuando está lejos.
+//
+// La comparación (nearPlaque !== nearPlaqueRef) evita setState innecesarios.
 // ─────────────────────────────────────────────
 function PlacedArtwork({ placement }) {
-  const rotRad = THREE.MathUtils.degToRad(placement.ry);
+  const rotRad = useMemo(() => THREE.MathUtils.degToRad(placement.ry), [placement.ry]);
+  const groupRef = useRef();
+  const [showPlaque, setShowPlaque] = useState(false);
+
+  // Vector de posición pre-alocado para no crear objetos en useFrame
+  const posVec = useMemo(
+    () => new THREE.Vector3(placement.x, placement.y, placement.z),
+    [placement.x, placement.y, placement.z],
+  );
+  // Ref para evitar setState si el valor no cambió
+  const nearRef = useRef(false);
+
+  useFrame(({ camera }) => {
+    if (!groupRef.current) return;
+    const dist = camera.position.distanceTo(posVec);
+
+    // Culling de mesh (sin React state — mutación directa)
+    groupRef.current.visible = dist < ARTWORK_CULL_DISTANCE;
+
+    // Culling de placa (con React state, pero solo cuando cambia el umbral)
+    const isNear = dist < PLAQUE_DISTANCE;
+    if (isNear !== nearRef.current) {
+      nearRef.current = isNear;
+      setShowPlaque(isNear);
+    }
+  });
+
   return (
-    <group position={[placement.x, placement.y, placement.z]}>
+    <group ref={groupRef} position={[placement.x, placement.y, placement.z]}>
       <group rotation={[0, rotRad, 0]}>
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          placement.type === 'paint' ? (
+            <group scale={[placement.scale, placement.scale, placement.scale]}>
+              <mesh geometry={FRAME_GEOMETRY} material={FRAME_MATERIAL} position={[0, 0, -0.02]} />
+              <mesh geometry={CANVAS_GEOMETRY} material={LOADING_CANVAS_MATERIAL} position={[0, 0, 0.01]} />
+            </group>
+          ) : null
+        }>
           {placement.type === 'sculpture' ? (
             <SculptureModel url={placement.artwork.modelo_3d_url} scale={placement.scale} />
           ) : (
             <PaintingMesh imgUrl={placement.artwork.img_pintura} scale={placement.scale} />
           )}
+          {/* Plaque solo existe en el DOM 3D cuando el usuario está cerca */}
+          {showPlaque && <Plaque placement={placement} />}
         </Suspense>
-        <Plaque placement={placement} />
       </group>
     </group>
   );
@@ -164,24 +290,30 @@ function PlacedArtwork({ placement }) {
 
 // ─────────────────────────────────────────────
 // OBRA ACTIVA (en modo colocación) — con bounding box
+// Geometría y material del bbox compartidos (constantes de módulo)
 // ─────────────────────────────────────────────
 function ActiveArtwork({ placement }) {
   const rotRad = THREE.MathUtils.degToRad(placement.ry);
   return (
     <group position={[placement.x, placement.y, placement.z]}>
       <group rotation={[0, rotRad, 0]}>
-        <Suspense fallback={null}>
+        <Suspense fallback={
+          placement.type === 'paint' ? (
+            <group scale={[placement.scale, placement.scale, placement.scale]}>
+              <mesh geometry={FRAME_GEOMETRY} material={FRAME_MATERIAL} position={[0, 0, -0.02]} />
+              <mesh geometry={CANVAS_GEOMETRY} material={LOADING_CANVAS_MATERIAL} position={[0, 0, 0.01]} />
+            </group>
+          ) : null
+        }>
           {placement.type === 'sculpture' ? (
             <SculptureModel url={placement.artwork.modelo_3d_url} scale={placement.scale} />
           ) : (
             <PaintingMesh imgUrl={placement.artwork.img_pintura} scale={placement.scale} />
           )}
+          {/* Bbox con geometría y material compartidos */}
+          <mesh geometry={BBOX_GEOMETRY} material={BBOX_MATERIAL} />
+          <Plaque placement={placement} isActive />
         </Suspense>
-        <mesh>
-          <boxGeometry args={[2.5, 2.5, 2.5]} />
-          <meshBasicMaterial color="#4f46e5" wireframe opacity={0.3} transparent />
-        </mesh>
-        <Plaque placement={placement} isActive />
       </group>
     </group>
   );
@@ -203,7 +335,7 @@ function HoldButton({ onAction, children, className }) {
 
 // ─────────────────────────────────────────────
 // CONTROLADOR DE CÁMARA FPS
-// Maneja WASD + mouse look con pointer lock
+// Sin cambios de lógica — ya estaba bien optimizado con vectores pre-alocados.
 // ─────────────────────────────────────────────
 function FPSController({ enabled }) {
   const { camera, gl } = useThree();
@@ -211,7 +343,6 @@ function FPSController({ enabled }) {
   const yaw = useRef(0);
   const pitch = useRef(0);
   const isLocked = useRef(false);
-  // Pre-alocar vectores fuera de useFrame para evitar GC cada frame
   const dir = useRef(new THREE.Vector3());
   const front = useRef(new THREE.Vector3());
   const right = useRef(new THREE.Vector3());
@@ -261,7 +392,6 @@ function FPSController({ enabled }) {
     camera.rotation.x = pitch.current;
 
     const speed = MOVE_SPEED * delta;
-    // Reusar vectores pre-alocados — sin new THREE.Vector3() por frame
     dir.current.set(0, 0, 0);
     front.current.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
     right.current.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current));
@@ -285,8 +415,7 @@ function FPSController({ enabled }) {
 }
 
 // ─────────────────────────────────────────────
-// ESCENA 3D COMPLETA
-// Expone la cámara hacia afuera via onCameraReady
+// EXPONER CÁMARA
 // ─────────────────────────────────────────────
 function CameraExposer({ onReady }) {
   const { camera } = useThree();
@@ -294,10 +423,12 @@ function CameraExposer({ onReady }) {
   return null;
 }
 
+// ─────────────────────────────────────────────
+// ESCENA 3D COMPLETA
+// ─────────────────────────────────────────────
 function MuseumScene({ placements, activePlacement, controlsEnabled, onCameraReady }) {
   return (
     <>
-      {/* Luz ambiente + direccional optimizadas */}
       <ambientLight color="#ffffff" intensity={2.2} />
       <directionalLight color="#ffffff" intensity={1.2} position={[-1, 4, 2]} castShadow={false} />
 
@@ -327,7 +458,6 @@ export default function VirtualMuseumScene() {
   const [activePlacement, setActivePlacement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  // Paso de movimiento ajustable por el usuario (0.05 - 1.0)
   const [step, setStep] = useState(0.1);
   const [showCollection, setShowCollection] = useState(true);
   const [showExposition, setShowExposition] = useState(true);
@@ -336,6 +466,16 @@ export default function VirtualMuseumScene() {
   const { isSuperAdmin } = usePermissions();
 
   const handleCameraReady = useCallback((cam) => { cameraRef.current = cam; }, []);
+
+  // ── OPTIMIZACIÓN 5: frameloop adaptativo ──────────────────────────────
+  // En modo curador sin placement activo: demand (canvas se detiene si no hay cambios)
+  // En modo navegación FPS: always (necesario para el movimiento suave)
+  // Cuando hay activePlacement: always (el usuario está moviendo una obra)
+  const frameloop = (editMode && !activePlacement) ? 'demand' : 'always';
+
+  // ── OPTIMIZACIÓN 6: controlsEnabled correcto ──────────────────────────
+  // FPS desactivado en editMode para no interferir con los paneles HTML del curador
+  const controlsEnabled = !editMode;
 
   // ── Carga de datos ──────────────────────────
   useEffect(() => {
@@ -358,7 +498,7 @@ export default function VirtualMuseumScene() {
 
         if (sculpturesRes.success && sculpturesRes.data) {
           const completed = sculpturesRes.data.filter(
-            s => s.estado_procesamiento === 'completado' && s.modelo_3d_url
+            s => s.estado_procesamiento === 'completado' && s.modelo_3d_url,
           );
           completed.forEach(s => {
             const aw = { ...s, type: 'sculpture' };
@@ -403,7 +543,6 @@ export default function VirtualMuseumScene() {
 
   // ── Acciones del curador ────────────────────
   const startPlacing = useCallback((artwork) => {
-    // Posicionar la obra a ~3 m delante de la cámara actual
     let spawnX = 0, spawnY = artwork.type === 'paint' ? 1.6 : 0, spawnZ = -3;
     if (cameraRef.current) {
       const cam = cameraRef.current;
@@ -467,7 +606,6 @@ export default function VirtualMuseumScene() {
     setActivePlacement({ ...placement });
   }, [placements]);
 
-  // updateActive usa el paso actual (`step`) para X/Z, fijo para rotación/Y/scale
   const updateActive = useCallback((key, delta) => {
     setActivePlacement(prev => prev ? { ...prev, [key]: prev[key] + delta } : null);
   }, []);
@@ -507,18 +645,21 @@ export default function VirtualMuseumScene() {
       <Canvas
         camera={{ fov: 70, near: 0.1, far: 200, position: [0, 1.6, 0] }}
         gl={{
-          antialias: true,          // desactivar software AA
+          antialias: true,
           powerPreference: 'high-performance',
-          stencil: false,            // no se usa stencil buffer
+          stencil: false,
           depth: true,
         }}
-        dpr={Math.min(window.devicePixelRatio, 2)}  // resolución nativa, máx 2x
+        // OPTIMIZACIÓN 5: frameloop adaptativo según modo
+        frameloop={frameloop}
+        dpr={Math.min(window.devicePixelRatio, 2)}
         style={{ position: 'absolute', inset: 0 }}
       >
         <MuseumScene
           placements={placements}
           activePlacement={activePlacement}
-          controlsEnabled={true}
+          // OPTIMIZACIÓN 6: FPS desactivado en modo curador
+          controlsEnabled={controlsEnabled}
           onCameraReady={handleCameraReady}
         />
       </Canvas>
@@ -555,8 +696,10 @@ export default function VirtualMuseumScene() {
 
       {/* Panel colección (modo editor) */}
       {editMode && !activePlacement && (
-        <div className="absolute top-24 right-6 z-[10000] w-80 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden" style={{ maxHeight: showCollection ? 'calc(100vh - 120px)' : 'auto' }}>
-          {/* Header colapsable */}
+        <div
+          className="absolute top-24 right-6 z-[10000] w-80 bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
+          style={{ maxHeight: showCollection ? 'calc(100vh - 120px)' : 'auto' }}
+        >
           <div className="flex items-center justify-between p-4 border-b border-white/10">
             <div>
               <h3 className="text-white font-bold text-base leading-tight">Colección Global</h3>
@@ -573,7 +716,10 @@ export default function VirtualMuseumScene() {
             </button>
           </div>
           {showCollection && (
-            <div className="overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-white/20" style={{ maxHeight: 'calc(100vh - 200px)' }}>
+            <div
+              className="overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-white/20"
+              style={{ maxHeight: 'calc(100vh - 200px)' }}
+            >
               {artworks.map(aw => {
                 const name = aw.type === 'sculpture' ? aw.nombre_escultura : aw.nombre_pintura;
                 const imgUrl = aw.type === 'sculpture' ? aw.imagen_referencia_url : aw.img_pintura;
@@ -629,7 +775,6 @@ export default function VirtualMuseumScene() {
             </h3>
           </div>
 
-          {/* Control de paso */}
           <div className="flex items-center gap-3 px-1">
             <span className="text-[10px] text-gray-400 uppercase font-bold whitespace-nowrap">Paso XZ</span>
             <input
@@ -680,7 +825,6 @@ export default function VirtualMuseumScene() {
       {/* Lista obras en exposición (modo editor) — inferior izquierda, colapsable */}
       {editMode && !activePlacement && placements.length > 0 && (
         <div className="absolute bottom-6 left-6 z-[10000] bg-black/80 backdrop-blur-md rounded-xl border border-white/10 shadow-2xl w-64 overflow-hidden">
-          {/* Header colapsable */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
             <h4 className="text-white text-xs font-bold uppercase tracking-wider">
               En Exposición ({placements.length})

@@ -33,7 +33,7 @@ const EMPTY_FORM = {
   title_lh: 1.1, overlay_opacity: 0.45,
   badge_visible: false, badge_text: '', badge_x: 50, badge_y: 18, badge_fs: 14,
   badge_style: 'glass', button_style: 'context', stats_style: 'glass',
-  banner_height: 600,
+  banner_height: 670,
 };
 
 const formFromSlide = (slide) => ({
@@ -72,7 +72,7 @@ const formFromSlide = (slide) => ({
   badge_style:     slide?.badge_style     || 'glass',
   button_style:    slide?.button_style    || 'context',
   stats_style:     slide?.stats_style     || 'glass',
-  banner_height:   slide?.banner_height   ?? 600,
+  banner_height:   slide?.banner_height   ?? 670,
 });
 
 /* ─────────────────────────────────────────────
@@ -221,7 +221,7 @@ const HomeHero = () => {
     const rect = bannerRef.current.getBoundingClientRect();
     return {
       x: Math.max(5, Math.min(95, ((cx - rect.left) / bannerW) * 100)),
-      y: Math.max(5, Math.min(95, ((cy - rect.top) / (formRef.current.banner_height ?? 600)) * 100)),
+      y: Math.max(5, Math.min(95, ((cy - rect.top) / (formRef.current.banner_height ?? 670)) * 100)),
     };
   };
 
@@ -295,7 +295,7 @@ const HomeHero = () => {
     setIsSaving(false);
   };
 
-  const bannerH = form.banner_height ?? 600;
+  const bannerH = form.banner_height ?? 670;
 
   /* ── Active slide data (for non-edit view) ── */
   const activeItem  = sortedMedia[current] || sortedMedia[0];
@@ -391,7 +391,7 @@ const HomeHero = () => {
 
       {/* ── Scroll indicator (non-edit) ── */}
       {!editMode && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce z-10">
+        <div className="absolute bottom-8 left-[49%] transform -translate-x-1/2 animate-bounce z-10">
           <div className="w-6 h-10 border-2 border-white/50 rounded-full flex items-start justify-center p-2">
             <div className="w-1 h-3 bg-white/50 rounded-full" />
           </div>
@@ -412,7 +412,7 @@ const HomeHero = () => {
 
       {/* ── Panel lateral de edición ── */}
       {isSuperAdmin && editMode && (
-        <div className="absolute top-0 right-0 bottom-0 z-40 w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden">
+        <div className="absolute top-0 right-0 bottom-0 z-[60] w-72 bg-black/85 backdrop-blur-xl border-l border-white/10 flex flex-col overflow-hidden">
 
           {/* Panel header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
@@ -594,11 +594,11 @@ const HomeHero = () => {
                 <div>
                   <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold mb-2">Altura del banner</p>
                   <div className="flex items-center gap-2">
-                    <input type="range" min={300} max={900} step={10}
+                    <input type="range" min={600} max={900} step={10}
                       value={form.banner_height ?? 600}
                       onChange={e => sf({ banner_height: +e.target.value })}
                       className="flex-1 accent-violet-500" />
-                    <PxInput value={form.banner_height ?? 600} onChange={v => sf({ banner_height: v })} min={300} max={900} />
+                    <PxInput value={form.banner_height ?? 600} onChange={v => sf({ banner_height: v })} min={600} max={900} />
                   </div>
                 </div>
 
