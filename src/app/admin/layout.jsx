@@ -80,7 +80,7 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-auto mt-16">
         {children}
       </div>
     </div>

@@ -110,11 +110,11 @@ const Navbar = () => {
       style={{ paddingTop: '5px' }}
     >
       <nav
-        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-lg shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300 w-[96%] sm:w-[95%] md:w-[95%] lg:w-[70%] xl:w-[85%] 2xl:w-[70%]"
+        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-md shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300 w-[96%] sm:w-[95%] md:w-[95%] lg:w-[70%] xl:w-[85%] 2xl:w-[70%]"
       >
       {/* Barra de progreso de scroll */}
       <div
-        className="absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-100"
+        className="ml-[1%] absolute bottom-0 left-0 h-0.5 rounded-full transition-all duration-100"
         style={{ width: `${scrollProgress}%`, backgroundColor: color }}
       />
 

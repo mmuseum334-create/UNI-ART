@@ -143,10 +143,10 @@ const AR = () => {
   const norm = featured ? normalize(featured) : null;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-dark-primary flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-dark-primary flex flex-col mt-14">
 
       {/* ══ HERO HEADER ══ */}
-      <header className="bg-gray-50 dark:bg-dark-secondary border-b border-gray-200 dark:border-dark-tertiary">
+      <header className="bg-gray-50 dark:bg-[#0e0e0e] border-b border-gray-200 dark:border-dark-tertiary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="max-w-xl">
