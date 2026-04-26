@@ -129,14 +129,15 @@ function SculpturesContent() {
         <Table headers={['Escultura', 'Artista', 'Categoría', 'Estado 3D', 'Fecha', 'Acciones']} loading={loading} color={color}>
           {!loading && paged.length === 0 && <EmptyRow cols={6} message="No hay esculturas" />}
           {paged.map(s => {
-            const status = STATUS_MAP[s.processing_status] ?? STATUS_MAP.pending;
+            const statusKey = s.estado_procesamiento === 'completado' ? 'completed' : s.estado_procesamiento === 'procesando' ? 'processing' : s.estado_procesamiento === 'fallido' ? 'failed' : 'pending';
+            const status = STATUS_MAP[statusKey] ?? STATUS_MAP.pending;
             return (
               <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-dark-tertiary/30 transition-colors">
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-3">
-                    {s.fotos_originales?.[0] ? (
+                    {s.imagenes?.[0] ? (
                       <div className="h-12 w-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-dark-tertiary">
-                        <img src={s.fotos_originales[0]} alt={s.nombre_escultura} className="h-full w-full object-cover"
+                        <img src={s.imagenes[0]} alt={s.nombre_escultura} className="h-full w-full object-cover"
                           onError={e => { e.target.src = 'https://via.placeholder.com/80x60/1a1a1a/444?text=3D'; }} />
                       </div>
                     ) : (
