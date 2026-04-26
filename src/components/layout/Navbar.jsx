@@ -107,10 +107,10 @@ const Navbar = () => {
       className={`fixed top-0 left-0 right-0 z-50 flex justify-center transition-all duration-300 pointer-events-none ${
         isVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
-      style={{ paddingTop: '5px' }}
+      style={{ paddingTop: '6px' }}
     >
       <nav
-        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-md shadow-black/10 dark:shadow-black/30 border border-slate-100 dark:border-dark-tertiary transition-all duration-300 w-[96%] sm:w-[95%] md:w-[95%] lg:w-[70%] xl:w-[85%] 2xl:w-[70%]"
+        className="pointer-events-auto py-0.5 relative bg-white dark:bg-dark-primary rounded-2xl shadow-[0_0_6px_rgba(0,0,0,0.18)] dark:shadow-[0_0_6px_rgba(0,0,0,0.45)] border border-slate-100 dark:border-dark-tertiary transition-all duration-300 w-[96%] sm:w-[95%] md:w-[95%] lg:w-[70%] xl:w-[85%] 2xl:w-[70%]"
       >
       {/* Barra de progreso de scroll */}
       <div
@@ -145,7 +145,7 @@ const Navbar = () => {
                   key={link.href}
                   href={link.href}
                   title={link.label}
-                  className={`relative flex items-center justify-center space-x-0 md:space-x-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group md:shadow-md ${
+                  className={`relative flex items-center justify-center space-x-0 md:space-x-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group md:shadow-[0_0_3.5px_rgba(0,0,0,0.15)] dark:md:shadow-[0_0_3.5px_rgba(0,0,0,0.40)] ${
                     active
                       ? 'text-slate-900 dark:text-white bg-[#f5f5f5] dark:bg-dark-tertiary/70'
                       : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-[#f5f5f5] dark:hover:bg-dark-tertiary/60'
@@ -260,7 +260,7 @@ const Navbar = () => {
                     Iniciar Sesión
                   </Button>
                 </Link>
-                <Link href="/auth">
+                <Link href="/auth?mode=register">
                   <Button size="sm" className="bg-gradient-to-r from-nature-500 to-museum-500 hover:from-nature-600 hover:to-museum-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-200">
                     Registrarse
                   </Button>

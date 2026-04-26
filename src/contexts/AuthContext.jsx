@@ -40,16 +40,9 @@ export const AuthProvider = ({ children }) => {
       const storedUser = localStorage.getItem('museum_user');
       const token = authService.getToken();
 
-      console.log('🔍 Cargando usuario al iniciar...'); // DEBUG
-      console.log('👤 Usuario en localStorage:', storedUser); // DEBUG
-      console.log('🔑 Token en localStorage:', token); // DEBUG
-
       if (storedUser && token) {
         const parsedUser = JSON.parse(storedUser);
-        console.log('✅ Usuario cargado:', parsedUser); // DEBUG
         setUser(parsedUser);
-      } else {
-        console.log('❌ No hay usuario o token guardado'); // DEBUG
       }
 
       setIsLoading(false);
@@ -63,20 +56,11 @@ export const AuthProvider = ({ children }) => {
     try {
       const result = await authService.login(email, password);
 
-      console.log('🔐 Login result:', result); // DEBUG
-
       if (result.success && result.data) {
-        console.log('✅ Login exitoso, datos recibidos:', result.data); // DEBUG
-
-        // Guardar toda la info del usuario que viene del backend (incluye rol y permisos)
         const userData = {
-          ...result.data.user, // Toda la info del backend (id, name, email, role, etc.)
+          ...result.data.user,
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || email}`,
         };
-
-        console.log('👤 Usuario a guardar:', userData); // DEBUG
-        console.log('🔑 Token guardado:', localStorage.getItem('museum_token')); // DEBUG
-        console.log('👑 Rol del usuario:', userData.role); // DEBUG
 
         localStorage.setItem('museum_user', JSON.stringify(userData));
         setUser(userData);
@@ -84,10 +68,8 @@ export const AuthProvider = ({ children }) => {
         return { success: true, user: userData };
       }
 
-      console.error('❌ Login falló:', result); // DEBUG
       return result;
     } catch (error) {
-      console.error('💥 Error en login:', error); // DEBUG
       return { success: false, error: error.message };
     } finally {
       setIsLoading(false);
@@ -102,12 +84,9 @@ export const AuthProvider = ({ children }) => {
       if (result.success && result.data) {
         // Auto-login: guardar usuario directamente (incluye rol asignado automáticamente)
         const userData = {
-          ...result.data.user, // Datos del usuario con rol inicial
+          ...result.data.user,
           avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${result.data.user?.email || result.data.email}`,
         };
-
-        console.log('👤 Usuario registrado:', userData); // DEBUG
-        console.log('👑 Rol asignado:', userData.role); // DEBUG
 
         localStorage.setItem('museum_user', JSON.stringify(userData));
         setUser(userData);
