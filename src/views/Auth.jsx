@@ -12,7 +12,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import NextImage from 'next/image';
 import { Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { useGLTF, Float, Center, Environment } from '@react-three/drei';
+import { useGLTF, Float, Center, Environment, Lightformer } from '@react-three/drei';
 import GoogleLoginButton from '@/components/auth/GoogleLoginButton';
 import { Eye, EyeOff, ArrowRight, Palette, Users, Image as ImageIcon, Brush, Home, Sun, Moon } from 'lucide-react';
 
@@ -256,8 +256,13 @@ const Auth = () => {
           <ambientLight intensity={isDark ? 0.8 : 1.5} />
           <directionalLight position={[10, 10, 10]} intensity={isDark ? 1.5 : 2} />
           
-          {/* Entorno de iluminación separado para no bloquear la escultura mientras se descarga */}
-          <Suspense fallback={null}>
+          {/* Entorno procedural síncrono como fallback (evita que la escultura sea negra por milisegundos) */}
+          <Suspense fallback={
+            <Environment>
+              <Lightformer intensity={2} position={[10, 5, 0]} scale={[50, 50, 1]} target={[0, 0, 0]} />
+              <Lightformer intensity={1} position={[-10, -5, 0]} scale={[50, 50, 1]} target={[0, 0, 0]} />
+            </Environment>
+          }>
             <Environment preset="city" />
           </Suspense>
 
