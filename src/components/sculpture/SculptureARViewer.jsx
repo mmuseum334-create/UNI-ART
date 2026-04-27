@@ -112,7 +112,7 @@ const SculptureARViewer = ({ modelUrl, sculptureTitle = 'Escultura', posterUrl =
         left: 50%;
         transform: translateX(-50%);
         padding: 11px 22px;
-        background: #328CE7;
+        background: #22C55E;
         border: none;
         border-radius: 40px;
         color: white;
@@ -154,11 +154,11 @@ const SculptureARViewer = ({ modelUrl, sculptureTitle = 'Escultura', posterUrl =
       `;
       arPrompt.innerHTML = `
         <div style="width:48px;height:48px;margin:0 auto 12px;position:relative;">
-          <div style="position:absolute;top:0;left:0;width:12px;height:12px;border-top:2px solid #328CE7;border-left:2px solid #328CE7;border-radius:2px 0 0 0;"></div>
-          <div style="position:absolute;top:0;right:0;width:12px;height:12px;border-top:2px solid #328CE7;border-right:2px solid #328CE7;border-radius:0 2px 0 0;"></div>
-          <div style="position:absolute;bottom:0;left:0;width:12px;height:12px;border-bottom:2px solid #328CE7;border-left:2px solid #328CE7;border-radius:0 0 0 2px;"></div>
-          <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-bottom:2px solid #328CE7;border-right:2px solid #328CE7;border-radius:0 0 2px 0;"></div>
-          <div style="position:absolute;left:2px;right:2px;height:2px;background:#328CE7;opacity:0.85;animation:ar-sv-scan 1.8s ease-in-out infinite;"></div>
+          <div style="position:absolute;top:0;left:0;width:12px;height:12px;border-top:2px solid #22C55E;border-left:2px solid #22C55E;border-radius:2px 0 0 0;"></div>
+          <div style="position:absolute;top:0;right:0;width:12px;height:12px;border-top:2px solid #22C55E;border-right:2px solid #22C55E;border-radius:0 2px 0 0;"></div>
+          <div style="position:absolute;bottom:0;left:0;width:12px;height:12px;border-bottom:2px solid #22C55E;border-left:2px solid #22C55E;border-radius:0 0 0 2px;"></div>
+          <div style="position:absolute;bottom:0;right:0;width:12px;height:12px;border-bottom:2px solid #22C55E;border-right:2px solid #22C55E;border-radius:0 0 2px 0;"></div>
+          <div style="position:absolute;left:2px;right:2px;height:2px;background:#22C55E;opacity:0.85;animation:ar-sv-scan 1.8s ease-in-out infinite;"></div>
         </div>
         <p style="font-size:14px;font-weight:600;margin:0 0 5px;">Buscando superficie plana</p>
         <p style="font-size:11px;opacity:0.65;margin:0;line-height:1.5;">Apunta al suelo y mueve el teléfono suavemente</p>

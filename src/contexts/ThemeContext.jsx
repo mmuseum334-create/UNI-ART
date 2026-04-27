@@ -26,8 +26,8 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     setMounted(true);
     const stored = localStorage.getItem('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialDark = stored ? stored === 'dark' : prefersDark;
+    // Si hay un tema guardado, lo usa. Si no, por defecto es 'light' (isDark = false)
+    const initialDark = stored ? stored === 'dark' : false;
     setIsDark(initialDark);
   }, []);
 

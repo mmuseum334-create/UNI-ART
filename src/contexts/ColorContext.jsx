@@ -9,7 +9,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './AuthContext';
 
-const DEFAULT_COLOR = '#328CE7';
+const DEFAULT_COLOR = '#22C55E';
 
 const ColorContext = createContext({
   color: DEFAULT_COLOR,

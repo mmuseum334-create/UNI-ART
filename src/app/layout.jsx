@@ -9,8 +9,7 @@ import './globals.css';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { ColorProvider } from '@/contexts/ColorContext';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
+import ConditionalShell from '@/components/layout/ConditionalShell';
 import ThemedToaster from '@/components/layout/ThemedToaster';
 
 // Configuración de la fuente Poppins
@@ -41,11 +40,9 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             <ColorProvider>
               <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-dark-primary dark:to-dark-secondary transition-colors duration-300">
-                <Navbar />
-                <main className="">
+                <ConditionalShell>
                   {children}
-                </main>
-                <Footer />
+                </ConditionalShell>
               </div>
               <ThemedToaster />
             </ColorProvider>

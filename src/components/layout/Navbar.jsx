@@ -166,7 +166,7 @@ const Navbar = () => {
           {/* Actions - Desktop */}
           <div className="hidden md:flex items-center space-x-1.5 lg:space-x-3 shrink-0">
             <AnimatedThemeToggler />
-            {isAuthenticated && <ColorPicker />}
+            <ColorPicker />
 
             {isAuthenticated ? (
               <div className="relative" ref={profileRef}>
