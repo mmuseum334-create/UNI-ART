@@ -5,7 +5,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { sculptureService } from '@/services/sculpture/sculptureService';
+import { userService } from '@/services/user/userService';
 import SculptureARViewer from '@/components/sculpture/SculptureARViewer';
 import ProcessingStatus from '@/components/sculpture/ProcessingStatus';
 import { Button } from '@/components/ui/Button';
@@ -20,8 +22,24 @@ import {
   Loader2,
   Share2,
   Heart,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Link as LinkIcon
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
+
+const CustomXLogo = ({ className }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    className={className} 
+    fill="currentColor"
+    aria-label="X (formerly Twitter)"
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 const SculptureDetailPage = () => {
   const router = useRouter();
@@ -31,6 +49,7 @@ const SculptureDetailPage = () => {
   const [sculpture, setSculpture] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [artistProfile, setArtistProfile] = useState(null);
 
   useEffect(() => {
     if (!sculptureId) return;
@@ -60,6 +79,18 @@ const SculptureDetailPage = () => {
 
     fetchSculpture();
   }, [sculptureId, router]);
+
+  useEffect(() => {
+    const fetchArtistProfile = async () => {
+      if (sculpture?.artista_id) {
+        const res = await userService.getUserProfile(sculpture.artista_id);
+        if (res.success) {
+          setArtistProfile(res.data);
+        }
+      }
+    };
+    fetchArtistProfile();
+  }, [sculpture?.artista_id]);
 
   const handleShare = async () => {
     const shareData = {
@@ -284,6 +315,64 @@ const SculptureDetailPage = () => {
                     <p className="text-sm text-slate-600">{sculpture.publicado_por}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Sobre el Artista */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Sobre el Artista
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-3 mb-3">
+                  <img
+                    src={artistProfile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${sculpture.artista}`}
+                    alt={sculpture.artista}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                  <div>
+                    <h3 className="font-medium text-slate-900 dark:text-white">{sculpture.artista}</h3>
+                    <p className="text-sm text-slate-600 dark:text-white/80">Artista {artistProfile?.career ? `- ${artistProfile.career}` : ''}</p>
+                  </div>
+                </div>
+                {sculpture.publicado_por && (
+                  <div className="mb-3 p-3 bg-slate-50 dark:bg-[#171717] rounded-lg">
+                    <p className="text-xs text-slate-500 mb-1 dark:text-white">Publicado por:</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-white">{sculpture.publicado_por}</p>
+                  </div>
+                )}
+                
+                {artistProfile?.socialLinks && artistProfile.socialLinks.length > 0 && (
+                  <div className="flex gap-2 mb-4">
+                    {artistProfile.socialLinks.map((link, idx) => {
+                      let IconComponent = null;
+                      switch(link.platform) {
+                        case 'facebook': IconComponent = Facebook; break;
+                        case 'instagram': IconComponent = Instagram; break;
+                        case 'x': IconComponent = CustomXLogo; break;
+                        case 'linkedin': IconComponent = Linkedin; break;
+                        default: IconComponent = LinkIcon;
+                      }
+                      return (
+                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#222] dark:hover:bg-[#333] rounded-full transition-colors text-slate-600 dark:text-white/80">
+                          <IconComponent className="w-4 h-4" />
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <p className="text-sm text-slate-600 dark:text-white/80 mb-3">
+                  Explora más obras de este talentoso artista en nuestra colección.
+                </p>
+                <Link href={`/profile/${sculpture.artista.toLowerCase().replace(/\s+/g, '-')}`}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Ver Perfil
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
 

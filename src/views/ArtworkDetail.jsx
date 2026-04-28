@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import FeaturedArtworks from '@/components/ui/FeaturedArtworks';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
+import { userService } from '@/services/user/userService';
 import { toast } from '@/lib/toast';
 import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
@@ -36,8 +37,24 @@ import {
   Play,
   Pause,
   Volume2,
-  Box
+  Box,
+  Facebook,
+  Instagram,
+  Linkedin,
+  Twitter,
+  Link as LinkIcon
 } from 'lucide-react';
+
+const CustomXLogo = ({ className }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    className={className} 
+    fill="currentColor"
+    aria-label="X (formerly Twitter)"
+  >
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 22.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 
 // Necesario en pages/ para evitar el prerender estático.
 // Sin esto, Next.js intenta renderizar la página en build time,
@@ -69,6 +86,7 @@ const ArtworkDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [artistProfile, setArtistProfile] = useState(null);
 
   useEffect(() => {
     const loadArtwork = async () => {
@@ -105,6 +123,7 @@ const ArtworkDetail = () => {
             likes: paint.likes || 0,
             views: paint.views || 0,
             uploadedBy: paint.publicado_por,
+            artista_id: paint.artista_id,
             artistId: paint.artista.toLowerCase().replace(/\s+/g, '-')
           };
 
@@ -137,6 +156,18 @@ const ArtworkDetail = () => {
 
     loadArtwork();
   }, [rawId, type, router]);
+
+  useEffect(() => {
+    const fetchArtistProfile = async () => {
+      if (artwork?.artista_id) {
+        const res = await userService.getUserProfile(artwork.artista_id);
+        if (res.success) {
+          setArtistProfile(res.data);
+        }
+      }
+    };
+    fetchArtistProfile();
+  }, [artwork?.artista_id]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
@@ -481,13 +512,13 @@ const ArtworkDetail = () => {
               <CardContent>
                 <div className="flex items-center gap-3 mb-3">
                   <img
-                    src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${artwork.artist}`}
+                    src={artistProfile?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${artwork.artist}`}
                     alt={artwork.artist}
-                    className="w-12 h-12 rounded-full"
+                    className="w-12 h-12 rounded-full object-cover"
                   />
                   <div>
                     <h3 className="font-medium text-slate-900 dark:text-white">{artwork.artist}</h3>
-                    <p className="text-sm text-slate-600 dark:text-white/80">Artista</p>
+                    <p className="text-sm text-slate-600 dark:text-white/80">Artista {artistProfile?.career ? `- ${artistProfile.career}` : ''}</p>
                   </div>
                 </div>
                 {artwork.uploadedBy && (
@@ -496,6 +527,27 @@ const ArtworkDetail = () => {
                     <p className="text-sm font-medium text-slate-700 dark:text-white">{artwork.uploadedBy}</p>
                   </div>
                 )}
+                
+                {artistProfile?.socialLinks && artistProfile.socialLinks.length > 0 && (
+                  <div className="flex gap-2 mb-4">
+                    {artistProfile.socialLinks.map((link, idx) => {
+                      let IconComponent = null;
+                      switch(link.platform) {
+                        case 'facebook': IconComponent = Facebook; break;
+                        case 'instagram': IconComponent = Instagram; break;
+                        case 'x': IconComponent = CustomXLogo; break;
+                        case 'linkedin': IconComponent = Linkedin; break;
+                        default: IconComponent = LinkIcon;
+                      }
+                      return (
+                        <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-[#222] dark:hover:bg-[#333] rounded-full transition-colors text-slate-600 dark:text-white/80">
+                          <IconComponent className="w-4 h-4" />
+                        </a>
+                      )
+                    })}
+                  </div>
+                )}
+
                 <p className="text-sm text-slate-600 dark:text-white/80 mb-3">
                   Explora más obras de este talentoso artista en nuestra colección.
                 </p>

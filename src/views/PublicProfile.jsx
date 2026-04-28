@@ -23,8 +23,49 @@ import {
   ArrowLeft,
   Mail,
   MapPin,
-  ExternalLink
+  ExternalLink,
+  Facebook,
+  Instagram,
+  Linkedin
 } from 'lucide-react';
+
+const XLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+  </svg>
+);
+
+const parseSocialLinks = (links) => {
+  if (!links) return [];
+  if (typeof links === 'string') {
+    try {
+      if (links.trim().startsWith('[')) {
+        return JSON.parse(links);
+      }
+      return links.split('\n').filter(l => l.trim()).map(url => {
+        let platform = 'default';
+        if (url.includes('facebook.com')) platform = 'facebook';
+        else if (url.includes('instagram.com')) platform = 'instagram';
+        else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
+        else if (url.includes('linkedin.com')) platform = 'linkedin';
+        return { platform, url: url.trim() };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+  return Array.isArray(links) ? links : [];
+};
+
+const SocialIcon = ({ platform, className }) => {
+  switch (platform) {
+    case 'facebook': return <Facebook className={className} />;
+    case 'instagram': return <Instagram className={className} />;
+    case 'twitter': return <XLogo className={className} />;
+    case 'linkedin': return <Linkedin className={className} />;
+    default: return <ExternalLink className={className} />;
+  }
+};
 
 const PublicProfile = ({ userId }) => {
   const { user: currentUser } = useAuth();
@@ -310,6 +351,13 @@ const PublicProfile = ({ userId }) => {
                     {profileUser.name}
                   </h1>
 
+                  {(profileUser.career || profileUser.carrera) && (
+                    <p className="text-sm font-medium text-nature-600 dark:text-nature-400 mb-2">
+                      {profileUser.career || profileUser.carrera} 
+                      {(profileUser.semester || profileUser.semestre) && ` - Semestre ${profileUser.semester || profileUser.semestre}`}
+                    </p>
+                  )}
+
                   {profileUser.bio && (
                     <p className="text-sm text-slate-600 dark:text-slate-300 mb-4">
                       {profileUser.bio}
@@ -364,10 +412,10 @@ const PublicProfile = ({ userId }) => {
                 </div>
 
                 {/* Enlaces adicionales si existen */}
-                {(profileUser.website || profileUser.social_links) && (
+                {(profileUser.website || profileUser.social_links || profileUser.socialLinks) && (
                   <div className="pt-6 border-t border-slate-200 dark:border-dark-tertiary">
                     <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Enlaces</h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {profileUser.website && (
                         <a
                           href={profileUser.website}
@@ -378,6 +426,26 @@ const PublicProfile = ({ userId }) => {
                           <ExternalLink className="h-4 w-4" />
                           Sitio web
                         </a>
+                      )}
+                      
+                      {(profileUser.socialLinks || profileUser.social_links) && parseSocialLinks(profileUser.socialLinks || profileUser.social_links).length > 0 && (
+                        <div className="flex flex-col gap-2">
+                          {parseSocialLinks(profileUser.socialLinks || profileUser.social_links).map((link, idx) => {
+                            const href = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+                            return (
+                              <a 
+                                key={idx} 
+                                href={href} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="flex items-center gap-2 text-sm text-nature-600 dark:text-nature-400 hover:underline break-all"
+                              >
+                                <SocialIcon platform={link.platform} className="h-4 w-4 shrink-0" />
+                                {link.url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]}
+                              </a>
+                            );
+                          })}
+                        </div>
                       )}
                     </div>
                   </div>

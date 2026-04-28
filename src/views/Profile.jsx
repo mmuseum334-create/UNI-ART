@@ -4,7 +4,7 @@
  */
 'use client'
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/Button';
@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/Badge';
 import { getPublicImageUrl } from '@/lib/supabase';
 import { formatDate } from '@/lib/utils';
 import { paintService } from '@/services/paint/paintService';
+import { userService } from '@/services/user/userService';
 import { toast } from '@/lib/toast';
 import EditPaintingModal from '@/components/ui/EditPaintingModal';
 import {
@@ -28,15 +29,154 @@ import {
   Settings,
   Save,
   X,
-  Trash2
+  Trash2,
+  Facebook,
+  Instagram,
+  Linkedin,
+  ExternalLink,
+  Plus,
+  ChevronDown,
+  Leaf,
+  Wheat,
+  Settings as CogIcon,
+  Factory,
+  PawPrint,
+  Mic,
+  Palette,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
+
+const XLogo = ({ className }) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+    <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+  </svg>
+);
+
+const CustomSelect = ({ value, onChange, options, placeholder, className }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (selectRef.current && !selectRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = options.find(opt => opt.value === value);
+
+  return (
+    <div ref={selectRef} className={`relative ${className}`}>
+      <div 
+        className="flex items-center justify-between h-10 w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-nature-400 dark:text-slate-50 transition-colors shadow-sm"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center gap-2 overflow-hidden">
+          {selectedOption ? (
+            <>
+              {selectedOption.icon && <selectedOption.icon className="w-4 h-4 shrink-0 text-slate-500 dark:text-slate-400" />}
+              <span className="text-sm truncate">{selectedOption.label}</span>
+            </>
+          ) : (
+            <span className="text-sm text-slate-400 truncate">{placeholder}</span>
+          )}
+        </div>
+        <ChevronDown className={`w-4 h-4 shrink-0 text-slate-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md shadow-lg max-h-60 overflow-auto py-1 animate-in fade-in zoom-in-95 duration-100">
+          {options.map((opt) => (
+            <div
+              key={opt.value}
+              className={`flex items-center gap-2 px-3 py-2 text-sm cursor-pointer transition-colors ${value === opt.value ? 'bg-nature-50 dark:bg-nature-900/30 text-nature-700 dark:text-nature-400' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              onClick={() => {
+                onChange(opt.value);
+                setIsOpen(false);
+              }}
+            >
+              {opt.icon && <opt.icon className="w-4 h-4 shrink-0" />}
+              <span className="truncate">{opt.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const careerOptions = [
+  { value: "Ingeniería Ambiental", label: "Ingeniería Ambiental", icon: Leaf },
+  { value: "Ingeniería Agronómica", label: "Ingeniería Agronómica", icon: Wheat },
+  { value: "Ingeniería de Producción", label: "Ingeniería de Producción", icon: CogIcon },
+  { value: "Ingeniería Agroindustrial", label: "Ingeniería Agroindustrial", icon: Factory },
+  { value: "Medicina Veterinaria y Zootecnia", label: "Medicina Veterinaria y Zootecnia", icon: PawPrint },
+  { value: "Trabajo Social", label: "Trabajo Social", icon: User },
+  { value: "Comunicación Social", label: "Comunicación Social", icon: Mic },
+  { value: "Licenciatura en Artes", label: "Licenciatura en Artes", icon: Palette },
+  { value: "Otra", label: "Otra", icon: Briefcase }
+];
+
+const semesterOptions = [
+  ...Array.from({length: 10}, (_, i) => ({ value: (i + 1).toString(), label: `Semestre ${i + 1}`, icon: Calendar })),
+  { value: "Egresado", label: "Egresado", icon: GraduationCap },
+  { value: "Profesor", label: "Profesor", icon: Briefcase }
+];
+
+const socialPlatformOptions = [
+  { value: "instagram", label: "Instagram", icon: Instagram },
+  { value: "facebook", label: "Facebook", icon: Facebook },
+  { value: "twitter", label: "X", icon: XLogo },
+  { value: "linkedin", label: "LinkedIn", icon: Linkedin },
+  { value: "default", label: "Otra", icon: ExternalLink }
+];
+
+const parseSocialLinks = (links) => {
+  if (!links) return [];
+  if (typeof links === 'string') {
+    try {
+      if (links.trim().startsWith('[')) {
+        return JSON.parse(links);
+      }
+      return links.split('\n').filter(l => l.trim()).map(url => {
+        let platform = 'default';
+        if (url.includes('facebook.com')) platform = 'facebook';
+        else if (url.includes('instagram.com')) platform = 'instagram';
+        else if (url.includes('twitter.com') || url.includes('x.com')) platform = 'twitter';
+        else if (url.includes('linkedin.com')) platform = 'linkedin';
+        return { platform, url: url.trim() };
+      });
+    } catch (e) {
+      return [];
+    }
+  }
+  return Array.isArray(links) ? links : [];
+};
+
+const SocialIcon = ({ platform, className }) => {
+  switch (platform) {
+    case 'facebook': return <Facebook className={className} />;
+    case 'instagram': return <Instagram className={className} />;
+    case 'twitter': return <XLogo className={className} />;
+    case 'linkedin': return <Linkedin className={className} />;
+    default: return <ExternalLink className={className} />;
+  }
+};
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || '',
-    email: user?.email || ''
+    email: user?.email || '',
+    career: user?.career || '',
+    semester: user?.semester || '',
+    socialLinks: parseSocialLinks(user?.socialLinks),
+    avatar: user?.avatar || ''
   });
   const [viewMode, setViewMode] = useState('grid');
   const [activeTab, setActiveTab] = useState('my-works');
@@ -114,17 +254,73 @@ const Profile = () => {
     loadFavorites();
   }, [user]);
 
-  const handleSave = () => {
-    updateProfile(editData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      const dataToSave = {
+        ...editData,
+        socialLinks: JSON.stringify(editData.socialLinks)
+      };
+      
+      // Intentar guardar en backend si el usuario tiene ID
+      if (user?.id) {
+        const result = await userService.update(user.id, dataToSave);
+        if (result.success) {
+          updateProfile(dataToSave);
+          toast.success("Perfil actualizado", "Tus datos se han guardado correctamente.");
+          setIsProfileModalOpen(false);
+        } else {
+          toast.error("Error al actualizar", result.error || "No se pudo actualizar el perfil.");
+        }
+      } else {
+        // Fallback si no hay ID por alguna razón
+        updateProfile(dataToSave);
+        toast.success("Perfil actualizado", "Tus datos se han guardado localmente.");
+        setIsProfileModalOpen(false);
+      }
+    } catch (error) {
+      toast.error("Error", "Ocurrió un problema al guardar tu perfil.");
+    }
   };
 
   const handleCancel = () => {
     setEditData({
       name: user?.name || '',
-      email: user?.email || ''
+      email: user?.email || '',
+      career: user?.career || '',
+      semester: user?.semester || '',
+      socialLinks: parseSocialLinks(user?.socialLinks),
+      avatar: user?.avatar || ''
     });
-    setIsEditing(false);
+    setIsProfileModalOpen(false);
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditData({ ...editData, avatar: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const addSocialLink = () => {
+    setEditData({
+      ...editData,
+      socialLinks: [...editData.socialLinks, { platform: 'instagram', url: '' }]
+    });
+  };
+
+  const updateSocialLink = (index, field, value) => {
+    const newLinks = [...editData.socialLinks];
+    newLinks[index][field] = value;
+    setEditData({ ...editData, socialLinks: newLinks });
+  };
+
+  const removeSocialLink = (index) => {
+    const newLinks = editData.socialLinks.filter((_, i) => i !== index);
+    setEditData({ ...editData, socialLinks: newLinks });
   };
 
   const handleEditPainting = (painting) => {
@@ -335,43 +531,56 @@ const Profile = () => {
                     alt={user?.name}
                     className="w-24 h-24 rounded-full mx-auto mb-4"
                   />
-                  {isEditing ? (
-                    <div className="space-y-2">
-                      <Input
-                        value={editData.name}
-                        onChange={(e) => setEditData({...editData, name: e.target.value})}
-                        className="text-center"
-                      />
-                      <Input
-                        value={editData.email}
-                        onChange={(e) => setEditData({...editData, email: e.target.value})}
-                        className="text-center"
-                      />
-                      <div className="flex gap-2">
-                        <Button size="sm" onClick={handleSave}>
-                          <Save className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleCancel}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white">
-                        {user?.name}
-                      </h1>
-                      <p className="text-slate-600 dark:text-white/60 mb-4">{user?.email}</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setIsEditing(true)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar Perfil
-                      </Button>
-                    </>
+                  <h1 className="text-2xl font-display font-bold text-slate-900 dark:text-white">
+                    {user?.name}
+                  </h1>
+                  <p className="text-slate-600 dark:text-white/60 mb-2">{user?.email}</p>
+                  
+                  {user?.career && (
+                    <p className="text-sm text-nature-600 dark:text-nature-400 font-medium mb-1">
+                      {user.career} {user?.semester && `- Semestre ${user.semester}`}
+                    </p>
                   )}
+                  
+                  {user?.socialLinks && parseSocialLinks(user.socialLinks).length > 0 && (
+                    <div className="mt-3 mb-4 flex justify-center gap-2 flex-wrap">
+                      {parseSocialLinks(user.socialLinks).map((link, idx) => {
+                        const href = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+                        return (
+                          <a 
+                            key={idx} 
+                            href={href} 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-white/80 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-nature-600 dark:hover:text-nature-400 transition-colors"
+                            title={link.url}
+                          >
+                            <SocialIcon platform={link.platform} className="w-4 h-4" />
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    className="mt-4"
+                    onClick={() => {
+                      setEditData({
+                        name: user?.name || '',
+                        email: user?.email || '',
+                        career: user?.career || '',
+                        semester: user?.semester || '',
+                        socialLinks: parseSocialLinks(user?.socialLinks),
+                        avatar: user?.avatar || ''
+                      });
+                      setIsProfileModalOpen(true);
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Perfil
+                  </Button>
                 </div>
 
                 <div className="space-y-3 text-sm">
@@ -391,10 +600,6 @@ const Profile = () => {
                     <div className="flex justify-between">
                       <span className="text-slate-600 dark:text-white/60">Obras:</span>
                       <span className="font-medium dark:text-white">{stats.artworks}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600 dark:text-white/60">Likes totales:</span>
-                      <span className="font-medium dark:text-white">{stats.totalLikes}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600 dark:text-white/60">Vistas totales:</span>
@@ -618,6 +823,126 @@ const Profile = () => {
         onClose={handleCloseEditModal}
         onSave={handleSavePainting}
       />
+
+      {/* Profile Edit Modal */}
+      {isProfileModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-xl w-full max-w-xl min-h-[75vh] max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800 flex flex-col">
+            <div className="p-8 flex flex-col flex-1">
+              <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                <h2 className="text-2xl font-display font-bold text-slate-900 dark:text-white">Editar Perfil</h2>
+                <button onClick={() => setIsProfileModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-full p-2 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex flex-col gap-6 text-left flex-1">
+                {/* Avatar Edit - Top */}
+                <div className="flex flex-col items-center">
+                  <div className="relative group cursor-pointer mb-2">
+                    <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-slate-100 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-md">
+                      <img 
+                        src={editData.avatar || user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email || 'default'}`} 
+                        alt="Avatar preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <label className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-pointer">
+                      <Upload className="w-5 h-5 mb-1" />
+                      <span className="text-[10px] font-medium text-center leading-tight">Cambiar<br/>Foto</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-500 text-center">Una buena foto te ayudará a destacar en la comunidad.</p>
+                </div>
+
+                {/* Form Fields */}
+                <div className="space-y-5">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre</label>
+                    <Input
+                      value={editData.name}
+                      onChange={(e) => setEditData({...editData, name: e.target.value})}
+                      placeholder="Tu nombre completo"
+                      className="focus:ring-nature-400 border-slate-300 dark:border-slate-700"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Carrera</label>
+                    <CustomSelect 
+                      value={editData.career}
+                      onChange={(val) => setEditData({...editData, career: val})}
+                      options={careerOptions}
+                      placeholder="Selecciona tu carrera"
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Semestre</label>
+                    <CustomSelect 
+                      value={editData.semester}
+                      onChange={(val) => setEditData({...editData, semester: val})}
+                      options={semesterOptions}
+                      placeholder="Selecciona tu semestre"
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2 mt-4">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Redes Sociales</label>
+                    <Button type="button" variant="outline" size="sm" onClick={addSocialLink} className="h-8 text-xs py-0 border-nature-200 text-nature-700 hover:bg-nature-50 dark:border-nature-800 dark:text-nature-400 dark:hover:bg-nature-900/30">
+                      <Plus className="w-3 h-3 mr-1" /> Agregar Red
+                    </Button>
+                  </div>
+                  
+                  {editData.socialLinks.length === 0 ? (
+                    <div className="text-sm text-slate-500 italic text-center p-4 border border-dashed rounded-md border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+                      No has agregado redes sociales.
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {editData.socialLinks.map((link, idx) => (
+                        <div key={idx} className="flex gap-2 items-center bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
+                          <CustomSelect
+                            value={link.platform}
+                            onChange={(val) => updateSocialLink(idx, 'platform', val)}
+                            options={socialPlatformOptions}
+                            placeholder="Red"
+                            className="w-[140px] shrink-0"
+                          />
+                          <Input
+                            value={link.url}
+                            onChange={(e) => updateSocialLink(idx, 'url', e.target.value)}
+                            placeholder="Ej. https://instagram.com/tu_usuario"
+                            className="flex-1 h-10 border-slate-300 dark:border-slate-700 shadow-sm"
+                          />
+                          <Button type="button" variant="ghost" onClick={() => removeSocialLink(idx)} className="h-10 w-10 p-0 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 shrink-0 rounded-md transition-colors">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex gap-3 pt-6 border-t border-slate-200 dark:border-slate-700 mt-auto">
+                  <Button onClick={handleSave} className="flex-1">
+                    Guardar Cambios
+                  </Button>
+                  <Button variant="outline" onClick={handleCancel} className="flex-1">
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      )}
     </div>
   );
 };

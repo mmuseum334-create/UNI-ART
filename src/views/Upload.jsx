@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { artCategories } from '@/data/mockData';
 import { paintService } from '@/services/paint/paintService';
+import { roleService } from '@/services/rbac/roleService';
 import {
   Upload as UploadIcon,
   X,
@@ -31,6 +32,7 @@ const Upload = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     artista: '',
+    artista_id: '',
     nombre_pintura: '',
     img_pintura: null, // Archivo File object
     descripcion_pintura: '',
@@ -47,6 +49,8 @@ const Upload = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
+  const [artistsList, setArtistsList] = useState([]);
+  const [isRegisteredArtist, setIsRegisteredArtist] = useState(false);
 
   // Redirigir si no está autenticado (solo en el cliente)
   useEffect(() => {
@@ -54,6 +58,27 @@ const Upload = () => {
       router.push('/auth');
     }
   }, [isAuthenticated, router]);
+
+  useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        const [usersRes, rolesRes] = await Promise.all([
+          roleService.getAllUsers(),
+          roleService.getAllRoles()
+        ]);
+        if (usersRes.success && rolesRes.success) {
+          const artistaRole = rolesRes.data.find(r => r.name.toLowerCase() === 'artista');
+          if (artistaRole) {
+            const artistas = usersRes.data.filter(u => u.roleId === artistaRole.id);
+            setArtistsList(artistas);
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching artists", e);
+      }
+    };
+    if (isAuthenticated) fetchArtists();
+  }, [isAuthenticated]);
 
   // Mostrar loading durante SSR o mientras redirige
   if (!isAuthenticated) {
@@ -226,6 +251,7 @@ const Upload = () => {
       // Preparar FormData para enviar al backend
       const paintFormData = new FormData();
       paintFormData.append('artista', formData.artista);
+      if (formData.artista_id) paintFormData.append('artista_id', formData.artista_id);
       paintFormData.append('nombre_pintura', formData.nombre_pintura);
       paintFormData.append('imagen', formData.img_pintura); // ✅ Cambiar a "imagen" (nombre que espera el backend)
       paintFormData.append('descripcion_pintura', formData.descripcion_pintura);
@@ -368,16 +394,51 @@ const Upload = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Nombre del Artista *
-                  </label>
-                  <Input
-                    name="artista"
-                    value={formData.artista}
-                    onChange={handleInputChange}
-                    placeholder="Nombre del artista"
-                    className={errors.artista ? 'border-red-500' : ''}
-                  />
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-slate-700">
+                      Nombre del Artista *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsRegisteredArtist(!isRegisteredArtist);
+                        setFormData(prev => ({ ...prev, artista: '', artista_id: '' }));
+                      }}
+                      className="text-xs text-nature-600 hover:text-nature-700 font-medium"
+                    >
+                      {isRegisteredArtist ? 'Ingresar nombre manualmente' : 'Seleccionar usuario de la plataforma'}
+                    </button>
+                  </div>
+
+                  {isRegisteredArtist ? (
+                    <select
+                      name="artista_id"
+                      value={formData.artista_id}
+                      onChange={(e) => {
+                        const selectedId = e.target.value;
+                        const selectedArtist = artistsList.find(a => a.id.toString() === selectedId);
+                        setFormData(prev => ({
+                          ...prev,
+                          artista_id: selectedId,
+                          artista: selectedArtist ? selectedArtist.name : ''
+                        }));
+                      }}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-nature-500 focus:border-transparent bg-white ${errors.artista ? 'border-red-500' : 'border-slate-200'}`}
+                    >
+                      <option value="">Selecciona un artista registrado</option>
+                      {artistsList.map(a => (
+                        <option key={a.id} value={a.id}>{a.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      name="artista"
+                      value={formData.artista}
+                      onChange={handleInputChange}
+                      placeholder="Nombre del artista"
+                      className={errors.artista ? 'border-red-500' : ''}
+                    />
+                  )}
                   {errors.artista && (
                     <p className="text-sm text-red-600 mt-1">{errors.artista}</p>
                   )}
