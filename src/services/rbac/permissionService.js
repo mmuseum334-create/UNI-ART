@@ -98,6 +98,29 @@ export const isSuperAdmin = (user) => {
 };
 
 /**
+ * Verifica si el usuario tiene rol Artista
+ * @param {Object} user
+ * @returns {boolean}
+ */
+export const isArtist = (user) => {
+  if (!user || !user.role) return false;
+  return user.role.name?.toLowerCase() === 'artista';
+};
+
+/**
+ * Verifica si el usuario puede subir esculturas.
+ * Los Artistas NO pueden — solo super_admin u otros roles con permiso.
+ * @param {Object} user
+ * @returns {boolean}
+ */
+export const canUploadSculpture = (user) => {
+  if (!user || !user.role) return false;
+  if (isArtist(user)) return false;           // Artistas: siempre NO
+  if (isSuperAdmin(user)) return true;        // super_admin: siempre SÍ
+  return hasPermission(user, RESOURCES.SCULPTURES, PERMISSIONS.CREATE);
+};
+
+/**
  * Verifica si un usuario es Admin o Super Admin
  * @param {Object} user - Usuario con su rol
  * @returns {boolean}
@@ -105,6 +128,7 @@ export const isSuperAdmin = (user) => {
 export const isAdmin = (user) => {
   return hasRole(user, ROLES.ADMIN) || isSuperAdmin(user);
 };
+
 
 /**
  * Verifica si un usuario tiene permiso sobre un recurso

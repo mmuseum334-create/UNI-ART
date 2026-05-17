@@ -70,8 +70,7 @@ export const paintService = {
   },
 
   /**
-   * Obtener todas las pinturas
-   * @returns {Promise<Object>} Respuesta con lista de pinturas
+   * Obtener todas las pinturas (solo aprobadas - galería pública)
    */
   async getAll() {
     try {
@@ -97,6 +96,61 @@ export const paintService = {
         success: false,
         error: 'Error de conexión con el servidor'
       };
+    }
+  },
+
+  /**
+   * [Admin] Obtener TODAS las pinturas (aprobadas + pendientes)
+   */
+  async getAllAdmin() {
+    try {
+      const response = await fetch(`${API_URL}/paint/admin/all`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al obtener pinturas' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
+   * [Admin] Obtener pinturas pendientes de aprobación
+   */
+  async getPending() {
+    try {
+      const response = await fetch(`${API_URL}/paint/admin/pending`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al obtener solicitudes' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
+    }
+  },
+
+  /**
+   * [Admin] Aprobar una pintura pendiente
+   * @param {number} id - ID de la pintura
+   */
+  async approve(id) {
+    try {
+      const response = await fetch(`${API_URL}/paint/${id}/approve`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: getHeaders(),
+      });
+      const data = await response.json();
+      if (!response.ok) return { success: false, error: data.message || 'Error al aprobar la pintura' };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error: 'Error de conexión con el servidor' };
     }
   },
 

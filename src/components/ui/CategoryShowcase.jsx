@@ -70,7 +70,7 @@ export const CategoryShowcase = ({ categories = [], iconMap = {} }) => {
   };
 
   return (
-    <section className="pt-20 pb-5 bg-white dark:bg-[#0f0f0f] overflow-hidden">
+    <section className="pt-11 md:pt-20 pb-5 bg-white dark:bg-[#0f0f0f] overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-16">
         {/* Header */}
         <div className="text-center">

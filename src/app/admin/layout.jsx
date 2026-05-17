@@ -5,18 +5,21 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard, Users, Shield, Tag, Palette,
   Frame, Landmark, ChevronLeft, ChevronRight, Image,
+  ClipboardList,
 } from 'lucide-react';
 import { useColor } from '@/contexts/ColorContext';
+import { NotificationBell } from '@/components/ui/NotificationBell';
 
 const navItems = [
-  { label: 'Dashboard',  icon: LayoutDashboard, path: '/admin' },
-  { label: 'Pinturas',   icon: Frame,            path: '/admin/paintings' },
-  { label: 'Esculturas', icon: Landmark,         path: '/admin/sculptures' },
-  { label: 'Banners',    icon: Image,            path: '/admin/banner' },
-  { label: 'Usuarios',   icon: Users,            path: '/admin/users' },
-  { label: 'Roles',      icon: Shield,           path: '/admin/roles' },
-  { label: 'Categorías', icon: Tag,              path: '/admin/categories' },
-  { label: 'Técnicas',   icon: Palette,          path: '/admin/techniques' },
+  { label: 'Dashboard',    icon: LayoutDashboard, path: '/admin' },
+  { label: 'Solicitudes',  icon: ClipboardList,   path: '/admin/paint-requests', badge: true },
+  { label: 'Pinturas',     icon: Frame,           path: '/admin/paintings' },
+  { label: 'Esculturas',   icon: Landmark,        path: '/admin/sculptures' },
+  { label: 'Banners',      icon: Image,           path: '/admin/banner' },
+  { label: 'Usuarios',     icon: Users,           path: '/admin/users' },
+  { label: 'Roles',        icon: Shield,          path: '/admin/roles' },
+  { label: 'Categorías',   icon: Tag,             path: '/admin/categories' },
+  { label: 'Técnicas',     icon: Palette,         path: '/admin/techniques' },
 ];
 
 export default function AdminLayout({ children }) {
@@ -53,8 +56,9 @@ export default function AdminLayout({ children }) {
 
         {/* Nav links */}
         <nav className="flex-1 p-2 space-y-0.5">
-          {navItems.map(({ label, icon: Icon, path }) => {
-            const active = pathname === path;
+          {navItems.map(({ label, icon: Icon, path, badge }) => {
+            const active = pathname === path || pathname.startsWith(path + '/');
+            const isSolicitudes = path === '/admin/paint-requests';
             return (
               <button
                 key={path}
@@ -72,7 +76,17 @@ export default function AdminLayout({ children }) {
                 style={active ? { backgroundColor: color } : undefined}
               >
                 <Icon className="h-4 w-4 shrink-0" />
-                {!collapsed && <span className="truncate">{label}</span>}
+                {!collapsed && (
+                  <span className="flex-1 text-left truncate">{label}</span>
+                )}
+                {/* Indicador de sección "Solicitudes" cuando no está activa */}
+                {!collapsed && isSolicitudes && !active && (
+                  <span
+                    className="ml-auto h-2 w-2 rounded-full animate-pulse"
+                    style={{ backgroundColor: '#f59e0b' }}
+                    title="Solicitudes pendientes"
+                  />
+                )}
               </button>
             );
           })}
@@ -80,7 +94,11 @@ export default function AdminLayout({ children }) {
       </aside>
 
       {/* Contenido principal */}
-      <div className="flex-1 overflow-auto mt-16">
+      <div className="flex-1 overflow-auto mt-16 relative">
+        {/* Campana de notificaciones en la esquina superior derecha del contenido */}
+        <div className="absolute top-3 right-4 z-40">
+          <NotificationBell />
+        </div>
         {children}
       </div>
     </div>

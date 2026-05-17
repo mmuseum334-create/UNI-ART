@@ -7,6 +7,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { isArtist } from '@/services/rbac/permissionService';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -56,12 +57,15 @@ const UploadSculpture = () => {
   const MAX_IMAGES = 4;
   const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB por imagen
 
-  // Redirigir si no está autenticado
+  // Redirigir si no está autenticado o si es Artista
   useEffect(() => {
     if (!isAuthenticated && typeof window !== 'undefined') {
       router.push('/auth');
+    } else if (user && isArtist(user)) {
+      // Los artistas no pueden subir esculturas
+      router.push('/profile');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     const fetchArtists = async () => {
@@ -95,7 +99,7 @@ const UploadSculpture = () => {
     };
   }, [images]);
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || (user && isArtist(user))) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

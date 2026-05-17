@@ -113,6 +113,16 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
   };
 
+  const setAuthData = (userData, token) => {
+    localStorage.setItem('museum_token', token);
+    const enrichedUser = {
+      ...userData,
+      avatar: userData?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData?.email}`,
+    };
+    localStorage.setItem('museum_user', JSON.stringify(enrichedUser));
+    setUser(enrichedUser);
+  };
+
   const value = {
     user,
     isLoading,
@@ -120,7 +130,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updateProfile
+    updateProfile,
+    setAuthData
   };
 
   return (

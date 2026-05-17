@@ -6,16 +6,19 @@ import { sculptureService } from '@/services/sculpture/sculptureService';
 import { useColor } from '@/contexts/ColorContext';
 import {
   Box,
-  Play,
   Smartphone,
   AlertTriangle,
-  Sparkles,
   Move3d,
   ScanLine,
   Loader2,
+  ChevronRight,
+  Maximize2,
+  RotateCcw,
+  Tag,
+  User,
+  Layers,
 } from 'lucide-react';
 
-/* ─── carga model-viewer una sola vez ─── */
 let modelViewerLoaded = false;
 const loadModelViewer = () => {
   if (typeof window === 'undefined' || modelViewerLoaded) return Promise.resolve();
@@ -33,10 +36,10 @@ const AR = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewerReady, setViewerReady] = useState(false);
   const [modelLoading, setModelLoading] = useState(true);
+  const [modelVisible, setModelVisible] = useState(false);
   const [error, setError] = useState(null);
   const modelViewerRef = useRef(null);
 
-  /* ─── detectar soporte AR ─── */
   useEffect(() => {
     if ('xr' in navigator) {
       navigator.xr.isSessionSupported('immersive-ar')
@@ -45,12 +48,10 @@ const AR = () => {
     }
   }, []);
 
-  /* ─── cargar model-viewer ─── */
   useEffect(() => {
     loadModelViewer().then(() => setViewerReady(true));
   }, []);
 
-  /* ─── cargar obras AR desde backend ─── */
   useEffect(() => {
     sculptureService.getAll().then((result) => {
       if (result.success) {
@@ -66,28 +67,22 @@ const AR = () => {
     });
   }, []);
 
-  /* ─── resetear loading cuando cambia el modelo ─── */
   useEffect(() => {
-    if (featured) setModelLoading(true);
+    if (featured) {
+      setModelLoading(true);
+      setModelVisible(false);
+    }
   }, [featured]);
 
-  /* ─── resetear posición de los viewers de tarjetas no activas ─── */
-  useEffect(() => {
-    const viewers = document.querySelectorAll('[data-card-viewer]');
-    viewers.forEach((v) => {
-      if (v.dataset.cardViewer !== String(featured?.id)) {
-        v.resetTurntableRotation?.();
-        v.cameraOrbit = 'auto auto auto';
-      }
-    });
-  }, [featured]);
-
-  /* ─── eventos del model-viewer ─── */
   useEffect(() => {
     const mv = modelViewerRef.current;
     if (!mv || !viewerReady) return;
-    const onLoad = () => setModelLoading(false);
-    const onError = () => setModelLoading(false);
+    const onLoad = () => {
+      setModelLoading(false);
+      // Small delay for smooth fade-in
+      requestAnimationFrame(() => setTimeout(() => setModelVisible(true), 50));
+    };
+    const onError = () => { setModelLoading(false); setModelVisible(true); };
     mv.addEventListener('load', onLoad);
     mv.addEventListener('error', onError);
     return () => {
@@ -118,24 +113,29 @@ const AR = () => {
     setSelectedArtwork(null);
   };
 
-  /* ── pantalla de carga inicial ── */
+  /* ── loading inicial ── */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-dark-primary flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative w-16 h-16 mx-auto mb-5">
-            <Loader2 className="w-16 h-16 animate-spin text-gray-300 dark:text-gray-700" />
+      <div className="min-h-screen bg-white dark:bg-dark-primary flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-14 h-14">
+            <svg className="w-14 h-14 animate-spin" viewBox="0 0 56 56">
+              <circle cx="28" cy="28" r="24" fill="none" strokeWidth="2" stroke="currentColor" strokeOpacity="0.1" className="text-gray-400" />
+              <circle cx="28" cy="28" r="24" fill="none" strokeWidth="2" strokeDasharray="60 90" strokeLinecap="round"
+                style={{ stroke: color }} />
+            </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <Box className="w-7 h-7" style={{ color }} />
+              <Box className="w-5 h-5" style={{ color }} />
             </div>
           </div>
-          <p className="text-gray-400 dark:text-gray-500 text-xs tracking-widest uppercase">Preparando experiencia AR</p>
+          <p className="text-gray-400 dark:text-gray-500 text-[11px] tracking-[0.2em] uppercase font-medium">
+            Preparando experiencia AR
+          </p>
         </div>
       </div>
     );
   }
 
-  /* ── visor AR pantalla completa ── */
   if (isARActive && selectedArtwork) {
     return <ARViewer artwork={selectedArtwork} onExit={stopAR} />;
   }
@@ -147,16 +147,15 @@ const AR = () => {
 
       {/* ══ HERO HEADER ══ */}
       <header className="bg-gray-50 dark:bg-[#0e0e0e] border-b border-gray-200 dark:border-dark-tertiary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
             <div className="max-w-xl">
-              {/* Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3 bg-gray-200 dark:bg-dark-tertiary text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-dark-tertiary">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-3
+                bg-gray-200 dark:bg-dark-tertiary text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-dark-tertiary">
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: color }} />
                 Realidad Aumentada · WebXR
                 <ScanLine className="w-3.5 h-3.5" />
               </div>
-
               <h1 className="text-3xl md:text-4xl font-extrabold leading-tight mb-2 text-gray-900 dark:text-white">
                 Esculturas en{' '}
                 <span style={{ color }}>tu mundo real</span>
@@ -166,22 +165,6 @@ const AR = () => {
               </p>
             </div>
 
-            {/* Stats */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                { label: 'Obras en 3D', value: artworks.length, icon: Box },
-                { label: 'Vista 360°', value: '∞', icon: Move3d },
-                { label: 'AR en móvil', value: isARSupported ? 'Listo' : 'Móvil req.', icon: Smartphone },
-              ].map(({ label, value, icon: Icon }) => (
-                <div key={label} className="flex items-center gap-2.5 px-3 py-2 rounded-xl bg-white dark:bg-dark-tertiary border border-gray-200 dark:border-dark-tertiary">
-                  <Icon className="w-4 h-4 text-gray-400" />
-                  <div>
-                    <p className="font-bold text-gray-900 dark:text-white leading-none text-sm">{value}</p>
-                    <p className="text-gray-400 dark:text-gray-500 text-xs mt-0.5">{label}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </header>
@@ -190,10 +173,10 @@ const AR = () => {
       {!isARSupported && (
         <div className="bg-amber-50 dark:bg-dark-tertiary border-b border-amber-200 dark:border-dark-tertiary">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-500 flex-shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
             <p className="text-xs text-amber-700 dark:text-gray-400">
-              <span className="font-semibold text-amber-800 dark:text-gray-300">Estás en escritorio</span> — puedes explorar los modelos 3D aquí.
-              Para la experiencia en Realidad Aumentada, abre esta página desde un Android con Chrome.
+              <span className="font-semibold text-amber-800 dark:text-gray-300">Estás en escritorio</span>
+              {' '}— puedes explorar los modelos 3D aquí. Para AR, abre esta página desde Android con Chrome.
             </p>
           </div>
         </div>
@@ -218,15 +201,24 @@ const AR = () => {
         </div>
       )}
 
-      {/* ══ VISOR PRINCIPAL ══ */}
+      {/* ══ VISOR PRINCIPAL MEJORADO ══ */}
       {!error && artworks.length > 0 && norm && (
         <main className="flex-1 flex flex-col">
 
-          {/* ── Fila superior: visor 3D + info ── */}
-          <div className="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-tertiary" style={{ height: '540px' }}>
+          {/*
+            ─────────────────────────────────────────────────
+            VISOR 3D + INFO PANEL
+            Layout:
+              Mobile  → visor pantalla completa con info en bottom sheet
+              Desktop → visor flex-1 | panel lateral fijo
+            ─────────────────────────────────────────────────
+          */}
+          <div className="flex flex-col lg:flex-row border-b border-gray-200 dark:border-dark-tertiary">
 
-            {/* Visor 3D */}
-            <div className="relative flex-1 bg-gray-100 dark:bg-dark-secondary overflow-hidden">
+            {/* ── Visor 3D ── */}
+            <div className="relative w-full lg:flex-1 h-[300px] lg:h-auto lg:min-h-[520px]">
+
+              {/* Model viewer con fade-in al cargar */}
               {viewerReady && (
                 <model-viewer
                   ref={modelViewerRef}
@@ -235,24 +227,33 @@ const AR = () => {
                   alt={norm.title}
                   camera-controls
                   auto-rotate
-                  auto-rotate-delay="500"
-                  rotation-per-second="20deg"
-                  shadow-intensity="1.2"
-                  shadow-softness="0.5"
-                  exposure="1.1"
+                  auto-rotate-delay="600"
+                  rotation-per-second="18deg"
+                  shadow-intensity="1.4"
+                  shadow-softness="0.6"
+                  exposure="1.15"
+                  environment-image="neutral"
                   ar
                   ar-modes="webxr scene-viewer quick-look"
                   ar-scale="auto"
-                  style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    inset: 0,
+                    opacity: modelVisible ? 1 : 0,
+                    transition: 'opacity 0.5s ease',
+                    backgroundColor: 'transparent',
+                  }}
                 >
+                  {/* Botón AR nativo (solo aparece en dispositivos compatibles) */}
                   <button
                     slot="ar-button"
                     style={{
                       position: 'absolute',
-                      bottom: '16px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      padding: '10px 22px',
+                      bottom: '20px',
+                      right: '16px',
+                      padding: '11px 20px',
                       backgroundColor: color,
                       border: 'none',
                       borderRadius: '50px',
@@ -262,11 +263,12 @@ const AR = () => {
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      boxShadow: `0 6px 20px ${color}55`,
+                      gap: '7px',
+                      boxShadow: `0 8px 24px ${color}55`,
+                      letterSpacing: '0.01em',
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                     </svg>
                     Ver en AR
@@ -274,94 +276,229 @@ const AR = () => {
                 </model-viewer>
               )}
 
-              {/* Spinner */}
+              {/* Fondo del visor */}
+              <div className="absolute inset-0 bg-gray-100 dark:bg-dark-secondary -z-10" />
+
+              {/* ── Loading state mejorado ── */}
               {(modelLoading || !viewerReady) && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-dark-secondary z-10">
-                  <div className="relative w-12 h-12 mb-3">
-                    <Loader2 className="w-12 h-12 animate-spin text-gray-300 dark:text-gray-700" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Box className="w-5 h-5" style={{ color }} />
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 dark:bg-dark-secondary z-20">
+                  {/* Grid de puntos de fondo */}
+                  <div className="absolute inset-0 opacity-30 dark:opacity-20"
+                    style={{
+                      backgroundImage: `radial-gradient(circle, ${color}33 1px, transparent 1px)`,
+                      backgroundSize: '28px 28px',
+                    }}
+                  />
+                  <div className="relative flex flex-col items-center gap-4">
+                    {/* Spinner custom */}
+                    <div className="relative w-16 h-16">
+                      <svg className="w-16 h-16 animate-spin" style={{ animationDuration: '1.4s' }} viewBox="0 0 64 64">
+                        <circle cx="32" cy="32" r="28" fill="none" strokeWidth="2"
+                          stroke="currentColor" strokeOpacity="0.1" className="text-gray-500" />
+                        <circle cx="32" cy="32" r="28" fill="none" strokeWidth="2.5"
+                          strokeDasharray="50 126" strokeLinecap="round"
+                          style={{ stroke: color }} />
+                      </svg>
+                      {/* Icono central */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                          style={{ backgroundColor: `${color}20` }}>
+                          <Box className="w-4 h-4" style={{ color }} />
+                        </div>
+                      </div>
+                    </div>
+                    {/* Nombre de la obra */}
+                    <div className="text-center">
+                      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 tracking-widest uppercase mb-1">
+                        Cargando modelo
+                      </p>
+                      <p className="text-sm font-bold text-gray-800 dark:text-white">{norm.title}</p>
+                    </div>
+                    {/* Barra de progreso animada */}
+                    <div className="w-32 h-0.5 rounded-full bg-gray-200 dark:bg-dark-tertiary overflow-hidden">
+                      <div className="h-full rounded-full animate-pulse"
+                        style={{ backgroundColor: color, width: '60%' }} />
                     </div>
                   </div>
-                  <p className="text-gray-400 dark:text-gray-600 text-xs tracking-widest">CARGANDO MODELO 3D</p>
                 </div>
               )}
 
-              {/* Hints */}
-              {!modelLoading && viewerReady && (
-                <div className="absolute bottom-3 left-3 flex items-center gap-2 pointer-events-none">
-                  <div className="flex items-center gap-1 bg-white/80 dark:bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded-full text-gray-600 dark:text-white/70 text-xs border border-gray-200/50 dark:border-transparent">
-                    <Move3d className="w-3 h-3" />
-                    Arrastra · Zoom
-                  </div>
-                </div>
-              )}
-
-              {/* Badge AR */}
-              {isARSupported && !modelLoading && (
-                <div className="absolute top-3 left-3">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white text-xs font-semibold"
-                    style={{ backgroundColor: `${color}dd` }}>
+              {/* ── Badge AR disponible (top-left) ── */}
+              {isARSupported && modelVisible && (
+                <div className="absolute top-4 left-4 z-10">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold backdrop-blur-sm"
+                    style={{ backgroundColor: `${color}e0`, boxShadow: `0 4px 12px ${color}44` }}>
                     <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                    AR disponible
+                    AR listo
                   </div>
                 </div>
               )}
+
+              {/* ── Controles hint (bottom-left) ── */}
+              {modelVisible && (
+                <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-white/80 dark:bg-black/50 backdrop-blur-md
+                    px-2.5 py-1.5 rounded-full text-xs text-gray-600 dark:text-white/70
+                    border border-white/50 dark:border-white/10 shadow-sm">
+                    <Move3d className="w-3 h-3" />
+                    <span>Arrastra · Pellizca</span>
+                  </div>
+                </div>
+              )}
+
             </div>
 
-            {/* Info de la obra seleccionada */}
-            <div className="lg:w-72 xl:w-80 flex flex-col justify-between p-5 bg-white dark:bg-dark-secondary border-l border-gray-200 dark:border-dark-tertiary overflow-hidden">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold tracking-widest uppercase mb-1.5 text-gray-400 dark:text-gray-500">
-                  Explorando ahora
-                </p>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-tight mb-0.5 truncate">
-                  {norm.title}
-                </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{norm.artist}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-3">
+            {/* ── MOBILE: info debajo del visor (no superpuesta) ── */}
+            <div className="lg:hidden bg-white dark:bg-dark-secondary border-t border-gray-200 dark:border-dark-tertiary px-4 py-4">
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold tracking-widest uppercase text-gray-400 mb-0.5">Explorando</p>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white truncate leading-tight">
+                    {norm.title}
+                  </h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{norm.artist}</p>
+                </div>
+                {norm.tags.length > 0 && (
+                  <span className="flex-shrink-0 px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-tertiary text-gray-500 dark:text-gray-400 mt-0.5">
+                    #{norm.tags[0]}
+                  </span>
+                )}
+              </div>
+              {norm.description && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-3 line-clamp-3">
                   {norm.description}
                 </p>
+              )}
+              <button
+                onClick={startAR}
+                disabled={!isARSupported}
+                className="w-full py-3 px-4 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2
+                  transition-all active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: color,
+                  boxShadow: isARSupported ? `0 6px 20px ${color}44` : 'none',
+                }}
+              >
+                <Smartphone className="w-4 h-4" />
+                {isARSupported ? 'Colocar en tu espacio (AR)' : 'AR requiere móvil Android'}
+              </button>
+            </div>
+
+            {/* ── Panel de información (desktop only) ── */}
+            <div className="hidden lg:flex lg:w-80 xl:w-96 flex-col bg-white dark:bg-dark-secondary
+              border-l border-gray-200 dark:border-dark-tertiary overflow-hidden">
+
+              {/* Zona scrollable: info de la obra */}
+              <div className="flex-1 overflow-y-auto p-6">
+
+                {/* Cabecera */}
+                <p className="text-[10px] font-semibold tracking-[0.18em] uppercase text-gray-400 dark:text-gray-500 mb-3">
+                  Explorando ahora
+                </p>
+
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white leading-tight mb-1">
+                  {norm.title}
+                </h2>
+
+                {/* Artista */}
+                <div className="flex items-center gap-1.5 mb-4">
+                  <User className="w-3.5 h-3.5 text-gray-400" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{norm.artist}</p>
+                </div>
+
+                {/* Separador decorativo */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex-1 h-px bg-gray-100 dark:bg-dark-tertiary" />
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                  <div className="flex-1 h-px bg-gray-100 dark:bg-dark-tertiary" />
+                </div>
+
+                {/* Descripción */}
+                {norm.description && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-5">
+                    {norm.description}
+                  </p>
+                )}
+
+                {/* Metadatos */}
+                <div className="space-y-2 mb-5">
+                  {norm.category && (
+                    <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                      <Layers className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Categoría:</span>
+                      <span>{norm.category}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tags */}
                 {norm.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {norm.tags.slice(0, 3).map((tag, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded-full text-xs bg-gray-100 dark:bg-dark-tertiary text-gray-500 dark:text-gray-400">
-                        #{tag}
+                  <div className="flex flex-wrap gap-1.5">
+                    {norm.tags.slice(0, 5).map((tag, i) => (
+                      <span key={i}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs
+                          bg-gray-100 dark:bg-dark-tertiary text-gray-500 dark:text-gray-400 font-medium">
+                        <Tag className="w-2.5 h-2.5" />
+                        {tag}
                       </span>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="mt-4">
+              {/* ── CTA fijo abajo ── */}
+              <div className="p-5 border-t border-gray-100 dark:border-dark-tertiary bg-white dark:bg-dark-secondary">
+
+                {/* Instrucción contextual */}
+                <p className="text-xs text-gray-400 dark:text-gray-500 text-center mb-3 leading-relaxed">
+                  {isARSupported
+                    ? 'Toca el botón para superponer la escultura en tu entorno real.'
+                    : 'Abre esta página en Android Chrome para activar la Realidad Aumentada.'}
+                </p>
+
                 <button
                   onClick={startAR}
                   disabled={!isARSupported}
-                  className="w-full py-2.5 px-4 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 active:scale-[0.98]"
-                  style={{ backgroundColor: color }}
+                  className="group w-full py-3.5 px-5 rounded-2xl font-bold text-sm text-white
+                    flex items-center justify-center gap-2.5
+                    transition-all duration-200
+                    hover:opacity-90 hover:scale-[1.01]
+                    active:scale-[0.98]
+                    disabled:opacity-40 disabled:cursor-not-allowed disabled:scale-100"
+                  style={{
+                    backgroundColor: color,
+                    boxShadow: isARSupported ? `0 8px 24px ${color}44` : 'none',
+                  }}
                 >
-                  <Smartphone className="w-4 h-4" />
+                  <Smartphone className="w-4 h-4 transition-transform group-hover:-translate-y-0.5" />
                   {isARSupported ? 'Colocar en tu espacio (AR)' : 'AR requiere móvil'}
+                  {isARSupported && (
+                    <ChevronRight className="w-4 h-4 ml-auto opacity-60 transition-transform group-hover:translate-x-0.5" />
+                  )}
                 </button>
+
+                {/* Hint de modelo interactivo en PC */}
                 {!isARSupported && (
-                  <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-1.5">
-                    El modelo 3D de arriba es interactivo en PC
+                  <p className="text-center text-xs text-gray-400 dark:text-gray-600 mt-2">
+                    El modelo 3D de arriba es interactivo aquí en PC
                   </p>
                 )}
               </div>
             </div>
           </div>
 
-          {/* ── Obras disponibles (grid abajo) ── */}
+          {/* ══ GRID DE OBRAS ══ */}
           <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-widest">
-                Obras disponibles en AR
-                <span className="ml-2 font-normal text-gray-400 normal-case tracking-normal">({artworks.length})</span>
+              <h3 className="text-xs font-semibold text-gray-900 dark:text-white uppercase tracking-widest">
+                Obras disponibles
+                <span className="ml-2 font-normal text-gray-400 normal-case tracking-normal">
+                  ({artworks.length})
+                </span>
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {artworks.map((sculpture) => {
                 const n = normalize(sculpture);
                 const isActive = featured?.id === sculpture.id;
@@ -369,13 +506,15 @@ const AR = () => {
                   <button
                     key={n.id}
                     onClick={() => setFeatured(sculpture)}
-                    className="group text-left rounded-xl overflow-hidden border-2 transition-all duration-200 focus:outline-none bg-white dark:bg-dark-secondary hover:shadow-md"
+                    className="group text-left rounded-xl overflow-hidden transition-all duration-200 focus:outline-none
+                      bg-white dark:bg-dark-secondary
+                      hover:shadow-md hover:-translate-y-0.5"
                     style={{
-                      borderColor: isActive ? color : 'transparent',
-                      boxShadow: isActive ? `0 0 0 1px ${color}` : undefined,
+                      border: `2px solid ${isActive ? color : 'transparent'}`,
+                      outline: isActive ? `1px solid ${color}55` : 'none',
+                      outlineOffset: '1px',
                     }}
                   >
-                    {/* Preview 3D */}
                     <div className="aspect-square bg-gray-100 dark:bg-dark-tertiary overflow-hidden relative">
                       {viewerReady ? (
                         <model-viewer
@@ -400,17 +539,17 @@ const AR = () => {
                           <Box className="w-8 h-8 text-gray-300 dark:text-gray-600" />
                         </div>
                       )}
-
-                      {/* Overlay hover: indica que es clickeable */}
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200 pointer-events-none rounded-t-xl" />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/8 transition-colors duration-200 pointer-events-none" />
                     </div>
 
-                    <div className="p-2.5">
-                      <p className="text-xs font-semibold text-gray-800 dark:text-white truncate">{n.title}</p>
+                    <div className="px-2.5 py-2">
+                      <p className="text-xs font-semibold text-gray-800 dark:text-white truncate leading-tight">{n.title}</p>
                       <p className="text-xs text-gray-400 truncate mt-0.5">{n.artist}</p>
                     </div>
+
+                    {/* Barra activa */}
                     {isActive && (
-                      <div className="h-0.5 w-full" style={{ backgroundColor: color }} />
+                      <div className="h-0.5 w-full transition-all" style={{ backgroundColor: color }} />
                     )}
                   </button>
                 );

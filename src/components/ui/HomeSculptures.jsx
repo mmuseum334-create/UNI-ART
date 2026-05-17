@@ -97,7 +97,7 @@ const HomeSculptures = () => {
           </div>
 
           {/* 3D Single Model Display */}
-          <div className="lg:col-span-7 relative h-[60vh] lg:h-[85vh] w-full mt-8 lg:mt-0 flex items-center justify-center">
+          <div className="lg:col-span-7 relative h-[60vh] lg:h-[85vh] w-full lg:mt-0 flex items-center justify-center">
 
             {/* Minimalist Vertical Nav Controls */}
             <div className="absolute right-0 lg:-right-8 top-1/2 -translate-y-1/2 flex flex-col items-center gap-3 z-40">

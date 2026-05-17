@@ -151,7 +151,8 @@ function PaintingMesh({ imgUrl, scale }) {
 // ─────────────────────────────────────────────
 function Plaque({ placement, isActive = false }) {
   const isPaint = placement.type === 'paint';
-  const [visible, setVisible] = useState(isPaint);
+  // Info siempre oculta por defecto; se muestra solo al hacer click en la obra
+  const [visible, setVisible] = useState(false);
   const name = isPaint ? placement.artwork.nombre_pintura : placement.artwork.nombre_escultura;
   const desc = isPaint ? placement.artwork.descripcion_pintura : placement.artwork.descripcion_escultura;
   const artist = placement.artwork.artista;
@@ -173,6 +174,7 @@ function Plaque({ placement, isActive = false }) {
               fontSize: 10,
               cursor: 'pointer',
               fontFamily: 'system-ui, sans-serif',
+              touchAction: 'none',
             }}
           >ℹ info</button>
         </Html>
@@ -185,7 +187,7 @@ function Plaque({ placement, isActive = false }) {
       <Html
         transform
         occlude={false}
-        style={{ pointerEvents: isPaint ? 'none' : 'auto', userSelect: 'none' }}
+        style={{ pointerEvents: 'auto', userSelect: 'none' }}
         distanceFactor={3}
       >
         <div
@@ -200,7 +202,7 @@ function Plaque({ placement, isActive = false }) {
             position: 'relative',
           }}
         >
-          {!isPaint && !isActive && (
+          {!isActive && (
             <button
               onClick={() => setVisible(false)}
               style={{
@@ -213,11 +215,11 @@ function Plaque({ placement, isActive = false }) {
           <div style={{
             fontWeight: 700, fontSize: 12, marginBottom: 2,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-            paddingRight: !isPaint ? 14 : 0,
+            paddingRight: 14,
           }}>{name}</div>
           <div style={{ fontSize: 10, color: '#aaa', marginBottom: 4 }}>Por: {artist}</div>
           <div style={{ fontSize: 9, color: '#ccc', lineHeight: 1.4 }}>
-            {(desc || '').substring(0, 100)}...
+            {(desc || '').substring(0, 120)}{desc && desc.length > 120 ? '...' : ''}
           </div>
         </div>
       </Html>
@@ -335,14 +337,14 @@ function HoldButton({ onAction, children, className }) {
 
 // ─────────────────────────────────────────────
 // CONTROLADOR DE CÁMARA FPS
-// Sin cambios de lógica — ya estaba bien optimizado con vectores pre-alocados.
+// Drag-to-look: botón derecho del mouse (o izquierdo sin soltar) rota la cámara.
+// Click simple pasa normalmente a los elementos HTML (botones de info).
 // ─────────────────────────────────────────────
-function FPSController({ enabled }) {
+function FPSController({ enabled, yawRef, pitchRef }) {
   const { camera, gl } = useThree();
   const keys = useRef({});
-  const yaw = useRef(0);
-  const pitch = useRef(0);
-  const isLocked = useRef(false);
+  const isDragging = useRef(false);
+  const lastMouse = useRef({ x: 0, y: 0 });
   const dir = useRef(new THREE.Vector3());
   const front = useRef(new THREE.Vector3());
   const right = useRef(new THREE.Vector3());
@@ -353,48 +355,58 @@ function FPSController({ enabled }) {
     const onKeyDown = (e) => { keys.current[e.code] = true; };
     const onKeyUp = (e) => { keys.current[e.code] = false; };
 
+    const onMouseDown = (e) => {
+      if (!enabled) return;
+      if (e.button === 2 || (e.button === 0 && e.target === gl.domElement)) {
+        isDragging.current = true;
+        lastMouse.current = { x: e.clientX, y: e.clientY };
+        if (e.button === 2) e.preventDefault();
+      }
+    };
+
+    const onMouseUp = () => { isDragging.current = false; };
+
     const onMouseMove = (e) => {
-      if (!isLocked.current) return;
-      yaw.current -= e.movementX * LOOK_SENSITIVITY;
-      pitch.current -= e.movementY * LOOK_SENSITIVITY;
-      pitch.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitch.current));
+      if (!isDragging.current || !enabled) return;
+      const dx = e.clientX - lastMouse.current.x;
+      const dy = e.clientY - lastMouse.current.y;
+      lastMouse.current = { x: e.clientX, y: e.clientY };
+      yawRef.current -= dx * LOOK_SENSITIVITY;
+      pitchRef.current -= dy * LOOK_SENSITIVITY;
+      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
     };
 
-    const onPointerLockChange = () => {
-      isLocked.current = document.pointerLockElement === gl.domElement;
-    };
-
-    const onClick = () => {
-      if (enabled && !isLocked.current) gl.domElement.requestPointerLock();
-    };
+    const onContextMenu = (e) => e.preventDefault();
 
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
     window.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('pointerlockchange', onPointerLockChange);
-    gl.domElement.addEventListener('click', onClick);
+    gl.domElement.addEventListener('contextmenu', onContextMenu);
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('pointerlockchange', onPointerLockChange);
-      gl.domElement.removeEventListener('click', onClick);
-      if (document.exitPointerLock) document.exitPointerLock();
+      gl.domElement.removeEventListener('contextmenu', onContextMenu);
     };
-  }, [enabled, camera, gl]);
+  }, [enabled, camera, gl, yawRef, pitchRef]);
 
   useFrame((_, delta) => {
     if (!enabled) return;
 
+    // Aplicar rotación desde refs compartidos
     camera.rotation.order = 'YXZ';
-    camera.rotation.y = yaw.current;
-    camera.rotation.x = pitch.current;
+    camera.rotation.y = yawRef.current;
+    camera.rotation.x = pitchRef.current;
 
     const speed = MOVE_SPEED * delta;
     dir.current.set(0, 0, 0);
-    front.current.set(-Math.sin(yaw.current), 0, -Math.cos(yaw.current));
-    right.current.set(Math.cos(yaw.current), 0, -Math.sin(yaw.current));
+    front.current.set(-Math.sin(yawRef.current), 0, -Math.cos(yawRef.current));
+    right.current.set(Math.cos(yawRef.current), 0, -Math.sin(yawRef.current));
 
     if (keys.current['KeyW'] || keys.current['ArrowUp'])    dir.current.add(front.current);
     if (keys.current['KeyS'] || keys.current['ArrowDown'])  dir.current.sub(front.current);
@@ -415,6 +427,52 @@ function FPSController({ enabled }) {
 }
 
 // ─────────────────────────────────────────────
+// CONTROLADOR TÁCTIL (móvil)
+// Recibe yawRef y pitchRef compartidos con FPSController para no pisar la rotación.
+// ─────────────────────────────────────────────
+function TouchController({ enabled, joystickRef, lookDeltaRef, yawRef, pitchRef }) {
+  const { camera } = useThree();
+  const dir = useRef(new THREE.Vector3());
+  const front = useRef(new THREE.Vector3());
+  const right = useRef(new THREE.Vector3());
+
+  useFrame((_, delta) => {
+    if (!enabled) return;
+    // Aplicar delta de swipe — modifica los refs compartidos con FPSController
+    if (lookDeltaRef.current) {
+      yawRef.current -= lookDeltaRef.current.x * LOOK_SENSITIVITY * 40;
+      pitchRef.current -= lookDeltaRef.current.y * LOOK_SENSITIVITY * 40;
+      pitchRef.current = Math.max(-Math.PI / 2.2, Math.min(Math.PI / 2.2, pitchRef.current));
+      lookDeltaRef.current = null;
+      // Aplicar rotación actualizada (FPSController lo hará también en su frame, pero
+      // necesitamos asegurar que se vea reflejado cuando solo hay input táctil)
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = yawRef.current;
+      camera.rotation.x = pitchRef.current;
+    }
+
+    const jx = joystickRef.current?.x ?? 0;
+    const jy = joystickRef.current?.y ?? 0;
+    if (Math.abs(jx) > 0.05 || Math.abs(jy) > 0.05) {
+      const speed = MOVE_SPEED * delta;
+      front.current.set(-Math.sin(yawRef.current), 0, -Math.cos(yawRef.current));
+      right.current.set(Math.cos(yawRef.current), 0, -Math.sin(yawRef.current));
+      dir.current.set(0, 0, 0);
+      dir.current.addScaledVector(front.current, -jy);
+      dir.current.addScaledVector(right.current, jx);
+      if (dir.current.lengthSq() > 0) {
+        dir.current.normalize().multiplyScalar(speed);
+        camera.position.add(dir.current);
+      }
+      camera.position.x = Math.max(-LIMIT_X, Math.min(LIMIT_X, camera.position.x));
+      camera.position.z = Math.max(-LIMIT_Z, Math.min(LIMIT_Z, camera.position.z));
+      camera.position.y = Math.max(1.6, camera.position.y);
+    }
+  });
+  return null;
+}
+
+// ─────────────────────────────────────────────
 // EXPONER CÁMARA
 // ─────────────────────────────────────────────
 function CameraExposer({ onReady }) {
@@ -426,14 +484,19 @@ function CameraExposer({ onReady }) {
 // ─────────────────────────────────────────────
 // ESCENA 3D COMPLETA
 // ─────────────────────────────────────────────
-function MuseumScene({ placements, activePlacement, controlsEnabled, onCameraReady }) {
+function MuseumScene({ placements, activePlacement, controlsEnabled, joystickRef, lookDeltaRef, onCameraReady }) {
+  // Refs compartidos de rotación — un solo estado de yaw/pitch para FPS y Touch
+  const yawRef = useRef(0);
+  const pitchRef = useRef(0);
+
   return (
     <>
       <ambientLight color="#ffffff" intensity={2.2} />
       <directionalLight color="#ffffff" intensity={1.2} position={[-1, 4, 2]} castShadow={false} />
 
       <CameraExposer onReady={onCameraReady} />
-      <FPSController enabled={controlsEnabled} />
+      <FPSController enabled={controlsEnabled} yawRef={yawRef} pitchRef={pitchRef} />
+      <TouchController enabled={controlsEnabled} joystickRef={joystickRef} lookDeltaRef={lookDeltaRef} yawRef={yawRef} pitchRef={pitchRef} />
 
       <Suspense fallback={null}>
         <MuseumBuilding />
@@ -462,6 +525,15 @@ export default function VirtualMuseumScene() {
   const [showCollection, setShowCollection] = useState(true);
   const [showExposition, setShowExposition] = useState(true);
   const cameraRef = useRef(null);
+
+  // Refs para controles táctiles (no necesitan re-render)
+  const joystickRef = useRef({ x: 0, y: 0 });   // posición normalizada del joystick
+  const lookDeltaRef = useRef(null);              // delta de swipe de mirada
+  const joystickTouchId = useRef(null);           // id del toque del joystick
+  const joystickOrigin = useRef({ x: 0, y: 0 }); // posición inicial del toque
+  const lookTouchId = useRef(null);
+  const lookOrigin = useRef({ x: 0, y: 0 });
+  const isMobile = useRef(typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0));
 
   const { isSuperAdmin } = usePermissions();
 
@@ -658,8 +730,9 @@ export default function VirtualMuseumScene() {
         <MuseumScene
           placements={placements}
           activePlacement={activePlacement}
-          // OPTIMIZACIÓN 6: FPS desactivado en modo curador
           controlsEnabled={controlsEnabled}
+          joystickRef={joystickRef}
+          lookDeltaRef={lookDeltaRef}
           onCameraReady={handleCameraReady}
         />
       </Canvas>
@@ -866,17 +939,86 @@ export default function VirtualMuseumScene() {
         </div>
       )}
 
-      {/* Ayuda de controles */}
-      {!editMode && !activePlacement && (
+      {/* Controles táctiles móvil */}
+      {!editMode && !activePlacement && isMobile.current && (
+        <>
+          {/* Joystick izquierdo */}
+          <div
+            id="joystick-zone"
+            style={{
+              position: 'absolute', bottom: 32, left: 32, width: 110, height: 110,
+              borderRadius: '50%', background: 'rgba(255,255,255,0.08)',
+              border: '2px solid rgba(255,255,255,0.2)', zIndex: 10000,
+              touchAction: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+            onPointerDown={(e) => {
+              if (joystickTouchId.current !== null) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              joystickTouchId.current = e.pointerId;
+              joystickOrigin.current = { x: e.clientX, y: e.clientY };
+              joystickRef.current = { x: 0, y: 0 };
+            }}
+            onPointerMove={(e) => {
+              if (e.pointerId !== joystickTouchId.current) return;
+              const dx = (e.clientX - joystickOrigin.current.x) / 50;
+              const dy = (e.clientY - joystickOrigin.current.y) / 50;
+              const len = Math.sqrt(dx * dx + dy * dy);
+              if (len > 1) { joystickRef.current = { x: dx / len, y: dy / len }; }
+              else { joystickRef.current = { x: dx, y: dy }; }
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerId !== joystickTouchId.current) return;
+              joystickTouchId.current = null;
+              joystickRef.current = { x: 0, y: 0 };
+            }}
+          >
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.25)', border: '1.5px solid rgba(255,255,255,0.4)',
+            }} />
+          </div>
+
+          {/* Zona de mirada: lado derecho de la pantalla */}
+          <div
+            id="look-zone"
+            style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: '55%', height: '100%',
+              zIndex: 9999, touchAction: 'none',
+            }}
+            onPointerDown={(e) => {
+              if (lookTouchId.current !== null) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              lookTouchId.current = e.pointerId;
+              lookOrigin.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerMove={(e) => {
+              if (e.pointerId !== lookTouchId.current) return;
+              lookDeltaRef.current = {
+                x: e.clientX - lookOrigin.current.x,
+                y: e.clientY - lookOrigin.current.y,
+              };
+              lookOrigin.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerUp={(e) => {
+              if (e.pointerId !== lookTouchId.current) return;
+              lookTouchId.current = null;
+            }}
+          />
+        </>
+      )}
+
+      {/* Ayuda de controles (solo desktop) */}
+      {!editMode && !activePlacement && !isMobile.current && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[10000] bg-black/50 backdrop-blur-md text-white/80 px-6 py-3 rounded-full text-xs flex gap-6 border border-white/10 pointer-events-none">
           <span className="flex items-center gap-2">
             <kbd className="bg-white/20 px-2 py-1 rounded">W A S D</kbd> Moverse
           </span>
           <span className="flex items-center gap-2">
-            <kbd className="bg-white/20 px-2 py-1 rounded">Click</kbd> Activar mirada
+            <kbd className="bg-white/20 px-2 py-1 rounded">Arrastrar</kbd> Mirar
           </span>
           <span className="flex items-center gap-2">
-            <kbd className="bg-white/20 px-2 py-1 rounded">Esc</kbd> Liberar cursor
+            <kbd className="bg-white/20 px-2 py-1 rounded">Click</kbd> Ver info obra
           </span>
         </div>
       )}

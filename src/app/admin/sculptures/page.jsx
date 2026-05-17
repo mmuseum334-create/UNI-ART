@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Landmark, Pencil, Trash2, X, ExternalLink } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Landmark, Pencil, Trash2, X, ExternalLink, MoreVertical, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { sculptureService } from '@/services/sculpture/sculptureService';
 import { categoryService } from '@/services/categoryService';
 import { useColor } from '@/contexts/ColorContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { artCategories } from '@/data/mockData';
 import {
   AdminPage, AdminHeader, SearchInput, TableCard, Table,
-  EmptyRow, IconBtn, Field, FormInput, FormTextarea, FormSelect,
+  EmptyRow, Field, FormInput, FormTextarea, FormSelect,
   ErrorBanner, GhostBtn, PrimaryBtn, usePagination, Pagination,
 } from '@/components/admin/AdminShell';
 import { toast } from '@/lib/toast';
@@ -30,8 +31,87 @@ export default function AdminSculpturesPage() {
   );
 }
 
+/* ── Dropdown de acciones por fila ── */
+function ActionsDropdown({ sculpture, isSuperAdmin, onEdit, onDelete, onRegenerate }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  // Cerrar al hacer clic fuera
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const item = (icon, label, action, cls = '') => (
+    <button
+      onClick={() => { setOpen(false); action(); }}
+      className={`flex w-full items-center gap-2.5 px-3 py-2 text-sm rounded-lg transition-colors ${cls || 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-tertiary'}`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+
+  return (
+    <div ref={ref} className="relative flex justify-center">
+      <button
+        onClick={() => setOpen(v => !v)}
+        title="Opciones"
+        className="flex items-center justify-center h-8 w-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors"
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-9 z-50 w-52 rounded-xl border border-slate-200 dark:border-dark-tertiary bg-white dark:bg-dark-secondary shadow-xl p-1.5 animate-in fade-in slide-in-from-top-2 duration-150">
+          <Link href={`/sculpture/${sculpture.id}`} target="_blank" onClick={() => setOpen(false)}>
+            <span className="flex w-full items-center gap-2.5 px-3 py-2 text-sm rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-tertiary transition-colors cursor-pointer">
+              <ExternalLink className="h-4 w-4 text-slate-400" />
+              Ver escultura
+            </span>
+          </Link>
+
+          {item(
+            <Pencil className="h-4 w-4 text-slate-400" />,
+            'Editar información',
+            onEdit
+          )}
+
+          {/* Acción exclusiva super_admin */}
+          {isSuperAdmin && (
+            <>
+              <div className="my-1 h-px bg-slate-100 dark:bg-dark-tertiary" />
+              {item(
+                <RefreshCw className="h-4 w-4 text-amber-500" />,
+                'Regenerar modelo 3D',
+                onRegenerate,
+                'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+              )}
+            </>
+          )}
+
+          <div className="my-1 h-px bg-slate-100 dark:bg-dark-tertiary" />
+
+          {item(
+            <Trash2 className="h-4 w-4 text-red-400" />,
+            'Eliminar',
+            onDelete,
+            'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SculpturesContent() {
   const { color } = useColor();
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role?.name === 'super_admin';
 
   const [sculptures,  setSculptures]  = useState([]);
   const [categories,  setCategories]  = useState([]);
@@ -109,6 +189,22 @@ function SculpturesContent() {
     );
   };
 
+  const handleRegenerate = useCallback((s) => {
+    toast.confirm(
+      `¿Regenerar modelo 3D de "${s.nombre_escultura}"?`,
+      'El modelo actual será reemplazado y se iniciará un nuevo proceso de generación 3D.',
+      async () => {
+        const res = await sculptureService.regenerateModel(s.id);
+        if (!res.success) {
+          toast.error('Error al regenerar', res.error);
+        } else {
+          toast.success('Regeneración iniciada', 'El modelo 3D comenzará a procesarse nuevamente.');
+          load();
+        }
+      }
+    );
+  }, []);
+
   const allCats = [
     ...artCategories.map(c => ({ id: c.id, name: c.name })),
     ...categories.filter(c => !artCategories.find(a => a.name === c.name)).map(c => ({ id: c.name, name: c.name })),
@@ -164,11 +260,13 @@ function SculpturesContent() {
                   {s.fecha ? new Date(s.fecha).toLocaleDateString('es-CO') : '—'}
                 </td>
                 <td className="px-5 py-3">
-                  <div className="flex items-center gap-1">
-                    <Link href={`/sculpture/${s.id}`} target="_blank"><IconBtn icon={ExternalLink} title="Ver" /></Link>
-                    <IconBtn icon={Pencil} onClick={() => openEdit(s)} title="Editar" />
-                    <IconBtn icon={Trash2} onClick={() => handleDelete(s)} variant="danger" title="Eliminar" />
-                  </div>
+                  <ActionsDropdown
+                    sculpture={s}
+                    isSuperAdmin={isSuperAdmin}
+                    onEdit={() => openEdit(s)}
+                    onDelete={() => handleDelete(s)}
+                    onRegenerate={() => handleRegenerate(s)}
+                  />
                 </td>
               </tr>
             );

@@ -91,7 +91,7 @@ const Auth = () => {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const colorInputRef = useRef(null);
 
-  const { login, register } = useAuth();
+  const { login, register, setAuthData } = useAuth();
   const { color, setColor } = useColor();
   const { isDark, toggleTheme } = useTheme();
 
@@ -186,14 +186,25 @@ const Auth = () => {
     else if (mode === 'login') setIsLogin(true);
   }, [searchParams]);
 
-  /* error de Google OAuth */
+  /* respuesta de Google OAuth */
   useEffect(() => {
     const googleError = searchParams.get('error');
+    const token = searchParams.get('token');
+    const userDataStr = searchParams.get('userData');
+
     if (googleError) {
       setErrors({ submit: decodeURIComponent(googleError) });
       router.replace('/auth', { scroll: false });
+    } else if (token && userDataStr) {
+      try {
+        const userData = JSON.parse(decodeURIComponent(userDataStr));
+        setAuthData(userData, token);
+        router.push('/');
+      } catch (err) {
+        console.error('Error parseando datos de Google:', err);
+      }
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, setAuthData]);
 
   const switchMode = (toLogin) => {
     setIsLogin(toLogin);

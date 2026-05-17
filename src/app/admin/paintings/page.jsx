@@ -53,7 +53,7 @@ function PaintingsContent() {
 
   const load = async () => {
     setLoading(true); setError('');
-    const res = await paintService.getAll();
+    const res = await paintService.getAllAdmin();
     if (res.success) setPaintings(res.data);
     else setError(res.error || 'Error al cargar pinturas');
     setLoading(false);
@@ -167,8 +167,14 @@ function PaintingsContent() {
                 {p.fecha ? new Date(p.fecha).toLocaleDateString('es-CO') : '—'}
               </td>
               <td className="px-5 py-3">
-                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.deleted_at ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
-                  {p.deleted_at ? 'Eliminada' : 'Activa'}
+                <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                  p.deleted_at
+                    ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400'
+                    : !p.aprobada
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                }`}>
+                  {p.deleted_at ? 'Eliminada' : !p.aprobada ? 'Pendiente' : 'Activa'}
                 </span>
               </td>
               <td className="px-5 py-3">

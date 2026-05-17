@@ -790,7 +790,7 @@ export default function UploadSculpture() {
   return (
     <ProtectedRoute
       requireAuth
-      resource={RESOURCES.SCULPTURES_CREATE}
+      resource={RESOURCES.SCULPTURES}
       permission={PERMISSIONS.CREATE}
       redirectTo="/"
     >
